@@ -18,15 +18,15 @@ export const FloatingLeaves = () => {
   useEffect(() => {
     const generateLeaves = () => {
       const newLeaves: Leaf[] = [];
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 80; i++) {
         newLeaves.push({
           id: i,
           x: Math.random() * 100,
-          delay: Math.random() * 15,
-          duration: 6 + Math.random() * 12,
-          size: 14 + Math.random() * 24,
+          delay: Math.random() * 12,
+          duration: 5 + Math.random() * 10,
+          size: 24 + Math.random() * 32,
           emoji: LEAF_EMOJIS[Math.floor(Math.random() * LEAF_EMOJIS.length)],
-          opacity: 0.4 + Math.random() * 0.5,
+          opacity: 0.7 + Math.random() * 0.3,
         });
       }
       setLeaves(newLeaves);

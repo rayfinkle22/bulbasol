@@ -41,12 +41,22 @@ export const SnailGame = () => {
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [collectibles, setCollectibles] = useState<Collectible[]>([]);
   const gameAreaRef = useRef<HTMLDivElement>(null);
-  const gameLoopRef = useRef<number>();
-  const spawnRef = useRef<number>();
+  const gameLoopRef = useRef<number | null>(null);
+  const spawnRef = useRef<number | null>(null);
   const snailYRef = useRef(50);
+  const scoreRef = useRef(0);
 
   const SNAIL_X = 15; // percentage from left
   const COLLISION_DISTANCE = 8; // percentage
+
+  // Keep refs in sync
+  useEffect(() => {
+    snailYRef.current = snailY;
+  }, [snailY]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -88,7 +98,7 @@ export const SnailGame = () => {
   }, [handleKeyDown]);
 
   const spawnItems = useCallback(() => {
-    const currentScore = score;
+    const currentScore = scoreRef.current;
     
     // Spawn obstacle (stick or tumbleweed)
     if (Math.random() < 0.6) {
@@ -115,7 +125,7 @@ export const SnailGame = () => {
       };
       setCollectibles(prev => [...prev, newCollectible]);
     }
-  }, [score]);
+  }, []);
 
   const startGame = () => {
     setGameState('playing');
