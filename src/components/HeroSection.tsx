@@ -26,7 +26,7 @@ export const HeroSection = () => {
       <div className="relative z-10 text-center max-w-4xl mx-auto w-full">
         {/* Hero banner */}
         <div className="mb-6 relative">
-          <div className="w-full max-w-2xl mx-auto rounded-2xl retro-border overflow-hidden">
+          <div className="w-full max-w-3xl mx-auto rounded-2xl retro-border overflow-hidden">
             <img 
               src={heroBanner} 
               alt="Franklin and Snail - $SNAIL Token" 
