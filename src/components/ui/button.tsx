@@ -19,6 +19,7 @@ const buttonVariants = cva(
         social: "bg-card border-2 border-border text-foreground font-mono hover:bg-secondary hover:border-accent transition-all duration-200",
         game: "bg-primary text-primary-foreground font-display text-lg hover:bg-primary/80 hover:scale-105 transition-all duration-200",
         hero: "bg-accent text-accent-foreground font-display text-xl hover:bg-accent/90 hover:scale-105 transition-all duration-200 shadow-lg",
+        fun: "bg-gradient-to-br from-accent to-primary text-primary-foreground font-display border-2 border-secondary hover:scale-110 hover:shadow-lg transition-all duration-200 rounded-full",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,6 +1,7 @@
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { SnailGame } from "@/components/SnailGame";
+import { DexChart } from "@/components/DexChart";
 import { Footer } from "@/components/Footer";
 
 const Index = () => {
@@ -10,6 +11,7 @@ const Index = () => {
       <main className="flex-1">
         <HeroSection />
         <SnailGame />
+        <DexChart />
       </main>
       <Footer />
     </div>
