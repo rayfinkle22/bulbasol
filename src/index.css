@@ -6,85 +6,84 @@
 
 @layer base {
   :root {
-    /* Franklin-inspired nostalgic color palette */
-    --background: 45 30% 12%;
-    --foreground: 45 40% 90%;
+    /* Franklin-inspired bright, cheerful palette */
+    --background: 85 35% 92%;
+    --foreground: 120 30% 20%;
 
-    --card: 45 25% 16%;
-    --card-foreground: 45 40% 90%;
+    --card: 85 40% 88%;
+    --card-foreground: 120 30% 20%;
 
-    --popover: 45 25% 16%;
-    --popover-foreground: 45 40% 90%;
+    --popover: 85 40% 88%;
+    --popover-foreground: 120 30% 20%;
 
-    /* Forest green primary */
-    --primary: 120 35% 35%;
-    --primary-foreground: 45 40% 95%;
+    /* Bright green from Franklin */
+    --primary: 95 55% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Warm brown secondary */
-    --secondary: 30 40% 25%;
-    --secondary-foreground: 45 40% 90%;
+    /* Warm brown/tan */
+    --secondary: 35 45% 65%;
+    --secondary-foreground: 30 40% 20%;
 
-    --muted: 45 20% 20%;
-    --muted-foreground: 45 20% 60%;
+    --muted: 85 25% 85%;
+    --muted-foreground: 120 20% 40%;
 
-    /* Golden accent */
-    --accent: 45 70% 50%;
-    --accent-foreground: 45 30% 10%;
+    /* Yellow accent like Franklin title */
+    --accent: 45 90% 55%;
+    --accent-foreground: 30 50% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 45 20% 25%;
-    --input: 45 20% 25%;
-    --ring: 120 35% 35%;
+    --border: 95 30% 70%;
+    --input: 95 30% 70%;
+    --ring: 95 55% 45%;
 
     --radius: 0.75rem;
 
-    /* Custom tokens */
-    --snail-shell: 30 50% 45%;
-    --snail-body: 180 20% 60%;
-    --grass: 120 40% 30%;
-    --sky: 200 60% 70%;
-    --bug: 0 60% 45%;
+    /* Game colors */
+    --sky: 195 70% 75%;
+    --grass: 95 50% 55%;
+    --grass-light: 90 55% 70%;
+    --dirt: 35 40% 50%;
 
-    --sidebar-background: 45 25% 14%;
-    --sidebar-foreground: 45 40% 90%;
-    --sidebar-primary: 120 35% 35%;
-    --sidebar-primary-foreground: 45 40% 95%;
-    --sidebar-accent: 45 70% 50%;
-    --sidebar-accent-foreground: 45 30% 10%;
-    --sidebar-border: 45 20% 25%;
-    --sidebar-ring: 120 35% 35%;
+    --sidebar-background: 85 35% 90%;
+    --sidebar-foreground: 120 30% 20%;
+    --sidebar-primary: 95 55% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 90% 55%;
+    --sidebar-accent-foreground: 30 50% 20%;
+    --sidebar-border: 95 30% 70%;
+    --sidebar-ring: 95 55% 45%;
   }
 
   .dark {
-    --background: 45 30% 12%;
-    --foreground: 45 40% 90%;
-    --card: 45 25% 16%;
-    --card-foreground: 45 40% 90%;
-    --popover: 45 25% 16%;
-    --popover-foreground: 45 40% 90%;
-    --primary: 120 35% 35%;
-    --primary-foreground: 45 40% 95%;
-    --secondary: 30 40% 25%;
-    --secondary-foreground: 45 40% 90%;
-    --muted: 45 20% 20%;
-    --muted-foreground: 45 20% 60%;
-    --accent: 45 70% 50%;
-    --accent-foreground: 45 30% 10%;
+    --background: 120 25% 15%;
+    --foreground: 85 30% 90%;
+    --card: 120 20% 20%;
+    --card-foreground: 85 30% 90%;
+    --popover: 120 20% 20%;
+    --popover-foreground: 85 30% 90%;
+    --primary: 95 55% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 35 35% 35%;
+    --secondary-foreground: 85 30% 90%;
+    --muted: 120 15% 25%;
+    --muted-foreground: 85 20% 60%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 30 50% 20%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 45 20% 25%;
-    --input: 45 20% 25%;
-    --ring: 120 35% 35%;
-    --sidebar-background: 45 25% 14%;
-    --sidebar-foreground: 45 40% 90%;
-    --sidebar-primary: 120 35% 35%;
-    --sidebar-primary-foreground: 45 40% 95%;
-    --sidebar-accent: 45 70% 50%;
-    --sidebar-accent-foreground: 45 30% 10%;
-    --sidebar-border: 45 20% 25%;
-    --sidebar-ring: 120 35% 35%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 15% 30%;
+    --input: 120 15% 30%;
+    --ring: 95 55% 45%;
+    --sidebar-background: 120 20% 18%;
+    --sidebar-foreground: 85 30% 90%;
+    --sidebar-primary: 95 55% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 90% 55%;
+    --sidebar-accent-foreground: 30 50% 20%;
+    --sidebar-border: 120 15% 30%;
+    --sidebar-ring: 95 55% 45%;
   }
 }
 
@@ -104,54 +103,74 @@
 
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 20px hsl(var(--accent) / 0.5), 0 0 40px hsl(var(--accent) / 0.3);
+    text-shadow: 
+      2px 2px 0 hsl(0 70% 50%),
+      -1px -1px 0 hsl(0 70% 50%),
+      1px -1px 0 hsl(0 70% 50%),
+      -1px 1px 0 hsl(0 70% 50%);
+  }
+
+  .text-outline {
+    text-shadow: 
+      3px 3px 0 hsl(195 70% 45%),
+      -2px -2px 0 hsl(195 70% 45%),
+      2px -2px 0 hsl(195 70% 45%),
+      -2px 2px 0 hsl(195 70% 45%);
   }
 
   .box-glow {
-    box-shadow: 0 0 30px hsl(var(--primary) / 0.3), inset 0 1px 0 hsl(var(--foreground) / 0.1);
-  }
-
-  .game-container {
-    background: linear-gradient(180deg, hsl(var(--sky)) 0%, hsl(120 40% 50%) 100%);
+    box-shadow: 0 4px 20px hsl(var(--primary) / 0.3);
   }
 
   .retro-border {
-    border: 3px solid hsl(var(--secondary));
+    border: 4px solid hsl(var(--secondary));
+    border-radius: 1rem;
     box-shadow: 
-      4px 4px 0 hsl(var(--secondary) / 0.5),
-      inset 0 2px 0 hsl(var(--foreground) / 0.1);
+      6px 6px 0 hsl(35 30% 40%),
+      inset 0 2px 0 hsl(0 0% 100% / 0.2);
+  }
+
+  .game-ground {
+    background: linear-gradient(180deg, 
+      hsl(var(--grass-light)) 0%, 
+      hsl(var(--grass)) 40%,
+      hsl(var(--dirt)) 100%
+    );
   }
 }
 
 /* Game animations */
 @keyframes bounce-snail {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
-@keyframes bug-fly {
-  0% { transform: translateX(0) rotate(0deg); }
-  25% { transform: translateX(-5px) rotate(-5deg); }
-  75% { transform: translateX(5px) rotate(5deg); }
-  100% { transform: translateX(0) rotate(0deg); }
+@keyframes tumble {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  50% { transform: translateY(-15px); }
 }
 
 @keyframes wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px hsl(45 90% 55%)); }
+  50% { filter: drop-shadow(0 0 15px hsl(45 90% 55%)); }
 }
 
 .animate-bounce-snail {
-  animation: bounce-snail 0.5s ease-in-out infinite;
+  animation: bounce-snail 0.4s ease-in-out infinite;
 }
 
-.animate-bug-fly {
-  animation: bug-fly 0.3s ease-in-out infinite;
+.animate-tumble {
+  animation: tumble 1s linear infinite;
 }
 
 .animate-float {
@@ -159,5 +178,9 @@
 }
 
 .animate-wiggle {
-  animation: wiggle 2s ease-in-out infinite;
+  animation: wiggle 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
 }
