@@ -1,7 +1,7 @@
 export const DexChart = () => {
   return (
     <section className="py-8 sm:py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <h2 className="font-display text-3xl sm:text-4xl text-center text-primary mb-2">
           Live Chart 📈
         </h2>
