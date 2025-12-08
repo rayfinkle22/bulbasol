@@ -29,10 +29,19 @@ const COLLECTIBLE_ICONS = {
   caterpillar: '🐛',
 };
 
+type Difficulty = 'slow' | 'medium' | 'hard';
+
+const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
+  slow: 0.5,
+  medium: 1,
+  hard: 1.8,
+};
+
 export const SnailGame = () => {
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
   const [score, setScore] = useState(0);
   const [bugsEaten, setBugsEaten] = useState(0);
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem('snail-highscore');
     return saved ? parseInt(saved) : 0;
@@ -45,11 +54,11 @@ export const SnailGame = () => {
   const spawnRef = useRef<number | null>(null);
   const snailYRef = useRef(50);
   const scoreRef = useRef(0);
+  const difficultyRef = useRef<Difficulty>('medium');
 
-  const SNAIL_X = 15; // percentage from left
-  const COLLISION_DISTANCE = 8; // percentage
+  const SNAIL_X = 15;
+  const COLLISION_DISTANCE = 8;
 
-  // Keep refs in sync
   useEffect(() => {
     snailYRef.current = snailY;
   }, [snailY]);
@@ -58,10 +67,9 @@ export const SnailGame = () => {
     scoreRef.current = score;
   }, [score]);
 
-  // Keep ref in sync
   useEffect(() => {
-    snailYRef.current = snailY;
-  }, [snailY]);
+    difficultyRef.current = difficulty;
+  }, [difficulty]);
 
   const moveSnail = useCallback((direction: 'up' | 'down') => {
     setSnailY(prev => {
@@ -83,7 +91,6 @@ export const SnailGame = () => {
     }
   }, [gameState, moveSnail]);
 
-  // Touch/mouse controls for mobile
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (gameState !== 'playing' || !gameAreaRef.current) return;
     const rect = gameAreaRef.current.getBoundingClientRect();
@@ -99,28 +106,27 @@ export const SnailGame = () => {
 
   const spawnItems = useCallback(() => {
     const currentScore = scoreRef.current;
+    const speedMult = SPEED_MULTIPLIERS[difficultyRef.current];
     
-    // Spawn obstacle (stick or tumbleweed)
     if (Math.random() < 0.6) {
       const obstacleTypes: Obstacle['type'][] = ['stick', 'tumbleweed'];
       const newObstacle: Obstacle = {
         id: Date.now() + Math.random(),
         x: 105,
         y: Math.random() * 60 + 20,
-        speed: 1.5 + Math.random() * 1.5 + (currentScore / 50),
+        speed: (1.5 + Math.random() * 1.5 + (currentScore / 50)) * speedMult,
         type: obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)],
       };
       setObstacles(prev => [...prev, newObstacle]);
     }
 
-    // Spawn collectible (bug to eat)
     if (Math.random() < 0.4) {
       const collectibleTypes: Collectible['type'][] = ['beetle', 'fly', 'caterpillar'];
       const newCollectible: Collectible = {
         id: Date.now() + Math.random() + 1,
         x: 105,
         y: Math.random() * 60 + 20,
-        speed: 1 + Math.random() * 1 + (currentScore / 80),
+        speed: (1 + Math.random() * 1 + (currentScore / 80)) * speedMult,
         type: collectibleTypes[Math.floor(Math.random() * collectibleTypes.length)],
       };
       setCollectibles(prev => [...prev, newCollectible]);
@@ -142,16 +148,14 @@ export const SnailGame = () => {
     let lastTime = performance.now();
     
     const gameLoop = (currentTime: number) => {
-      const deltaTime = (currentTime - lastTime) / 16.67; // normalize to ~60fps
+      const deltaTime = (currentTime - lastTime) / 16.67;
       lastTime = currentTime;
 
-      // Update obstacles
       setObstacles(prev => {
         const updated = prev
           .map(obs => ({ ...obs, x: obs.x - obs.speed * deltaTime }))
           .filter(obs => obs.x > -10);
 
-        // Check collision with obstacles
         for (const obs of updated) {
           const dx = Math.abs(SNAIL_X - obs.x);
           const dy = Math.abs(snailYRef.current - obs.y);
@@ -171,7 +175,6 @@ export const SnailGame = () => {
         return updated;
       });
 
-      // Update collectibles
       setCollectibles(prev => {
         const updated: Collectible[] = [];
         
@@ -183,7 +186,6 @@ export const SnailGame = () => {
           const dy = Math.abs(snailYRef.current - col.y);
           
           if (dx < COLLISION_DISTANCE && dy < COLLISION_DISTANCE) {
-            // Collected!
             setScore(s => s + 10);
             setBugsEaten(b => b + 1);
           } else {
@@ -194,7 +196,6 @@ export const SnailGame = () => {
         return updated;
       });
 
-      // Increment score over time
       setScore(s => s + 0.1);
 
       gameLoopRef.current = requestAnimationFrame(gameLoop);
@@ -202,7 +203,6 @@ export const SnailGame = () => {
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
 
-    // Spawn items periodically
     spawnRef.current = window.setInterval(() => {
       spawnItems();
     }, 800);
@@ -215,7 +215,7 @@ export const SnailGame = () => {
 
   return (
     <section className="py-8 sm:py-12 px-4">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h2 className="font-display text-3xl sm:text-4xl text-center text-primary mb-2">
           Snail's Adventure!
         </h2>
@@ -238,7 +238,7 @@ export const SnailGame = () => {
           ref={gameAreaRef}
           className="relative w-full rounded-2xl retro-border overflow-hidden cursor-pointer touch-none select-none"
           style={{ 
-            height: 280,
+            height: 320,
             background: 'linear-gradient(180deg, hsl(195 70% 75%) 0%, hsl(195 60% 85%) 30%, hsl(90 55% 70%) 50%, hsl(95 50% 55%) 70%, hsl(35 40% 50%) 100%)'
           }}
           onClick={() => gameState !== 'playing' ? startGame() : null}
@@ -255,7 +255,7 @@ export const SnailGame = () => {
 
           {/* Snail */}
           <div 
-            className={`absolute transition-all duration-75 ${gameState === 'playing' ? '' : ''}`}
+            className="absolute transition-all duration-75"
             style={{ 
               left: `${SNAIL_X}%`,
               top: `${snailY}%`,
@@ -327,6 +327,27 @@ export const SnailGame = () => {
               </Button>
             </div>
           )}
+        </div>
+
+        {/* Speed toggle */}
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <span className="font-body text-sm text-muted-foreground">Speed:</span>
+          <div className="flex gap-1">
+            {(['slow', 'medium', 'hard'] as Difficulty[]).map((level) => (
+              <Button
+                key={level}
+                variant={difficulty === level ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDifficulty(level)}
+                className="font-display capitalize"
+              >
+                {level === 'slow' && '🐢'} 
+                {level === 'medium' && '🐇'} 
+                {level === 'hard' && '🚀'} 
+                {level}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <p className="text-center text-muted-foreground font-body text-sm mt-3">
