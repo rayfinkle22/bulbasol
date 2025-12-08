@@ -7,9 +7,10 @@ interface Leaf {
   duration: number;
   size: number;
   emoji: string;
+  opacity: number;
 }
 
-const LEAF_EMOJIS = ['🍂', '🍃', '🌿', '🍁'];
+const LEAF_EMOJIS = ['🍂', '🍃', '🌿', '🍁', '🍂', '🍃', '🍁'];
 
 export const FloatingLeaves = () => {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
@@ -17,14 +18,15 @@ export const FloatingLeaves = () => {
   useEffect(() => {
     const generateLeaves = () => {
       const newLeaves: Leaf[] = [];
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 60; i++) {
         newLeaves.push({
           id: i,
           x: Math.random() * 100,
-          delay: Math.random() * 10,
-          duration: 8 + Math.random() * 8,
-          size: 16 + Math.random() * 16,
+          delay: Math.random() * 15,
+          duration: 6 + Math.random() * 12,
+          size: 14 + Math.random() * 24,
           emoji: LEAF_EMOJIS[Math.floor(Math.random() * LEAF_EMOJIS.length)],
+          opacity: 0.4 + Math.random() * 0.5,
         });
       }
       setLeaves(newLeaves);
@@ -45,7 +47,7 @@ export const FloatingLeaves = () => {
             fontSize: `${leaf.size}px`,
             animationDelay: `${leaf.delay}s`,
             animationDuration: `${leaf.duration}s`,
-            opacity: 0.7,
+            opacity: leaf.opacity,
           }}
         >
           {leaf.emoji}
