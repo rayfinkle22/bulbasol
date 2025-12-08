@@ -51,14 +51,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        snail: {
-          shell: "hsl(var(--snail-shell))",
-          body: "hsl(var(--snail-body))",
-        },
         game: {
-          grass: "hsl(var(--grass))",
           sky: "hsl(var(--sky))",
-          bug: "hsl(var(--bug))",
+          grass: "hsl(var(--grass))",
+          dirt: "hsl(var(--dirt))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
