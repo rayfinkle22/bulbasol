@@ -26,7 +26,7 @@ export const FloatingLeaves = () => {
           duration: 5 + Math.random() * 10,
           size: 24 + Math.random() * 32,
           emoji: LEAF_EMOJIS[Math.floor(Math.random() * LEAF_EMOJIS.length)],
-          opacity: 0.7 + Math.random() * 0.3,
+          opacity: 0.85 + Math.random() * 0.15,
         });
       }
       setLeaves(newLeaves);
