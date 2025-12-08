@@ -8,7 +8,7 @@
   :root {
     /* Franklin-inspired bright, cheerful palette */
     --background: 85 25% 78%;
-    --foreground: 120 35% 15%;
+    --foreground: 120 45% 12%;
 
     --card: 85 40% 88%;
     --card-foreground: 120 30% 20%;
@@ -93,7 +93,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body font-semibold;
   }
 
   h1, h2, h3, h4, h5, h6 {

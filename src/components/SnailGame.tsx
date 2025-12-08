@@ -32,9 +32,9 @@ const COLLECTIBLE_ICONS = {
 type Difficulty = 'slow' | 'medium' | 'hard';
 
 const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
-  slow: 0.5,
-  medium: 1,
-  hard: 1.8,
+  slow: 0.25,
+  medium: 0.5,
+  hard: 0.9,
 };
 
 export const SnailGame = () => {
