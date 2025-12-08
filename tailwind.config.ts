@@ -89,12 +89,57 @@ export default {
           "0%": { opacity: "0", transform: "translateY(20px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "wiggle": {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
+        },
+        "bounce-snail": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-3px)" },
+        },
+        "tumble": {
+          "0%": { transform: "translate(-50%, -50%) rotate(0deg)" },
+          "100%": { transform: "translate(-50%, -50%) rotate(360deg)" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { transform: "translate(-50%, -50%) scale(1)", opacity: "1" },
+          "50%": { transform: "translate(-50%, -50%) scale(1.1)", opacity: "0.8" },
+        },
+        "leaf-fall": {
+          "0%": { 
+            transform: "translateY(-10vh) rotate(0deg) translateX(0)",
+            opacity: "0.7"
+          },
+          "25%": {
+            transform: "translateY(25vh) rotate(90deg) translateX(30px)"
+          },
+          "50%": {
+            transform: "translateY(50vh) rotate(180deg) translateX(-30px)"
+          },
+          "75%": {
+            transform: "translateY(75vh) rotate(270deg) translateX(20px)"
+          },
+          "100%": { 
+            transform: "translateY(110vh) rotate(360deg) translateX(0)",
+            opacity: "0"
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.6s ease-out forwards",
+        "float": "float 3s ease-in-out infinite",
+        "wiggle": "wiggle 1s ease-in-out infinite",
+        "bounce-snail": "bounce-snail 0.3s ease-in-out infinite",
+        "tumble": "tumble 1s linear infinite",
+        "pulse-glow": "pulse-glow 0.8s ease-in-out infinite",
+        "leaf-fall": "leaf-fall 10s linear infinite",
       },
     },
   },
