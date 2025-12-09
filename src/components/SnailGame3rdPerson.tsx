@@ -51,12 +51,18 @@ interface LeaderboardEntry {
   created_at?: string;
 }
 
-type Difficulty = 'slow' | 'medium' | 'hard';
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
-  slow: 0.3,
-  medium: 0.6,
-  hard: 1.0,
+  easy: 0.4,
+  medium: 0.7,
+  hard: 1.2,
+};
+
+const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: '🐢 Easy',
+  medium: '🐛 Medium', 
+  hard: '🔥 Hard',
 };
 
 const BUG_CONFIGS = {
@@ -1151,6 +1157,28 @@ export const SnailGame3rdPerson = () => {
           {/* HUD */}
           {(gameState.status === 'playing' || gameState.status === 'paused') && (
             <div className="absolute top-0 left-0 right-0 p-3">
+              {/* Top row - Difficulty buttons */}
+              <div className="flex justify-center gap-2 mb-2">
+                {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                  <Button
+                    key={d}
+                    variant={difficulty === d ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDifficulty(d)}
+                    className={`font-display text-xs px-3 py-1 ${
+                      difficulty === d 
+                        ? d === 'easy' ? 'bg-green-600 hover:bg-green-700' 
+                          : d === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700'
+                          : 'bg-red-600 hover:bg-red-700'
+                        : 'bg-black/40 border-white/30 text-white hover:bg-black/60'
+                    }`}
+                  >
+                    {DIFFICULTY_LABELS[d]}
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Second row - Health, Score, Pause */}
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 pointer-events-none">
@@ -1285,16 +1313,23 @@ export const SnailGame3rdPerson = () => {
               <img src={snailTexture} alt="Snail" className="w-20 h-20 object-contain mb-2" />
               <h3 className="font-display text-2xl text-primary mb-4">3rd Person Mode</h3>
               
+              <p className="font-body text-sm text-muted-foreground mb-2">Select Difficulty:</p>
               <div className="flex gap-2 mb-4">
-                {(['slow', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                   <Button
                     key={d}
                     variant={difficulty === d ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setDifficulty(d)}
-                    className="font-display capitalize"
+                    className={`font-display ${
+                      difficulty === d 
+                        ? d === 'easy' ? 'bg-green-600 hover:bg-green-700' 
+                          : d === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700'
+                          : 'bg-red-600 hover:bg-red-700'
+                        : ''
+                    }`}
                   >
-                    {d}
+                    {DIFFICULTY_LABELS[d]}
                   </Button>
                 ))}
               </div>
