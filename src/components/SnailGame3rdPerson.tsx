@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
+import { Maximize, Minimize } from "lucide-react";
 
 interface Bug {
   id: number;
@@ -1288,6 +1289,7 @@ export const SnailGame3rdPerson = () => {
   const touchJumping = useRef(false);
   const joystickRef = useRef<HTMLDivElement>(null);
   const joystickStartPos = useRef<{ x: number; y: number } | null>(null);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [gameState, setGameState] = useState<GameState>({
@@ -1457,6 +1459,48 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
+  // Fullscreen handling
+  const toggleFullscreen = useCallback(async () => {
+    if (!gameContainerRef.current) return;
+    
+    try {
+      if (!document.fullscreenElement) {
+        await gameContainerRef.current.requestFullscreen();
+        // Try to lock to landscape on mobile
+        if (screen.orientation && 'lock' in screen.orientation) {
+          try {
+            await (screen.orientation as any).lock('landscape');
+          } catch (e) {
+            // Orientation lock not supported or failed
+          }
+        }
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          try {
+            (screen.orientation as any).unlock();
+          } catch (e) {
+            // Orientation unlock not supported
+          }
+        }
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
+    }
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
     <section className="py-8 sm:py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -1488,9 +1532,20 @@ export const SnailGame3rdPerson = () => {
 
         {/* Game area - taller for 3rd person view */}
         <div 
-          className="relative w-full rounded-2xl retro-border overflow-hidden"
-          style={{ height: 500 }}
+          ref={gameContainerRef}
+          className={`relative w-full rounded-2xl retro-border overflow-hidden bg-black ${
+            isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none' : ''
+          }`}
+          style={{ height: isFullscreen ? '100%' : 500 }}
         >
+          {/* Fullscreen button - always visible in corner */}
+          <button
+            onClick={toggleFullscreen}
+            className="absolute top-2 right-2 z-50 p-2 bg-black/60 hover:bg-black/80 rounded-lg border border-white/30 text-white transition-colors"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          >
+            {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+          </button>
           <Canvas
             shadows
             gl={{ 
@@ -1514,7 +1569,7 @@ export const SnailGame3rdPerson = () => {
 
           {/* HUD */}
           {(gameState.status === 'playing' || gameState.status === 'paused') && (
-            <div className="absolute top-0 left-0 right-0 p-3">
+            <div className="absolute top-0 left-0 right-0 p-3 pr-14">
               {/* Top row - Difficulty buttons */}
               <div className="flex justify-center gap-2 mb-2">
                 {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
