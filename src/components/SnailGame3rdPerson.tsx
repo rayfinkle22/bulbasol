@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerspectiveCamera, Environment } from "@react-three/drei";
+import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { PerspectiveCamera, Environment, Billboard } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
 import snailTexture from "@/assets/snail-game.png";
+import snail3DImage from "@/assets/snail-3d.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
@@ -66,150 +67,39 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail with realistic orange spiral shell - Fortnite style sharp materials
+// 3D Snail using billboard sprite from uploaded image
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
+  const texture = useLoader(THREE.TextureLoader, snail3DImage);
+  
   return (
-    <group position={[position[0], 0.2, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Shell group - tilted to the right like the reference */}
-      <group position={[0, 0.5, -0.2]} rotation={[0.2, 0, 0.2]}>
-        {/* Main shell - large orange sphere with sharp materials */}
-        <mesh castShadow receiveShadow>
-          <sphereGeometry args={[0.65, 48, 36]} />
+    <group position={[position[0], 0, position[1]]} rotation={[0, rotation, 0]}>
+      {/* Billboard sprite of the snail - always faces camera */}
+      <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
+        <mesh position={[0, 1.0, 0]} castShadow>
+          <planeGeometry args={[2.2, 2.2]} />
           <meshStandardMaterial 
-            color="#e88030" 
-            roughness={0.25} 
-            metalness={0.1}
-            envMapIntensity={0.8}
+            map={texture} 
+            transparent={true} 
+            alphaTest={0.5}
+            side={THREE.DoubleSide}
           />
         </mesh>
-        
-        {/* Spiral groove 1 - outermost */}
-        <mesh position={[0, 0, 0]} rotation={[0.2, 0.2, 0.3]} castShadow>
-          <torusGeometry args={[0.58, 0.035, 16, 64]} />
-          <meshStandardMaterial color="#c05515" roughness={0.3} metalness={0.15} />
-        </mesh>
-        
-        {/* Spiral groove 2 */}
-        <mesh position={[0.12, 0.05, -0.08]} rotation={[0.3, 0.5, 0.4]} castShadow>
-          <torusGeometry args={[0.42, 0.032, 16, 56]} />
-          <meshStandardMaterial color="#b04510" roughness={0.3} metalness={0.15} />
-        </mesh>
-        
-        {/* Spiral groove 3 */}
-        <mesh position={[0.2, 0.08, -0.12]} rotation={[0.4, 0.8, 0.5]} castShadow>
-          <torusGeometry args={[0.28, 0.028, 16, 48]} />
-          <meshStandardMaterial color="#a03808" roughness={0.3} metalness={0.15} />
-        </mesh>
-        
-        {/* Spiral groove 4 - innermost */}
-        <mesh position={[0.25, 0.1, -0.15]} rotation={[0.5, 1.1, 0.6]} castShadow>
-          <torusGeometry args={[0.16, 0.025, 12, 36]} />
-          <meshStandardMaterial color="#903005" roughness={0.3} metalness={0.2} />
-        </mesh>
-        
-        {/* Spiral center */}
-        <mesh position={[0.28, 0.12, -0.18]} castShadow>
-          <sphereGeometry args={[0.1, 24, 24]} />
-          <meshStandardMaterial color="#802500" roughness={0.35} metalness={0.2} />
-        </mesh>
-        
-        {/* Shell highlight - specular reflection */}
-        <mesh position={[-0.2, 0.2, 0.3]} scale={[0.4, 0.25, 0.3]}>
-          <sphereGeometry args={[0.2, 16, 16]} />
-          <meshStandardMaterial color="#ffb070" roughness={0.1} metalness={0.3} />
-        </mesh>
-      </group>
+      </Billboard>
       
-      {/* Shell rim where body emerges */}
-      <mesh position={[0, 0.25, 0.05]} rotation={[1.2, 0, 0]} scale={[0.6, 0.7, 0.2]}>
-        <torusGeometry args={[0.4, 0.08, 12, 24]} />
-        <meshStandardMaterial color="#c04520" roughness={0.45} />
+      {/* Shadow disc on ground */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.8, 32]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.3} />
       </mesh>
       
-      {/* Snail body */}
-      <mesh position={[0, 0.18, 0.35]} scale={[1, 0.85, 1]}>
-        <capsuleGeometry args={[0.2, 0.4, 16, 18]} />
-        <meshStandardMaterial color="#e5dcd0" roughness={0.55} />
-      </mesh>
-      
-      {/* Foot base */}
-      <mesh position={[0, 0.05, 0.25]} scale={[1.15, 0.12, 1.35]}>
-        <sphereGeometry args={[0.38, 18, 12]} />
-        <meshStandardMaterial color="#dcd2c5" roughness={0.6} />
-      </mesh>
-      
-      {/* Foot ripples */}
-      <mesh position={[-0.25, 0.04, 0.2]} scale={[0.22, 0.1, 0.4]}>
-        <sphereGeometry args={[0.3, 10, 8]} />
-        <meshStandardMaterial color="#d5cabb" roughness={0.65} />
-      </mesh>
-      <mesh position={[0.25, 0.04, 0.2]} scale={[0.22, 0.1, 0.4]}>
-        <sphereGeometry args={[0.3, 10, 8]} />
-        <meshStandardMaterial color="#d5cabb" roughness={0.65} />
-      </mesh>
-      <mesh position={[0, 0.04, 0.55]} scale={[0.3, 0.1, 0.18]}>
-        <sphereGeometry args={[0.3, 10, 8]} />
-        <meshStandardMaterial color="#d5cabb" roughness={0.65} />
-      </mesh>
-      
-      {/* Head */}
-      <mesh position={[0, 0.28, 0.68]}>
-        <sphereGeometry args={[0.15, 18, 18]} />
-        <meshStandardMaterial color="#e5dcd0" roughness={0.5} />
-      </mesh>
-      
-      {/* Snout */}
-      <mesh position={[0, 0.22, 0.8]} scale={[0.65, 0.5, 0.35]}>
-        <sphereGeometry args={[0.1, 12, 10]} />
-        <meshStandardMaterial color="#dcd2c5" roughness={0.55} />
-      </mesh>
-      
-      {/* Eye stalks */}
-      <mesh position={[-0.08, 0.42, 0.62]} rotation={[-0.4, 0, -0.15]}>
-        <capsuleGeometry args={[0.032, 0.16, 10, 12]} />
-        <meshStandardMaterial color="#e5dcd0" roughness={0.5} />
-      </mesh>
-      <mesh position={[0.08, 0.42, 0.62]} rotation={[-0.4, 0, 0.15]}>
-        <capsuleGeometry args={[0.032, 0.16, 10, 12]} />
-        <meshStandardMaterial color="#e5dcd0" roughness={0.5} />
-      </mesh>
-      
-      {/* Eyes - white with pupils */}
-      <mesh position={[-0.1, 0.54, 0.68]}>
-        <sphereGeometry args={[0.065, 14, 14]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.25} />
-      </mesh>
-      <mesh position={[0.1, 0.54, 0.68]}>
-        <sphereGeometry args={[0.065, 14, 14]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.25} />
-      </mesh>
-      {/* Pupils */}
-      <mesh position={[-0.1, 0.54, 0.745]}>
-        <sphereGeometry args={[0.032, 10, 10]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      <mesh position={[0.1, 0.54, 0.745]}>
-        <sphereGeometry args={[0.032, 10, 10]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      {/* Eye highlights */}
-      <mesh position={[-0.12, 0.56, 0.74]}>
-        <sphereGeometry args={[0.012, 8, 8]} />
-        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
-      </mesh>
-      <mesh position={[0.08, 0.56, 0.74]}>
-        <sphereGeometry args={[0.012, 8, 8]} />
-        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.5} />
-      </mesh>
-      
-      {/* Gun mount on shell */}
-      <mesh position={[0.5, 0.55, -0.15]} rotation={[0, 0, 0.3]}>
+      {/* Gun mount on right side */}
+      <mesh position={[0.8, 0.9, 0.2]} rotation={[0, 0, 0.3]}>
         <boxGeometry args={[0.35, 0.05, 0.06]} />
         <meshStandardMaterial color="#4a3a2a" roughness={0.8} />
       </mesh>
       
       {/* Machine gun */}
-      <group position={[0.6, 0.6, 0.2]} rotation={[0, 0, 0]}>
+      <group position={[0.9, 0.95, 0.5]} rotation={[0, 0, 0]}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.06, 0.08, 0.7, 12]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
@@ -1051,7 +941,7 @@ export const SnailGame3rdPerson = () => {
     const fetchData = async () => {
       try {
         const { data: leaderboardData, error: leaderboardError } = await supabase
-          .from('leaderboard')
+          .from('leaderboard_3d')
           .select('*')
           .order('score', { ascending: false })
           .limit(10);
@@ -1087,7 +977,7 @@ export const SnailGame3rdPerson = () => {
     
     try {
       const { data: success, error } = await supabase
-        .rpc('submit_score', {
+        .rpc('submit_score_3d', {
           p_name: name,
           p_score: score,
           p_game_duration: gameDuration,
@@ -1105,7 +995,7 @@ export const SnailGame3rdPerson = () => {
       }
       
       const { data } = await supabase
-        .from('leaderboard')
+        .from('leaderboard_3d')
         .select('*')
         .order('score', { ascending: false })
         .limit(10);
