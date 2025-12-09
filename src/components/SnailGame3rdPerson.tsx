@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerspectiveCamera } from "@react-three/drei";
+import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
 import snailTexture from "@/assets/snail-game.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RealisticForestGround } from "./game/RealisticForest";
+import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
 
 interface Bug {
   id: number;
@@ -64,52 +66,57 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail with orange spiral shell like Turbo
+// 3D Snail with realistic orange spiral shell - Fortnite style sharp materials
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   return (
     <group position={[position[0], 0.2, position[1]]} rotation={[0, rotation, 0]}>
       {/* Shell group - tilted to the right like the reference */}
       <group position={[0, 0.5, -0.2]} rotation={[0.2, 0, 0.2]}>
-        {/* Main shell - large orange sphere */}
-        <mesh>
-          <sphereGeometry args={[0.65, 32, 24]} />
-          <meshStandardMaterial color="#e88030" roughness={0.35} />
+        {/* Main shell - large orange sphere with sharp materials */}
+        <mesh castShadow receiveShadow>
+          <sphereGeometry args={[0.65, 48, 36]} />
+          <meshStandardMaterial 
+            color="#e88030" 
+            roughness={0.25} 
+            metalness={0.1}
+            envMapIntensity={0.8}
+          />
         </mesh>
         
         {/* Spiral groove 1 - outermost */}
-        <mesh position={[0, 0, 0]} rotation={[0.2, 0.2, 0.3]}>
-          <torusGeometry args={[0.58, 0.03, 8, 48]} />
-          <meshStandardMaterial color="#c05515" roughness={0.4} />
+        <mesh position={[0, 0, 0]} rotation={[0.2, 0.2, 0.3]} castShadow>
+          <torusGeometry args={[0.58, 0.035, 16, 64]} />
+          <meshStandardMaterial color="#c05515" roughness={0.3} metalness={0.15} />
         </mesh>
         
         {/* Spiral groove 2 */}
-        <mesh position={[0.12, 0.05, -0.08]} rotation={[0.3, 0.5, 0.4]}>
-          <torusGeometry args={[0.42, 0.028, 8, 40]} />
-          <meshStandardMaterial color="#b04510" roughness={0.4} />
+        <mesh position={[0.12, 0.05, -0.08]} rotation={[0.3, 0.5, 0.4]} castShadow>
+          <torusGeometry args={[0.42, 0.032, 16, 56]} />
+          <meshStandardMaterial color="#b04510" roughness={0.3} metalness={0.15} />
         </mesh>
         
         {/* Spiral groove 3 */}
-        <mesh position={[0.2, 0.08, -0.12]} rotation={[0.4, 0.8, 0.5]}>
-          <torusGeometry args={[0.28, 0.025, 8, 32]} />
-          <meshStandardMaterial color="#a03808" roughness={0.4} />
+        <mesh position={[0.2, 0.08, -0.12]} rotation={[0.4, 0.8, 0.5]} castShadow>
+          <torusGeometry args={[0.28, 0.028, 16, 48]} />
+          <meshStandardMaterial color="#a03808" roughness={0.3} metalness={0.15} />
         </mesh>
         
         {/* Spiral groove 4 - innermost */}
-        <mesh position={[0.25, 0.1, -0.15]} rotation={[0.5, 1.1, 0.6]}>
-          <torusGeometry args={[0.16, 0.022, 8, 24]} />
-          <meshStandardMaterial color="#903005" roughness={0.4} />
+        <mesh position={[0.25, 0.1, -0.15]} rotation={[0.5, 1.1, 0.6]} castShadow>
+          <torusGeometry args={[0.16, 0.025, 12, 36]} />
+          <meshStandardMaterial color="#903005" roughness={0.3} metalness={0.2} />
         </mesh>
         
         {/* Spiral center */}
-        <mesh position={[0.28, 0.12, -0.18]}>
-          <sphereGeometry args={[0.1, 16, 16]} />
-          <meshStandardMaterial color="#802500" roughness={0.45} />
+        <mesh position={[0.28, 0.12, -0.18]} castShadow>
+          <sphereGeometry args={[0.1, 24, 24]} />
+          <meshStandardMaterial color="#802500" roughness={0.35} metalness={0.2} />
         </mesh>
         
-        {/* Shell highlight */}
+        {/* Shell highlight - specular reflection */}
         <mesh position={[-0.2, 0.2, 0.3]} scale={[0.4, 0.25, 0.3]}>
-          <sphereGeometry args={[0.2, 12, 12]} />
-          <meshStandardMaterial color="#ffa050" roughness={0.2} />
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshStandardMaterial color="#ffb070" roughness={0.1} metalness={0.3} />
         </mesh>
       </group>
       
@@ -986,26 +993,15 @@ function GameScene({
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={65} near={0.1} far={150} />
       <ThirdPersonCamera targetPosition={gameState.snailPosition} targetRotation={gameState.snailRotation} />
       
-      {/* Bright daylight lighting */}
-      <ambientLight intensity={0.8} color="#ffffff" />
-      <directionalLight position={[15, 40, 15]} intensity={1.2} color="#fffef5" castShadow />
-      <directionalLight position={[-10, 25, -10]} intensity={0.5} color="#ffffff" />
-      <pointLight position={[0, 20, 0]} intensity={0.4} color="#fffef0" distance={60} />
-      <hemisphereLight args={['#87ceeb', '#7cba5c', 0.6]} />
+      {/* Realistic lighting and atmosphere */}
+      <RealisticLighting />
+      <ForestSkybox />
       
-      {/* Bright blue sky fog */}
-      <fog attach="fog" args={['#87ceeb', 30, 80]} />
-      
-      {/* Sky background */}
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[100, 32, 32]} />
-        <meshBasicMaterial color="#87ceeb" side={THREE.BackSide} />
-      </mesh>
-      
-      <ForestGround />
+      {/* Realistic forest terrain */}
+      <RealisticForestGround />
       
       <Snail position={gameState.snailPosition} rotation={gameState.snailRotation} />
       
@@ -1182,7 +1178,15 @@ export const SnailGame3rdPerson = () => {
           className="relative w-full rounded-2xl retro-border overflow-hidden"
           style={{ height: 500 }}
         >
-          <Canvas>
+          <Canvas
+            shadows
+            gl={{ 
+              antialias: true,
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 1.1
+            }}
+            camera={{ fov: 65 }}
+          >
             <GameScene 
               gameState={gameState} 
               setGameState={setGameState} 
