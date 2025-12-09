@@ -23,6 +23,12 @@ interface Bullet {
   velocity: [number, number];
 }
 
+interface PowerUp {
+  id: number;
+  position: [number, number, number];
+  type: 'health' | 'doubleDamage';
+}
+
 interface GameState {
   status: 'idle' | 'playing' | 'gameover' | 'entering_name';
   score: number;
@@ -31,7 +37,9 @@ interface GameState {
   snailRotation: number;
   bugs: Bug[];
   bullets: Bullet[];
+  powerUps: PowerUp[];
   health: number;
+  doubleDamageUntil: number;
 }
 
 interface LeaderboardEntry {
@@ -273,6 +281,60 @@ function Bullet({ bullet }: { bullet: Bullet }) {
   );
 }
 
+// Power-up component
+function PowerUpMesh({ powerUp }: { powerUp: PowerUp }) {
+  const meshRef = useRef<THREE.Group>(null);
+  
+  // Floating and spinning animation
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 2;
+      meshRef.current.position.y = 0.4 + Math.sin(Date.now() * 0.003) * 0.1;
+    }
+  });
+  
+  return (
+    <group ref={meshRef} position={[powerUp.position[0], powerUp.position[1], powerUp.position[2]]}>
+      {powerUp.type === 'health' && (
+        <>
+          {/* Health pack - red cross */}
+          <mesh>
+            <boxGeometry args={[0.35, 0.35, 0.35]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          {/* Red cross horizontal */}
+          <mesh position={[0, 0, 0.18]}>
+            <boxGeometry args={[0.25, 0.08, 0.02]} />
+            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+          </mesh>
+          {/* Red cross vertical */}
+          <mesh position={[0, 0, 0.18]}>
+            <boxGeometry args={[0.08, 0.25, 0.02]} />
+            <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+          </mesh>
+          {/* Glow */}
+          <pointLight color="#00ff00" intensity={0.5} distance={2} />
+        </>
+      )}
+      {powerUp.type === 'doubleDamage' && (
+        <>
+          {/* Double damage - orange/yellow star */}
+          <mesh>
+            <octahedronGeometry args={[0.25, 0]} />
+            <meshStandardMaterial color="#ff8800" emissive="#ffaa00" emissiveIntensity={0.5} />
+          </mesh>
+          <mesh rotation={[0, Math.PI / 4, 0]}>
+            <octahedronGeometry args={[0.25, 0]} />
+            <meshStandardMaterial color="#ffcc00" emissive="#ffaa00" emissiveIntensity={0.5} />
+          </mesh>
+          {/* Glow */}
+          <pointLight color="#ffaa00" intensity={0.8} distance={3} />
+        </>
+      )}
+    </group>
+  );
+}
+
 // Solid green ground - no flickering
 function Ground() {
   return (
@@ -308,6 +370,7 @@ function GameScene({
 }) {
   const keysPressed = useRef<Set<string>>(new Set());
   const lastSpawn = useRef(0);
+  const lastPowerUpSpawn = useRef(0);
   const lastShot = useRef(0);
   const isShooting = useRef(false);
 
@@ -420,6 +483,25 @@ function GameScene({
         bugs: [...prev.bugs, newBug]
       }));
     }
+    
+    // Spawn power-ups randomly (every 8-15 seconds)
+    if (now - lastPowerUpSpawn.current > 8000 + Math.random() * 7000) {
+      lastPowerUpSpawn.current = now;
+      const powerUpType: PowerUp['type'] = Math.random() > 0.5 ? 'health' : 'doubleDamage';
+      const newPowerUp: PowerUp = {
+        id: Date.now() + Math.random(),
+        position: [
+          (Math.random() - 0.5) * 14,
+          0.4,
+          (Math.random() - 0.5) * 14
+        ],
+        type: powerUpType
+      };
+      setGameState(prev => ({
+        ...prev,
+        powerUps: [...prev.powerUps, newPowerUp]
+      }));
+    }
 
     setGameState(prev => {
       // Update snail position
@@ -462,6 +544,10 @@ function GameScene({
         };
       });
 
+      // Check if double damage is active
+      const isDoubleDamage = performance.now() < prev.doubleDamageUntil;
+      const damageMultiplier = isDoubleDamage ? 2 : 1;
+
       // Check bullet-bug collisions
       let newScore = prev.score;
       let newBugsKilled = prev.bugsKilled;
@@ -475,7 +561,7 @@ function GameScene({
           
           if (dist < 0.4) {
             updatedBullets.splice(i, 1);
-            newScore += 10;
+            newScore += 10 * damageMultiplier;
             newBugsKilled += 1;
             return false;
           }
@@ -483,8 +569,26 @@ function GameScene({
         return true;
       });
 
-      // Check bug-snail collisions
+      // Check power-up collisions
       let newHealth = prev.health;
+      let newDoubleDamageUntil = prev.doubleDamageUntil;
+      let updatedPowerUps = prev.powerUps.filter(powerUp => {
+        const dx = powerUp.position[0] - newX;
+        const dz = powerUp.position[2] - newZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        
+        if (dist < 0.7) {
+          if (powerUp.type === 'health') {
+            newHealth = Math.min(100, newHealth + 30);
+          } else if (powerUp.type === 'doubleDamage') {
+            newDoubleDamageUntil = performance.now() + 8000; // 8 seconds of double damage
+          }
+          return false; // Remove collected power-up
+        }
+        return true;
+      });
+
+      // Check bug-snail collisions
       updatedBugs = updatedBugs.filter(bug => {
         const dx = bug.position[0] - newX;
         const dz = bug.position[2] - newZ;
@@ -518,9 +622,11 @@ function GameScene({
         snailRotation: newRotation,
         bullets: updatedBullets,
         bugs: updatedBugs,
+        powerUps: updatedPowerUps,
         score: newScore,
         bugsKilled: newBugsKilled,
-        health: newHealth
+        health: newHealth,
+        doubleDamageUntil: newDoubleDamageUntil
       };
     });
   });
@@ -546,6 +652,10 @@ function GameScene({
       
       {gameState.bullets.map(bullet => (
         <Bullet key={bullet.id} bullet={bullet} />
+      ))}
+      
+      {gameState.powerUps.map(powerUp => (
+        <PowerUpMesh key={powerUp.id} powerUp={powerUp} />
       ))}
     </>
   );
@@ -573,7 +683,9 @@ export const SnailGame = () => {
     snailRotation: 0,
     bugs: [],
     bullets: [],
-    health: 100
+    powerUps: [],
+    health: 100,
+    doubleDamageUntil: 0
   });
 
   // Fetch leaderboard from database on mount
@@ -657,7 +769,9 @@ export const SnailGame = () => {
       snailRotation: 0,
       bugs: [],
       bullets: [],
-      health: 100
+      powerUps: [],
+      health: 100,
+      doubleDamageUntil: 0
     });
   }, []);
 
@@ -727,6 +841,12 @@ export const SnailGame = () => {
                     </div>
                     <span className="text-white font-display text-sm drop-shadow-lg">{gameState.health}</span>
                   </div>
+                  {/* Double damage indicator */}
+                  {gameState.doubleDamageUntil > performance.now() && (
+                    <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse">
+                      <span className="text-white font-display text-xs">⚡2X DAMAGE⚡</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-4 font-display text-white drop-shadow-lg">
