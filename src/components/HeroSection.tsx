@@ -25,14 +25,14 @@ export const HeroSection = () => {
       <div className="relative z-10 text-center max-w-4xl mx-auto w-full">
         {/* Hero banner */}
         <div className="mb-6 relative">
-          <div className="w-full max-w-3xl mx-auto rounded-2xl retro-border overflow-hidden">
+          <div className="w-full max-w-md mx-auto rounded-2xl retro-border overflow-hidden">
             <video 
               src="/videos/snail-animation.mp4" 
               autoPlay
               loop
               muted
               playsInline
-              className="w-full h-auto object-cover"
+              className="w-full h-auto max-h-48 sm:max-h-64 object-cover"
             />
           </div>
         </div>
