@@ -54,9 +54,15 @@ interface LeaderboardEntry {
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
-  easy: 0.4,
-  medium: 0.7,
-  hard: 1.2,
+  easy: 0.7,
+  medium: 1.0,
+  hard: 1.5,
+};
+
+const BUG_SPAWN_COUNTS: Record<Difficulty, number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
 };
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -695,7 +701,7 @@ function GameScene({
 
     const speedMult = SPEED_MULTIPLIERS[difficulty];
     const moveSpeed = 5 * clampedDelta;
-    const rotateSpeed = 3 * clampedDelta;
+    const rotateSpeed = 1.8 * clampedDelta; // Slower, smoother turning
 
     let forward = 0;
     let turn = 0;
@@ -749,27 +755,32 @@ function GameScene({
       }));
     }
 
-    // Spawn bugs
-    if (now - lastSpawn.current > 2000 / speedMult) {
+    // Spawn bugs - spawn multiple bugs based on difficulty
+    if (now - lastSpawn.current > 1800 / speedMult) {
       lastSpawn.current = now;
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 12 + Math.random() * 3;
       const bugTypes: Bug['type'][] = ['beetle', 'centipede', 'spider', 'scorpion', 'wasp'];
-      const newBug: Bug = {
-        id: Date.now() + Math.random(),
-        position: [
-          gameState.snailPosition[0] + Math.sin(angle) * distance,
-          0.35,
-          gameState.snailPosition[1] + Math.cos(angle) * distance
-        ],
-        velocity: [0, 0],
-        type: bugTypes[Math.floor(Math.random() * bugTypes.length)],
-        health: 1,
-        scale: 0.8 + Math.random() * 0.6
-      };
+      const bugsToSpawn = BUG_SPAWN_COUNTS[difficulty];
+      
+      const newBugs: Bug[] = [];
+      for (let i = 0; i < bugsToSpawn; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 12 + Math.random() * 3;
+        newBugs.push({
+          id: Date.now() + Math.random() + i,
+          position: [
+            gameState.snailPosition[0] + Math.sin(angle) * distance,
+            0.35,
+            gameState.snailPosition[1] + Math.cos(angle) * distance
+          ],
+          velocity: [0, 0],
+          type: bugTypes[Math.floor(Math.random() * bugTypes.length)],
+          health: 1,
+          scale: 0.8 + Math.random() * 0.6
+        });
+      }
       setGameState(prev => ({
         ...prev,
-        bugs: [...prev.bugs, newBug]
+        bugs: [...prev.bugs, ...newBugs]
       }));
     }
     
