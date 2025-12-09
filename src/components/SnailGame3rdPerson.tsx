@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
-import { Maximize, Minimize } from "lucide-react";
+import { Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { useGameSounds } from "@/hooks/useGameSounds";
 
 interface Bug {
   id: number;
@@ -800,7 +801,8 @@ function GameScene({
   setHighScore,
   touchMove,
   touchShooting,
-  touchJumping
+  touchJumping,
+  sounds
 }: { 
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -810,6 +812,7 @@ function GameScene({
   touchMove: React.MutableRefObject<{ dx: number; dy: number }>;
   touchShooting: React.MutableRefObject<boolean>;
   touchJumping: React.MutableRefObject<boolean>;
+  sounds: ReturnType<typeof useGameSounds>;
 }) {
   const keysPressed = useRef<Set<string>>(new Set());
   const lastSpawn = useRef(0);
@@ -818,6 +821,13 @@ function GameScene({
   const lastShot = useRef(0);
   const isShooting = useRef(false);
   const jumpPressed = useRef(false);
+  
+  // Sound tracking refs
+  const prevBugsKilled = useRef(0);
+  const prevHealth = useRef(100);
+  const prevPowerUps = useRef(0);
+  const prevWeaponPickups = useRef(0);
+  const wasJumping = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -850,6 +860,44 @@ function GameScene({
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Sound effects based on state changes
+  useEffect(() => {
+    // Bug kill sound
+    if (gameState.bugsKilled > prevBugsKilled.current) {
+      sounds.playBugKill();
+    }
+    prevBugsKilled.current = gameState.bugsKilled;
+    
+    // Damage sound
+    if (gameState.health < prevHealth.current && gameState.health > 0) {
+      sounds.playDamage();
+    }
+    prevHealth.current = gameState.health;
+    
+    // Power-up sound
+    if (gameState.powerUps.length < prevPowerUps.current) {
+      sounds.playPowerUp();
+    }
+    prevPowerUps.current = gameState.powerUps.length;
+    
+    // Weapon pickup sound
+    if (gameState.weaponPickups.length < prevWeaponPickups.current) {
+      sounds.playPowerUp();
+    }
+    prevWeaponPickups.current = gameState.weaponPickups.length;
+    
+    // Jump sound
+    if (gameState.isJumping && !wasJumping.current) {
+      sounds.playJump();
+    }
+    wasJumping.current = gameState.isJumping;
+    
+    // Game over sound
+    if (gameState.status === 'gameover' && gameState.health === 0) {
+      sounds.playGameOver();
+    }
+  }, [gameState.bugsKilled, gameState.health, gameState.powerUps.length, gameState.weaponPickups.length, gameState.isJumping, gameState.status, sounds]);
 
   useFrame((_, delta) => {
     if (gameState.status !== 'playing') return;
@@ -906,6 +954,7 @@ function GameScene({
       const activeWeapon = gameState.specialWeaponUntil > now ? gameState.specialWeapon : null;
       
       if (activeWeapon === 'flamethrower') {
+        sounds.playFlamethrower();
         // Flamethrower shoots multiple short-range flames
         const spread = (Math.random() - 0.5) * 0.4;
         const velocity: [number, number] = [
@@ -927,6 +976,7 @@ function GameScene({
           bullets: [...prev.bullets, newBullet]
         }));
       } else if (activeWeapon === 'rocketLauncher') {
+        sounds.playRocket();
         // Rocket launcher shoots a single powerful rocket
         const velocity: [number, number] = [
           Math.sin(angle) * 0.5,
@@ -947,6 +997,7 @@ function GameScene({
           bullets: [...prev.bullets, newBullet]
         }));
       } else {
+        sounds.playShoot();
         // Default machine gun
         const spread = (Math.random() - 0.5) * 0.15;
         const velocity: [number, number] = [
@@ -1292,6 +1343,8 @@ export const SnailGame3rdPerson = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const sounds = useGameSounds();
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1623,6 +1676,23 @@ export const SnailGame3rdPerson = () => {
             maxHeight: '500px'
           }}
         >
+          {/* Mute/Unmute button */}
+          <button
+            onClick={() => {
+              const newMuted = !isMuted;
+              setIsMuted(newMuted);
+              sounds.setMuted(newMuted);
+            }}
+            className={`absolute z-50 p-2 rounded-lg border text-white transition-colors ${
+              isFullscreen 
+                ? 'top-3 right-14 bg-black/60 hover:bg-black/80 border-white/30' 
+                : 'top-2 right-12 bg-black/60 hover:bg-black/80 border-white/30'
+            }`}
+            aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+
           {/* Fullscreen/Exit button - always visible in corner */}
           <button
             onClick={toggleFullscreen}
@@ -1653,6 +1723,7 @@ export const SnailGame3rdPerson = () => {
               touchMove={touchMove}
               touchShooting={touchShooting}
               touchJumping={touchJumping}
+              sounds={sounds}
             />
           </Canvas>
 
