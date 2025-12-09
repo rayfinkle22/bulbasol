@@ -14,21 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_stats: {
+        Row: {
+          games_played: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          games_played?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          games_played?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
+          bugs_killed: number | null
           created_at: string
+          game_duration_seconds: number | null
           id: string
           name: string
           score: number
         }
         Insert: {
+          bugs_killed?: number | null
           created_at?: string
+          game_duration_seconds?: number | null
           id?: string
           name: string
           score: number
         }
         Update: {
+          bugs_killed?: number | null
           created_at?: string
+          game_duration_seconds?: number | null
           id?: string
           name?: string
           score?: number
@@ -40,7 +64,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_games_played: { Args: never; Returns: number }
+      submit_score: {
+        Args: {
+          p_bugs_killed: number
+          p_game_duration: number
+          p_name: string
+          p_score: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
