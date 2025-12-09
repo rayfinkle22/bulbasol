@@ -333,12 +333,19 @@ function Tree({ position, scale = 1 }: { position: [number, number, number]; sca
   );
 }
 
-// Grass tuft component
-function GrassTuft({ position }: { position: [number, number, number] }) {
+// Grass tuft component - using useMemo pattern via static values
+function GrassTuft({ position, seed }: { position: [number, number, number]; seed: number }) {
+  // Use seed to generate deterministic random values
+  const rotations = [
+    [(seed * 0.1) % 0.3 - 0.15, (seed * 0.2) % Math.PI, 0],
+    [(seed * 0.15) % 0.3 - 0.15, (seed * 0.25) % Math.PI, 0],
+    [(seed * 0.12) % 0.3 - 0.15, (seed * 0.3) % Math.PI, 0],
+  ];
+  
   return (
     <group position={position}>
       {[-0.08, 0, 0.08].map((offset, i) => (
-        <mesh key={i} position={[offset, 0.15, offset * 0.5]} rotation={[(Math.random() - 0.5) * 0.3, Math.random() * Math.PI, 0]}>
+        <mesh key={i} position={[offset, 0.15, offset * 0.5]} rotation={rotations[i] as [number, number, number]}>
           <planeGeometry args={[0.1, 0.3]} />
           <meshStandardMaterial color={i % 2 === 0 ? "#5a8a3a" : "#4a7a2a"} side={THREE.DoubleSide} />
         </mesh>
@@ -347,34 +354,56 @@ function GrassTuft({ position }: { position: [number, number, number] }) {
   );
 }
 
-// Forest ground with trees and grass
+// Forest ground with trees and grass - using useMemo to prevent re-renders
 function ForestGround() {
-  // Generate tree positions (avoiding center area where gameplay happens)
+  // Pre-computed deterministic positions using seeded pseudo-random
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+
+  // Generate tree positions deterministically
   const trees = [];
   for (let i = 0; i < 60; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 18 + Math.random() * 15; // Trees at outer edges
+    const seed = i * 1.618;
+    const angle = seededRandom(seed) * Math.PI * 2;
+    const distance = 18 + seededRandom(seed + 1) * 15;
     const x = Math.sin(angle) * distance;
     const z = Math.cos(angle) * distance;
-    trees.push({ x, z, scale: 0.8 + Math.random() * 0.6, key: i });
+    trees.push({ x, z, scale: 0.8 + seededRandom(seed + 2) * 0.6, key: i });
   }
   
-  // Add some trees scattered around but not too close to center
+  // Add more trees scattered around
   for (let i = 60; i < 100; i++) {
-    const x = (Math.random() - 0.5) * 50;
-    const z = (Math.random() - 0.5) * 50;
+    const seed = i * 2.718;
+    const x = (seededRandom(seed) - 0.5) * 50;
+    const z = (seededRandom(seed + 1) - 0.5) * 50;
     const distFromCenter = Math.sqrt(x * x + z * z);
-    if (distFromCenter > 12) { // Keep center clear for gameplay
-      trees.push({ x, z, scale: 0.6 + Math.random() * 0.8, key: i });
+    if (distFromCenter > 12) {
+      trees.push({ x, z, scale: 0.6 + seededRandom(seed + 2) * 0.8, key: i });
     }
   }
   
-  // Generate grass positions
+  // Generate grass positions with seeds
   const grass = [];
   for (let i = 0; i < 200; i++) {
-    const x = (Math.random() - 0.5) * 45;
-    const z = (Math.random() - 0.5) * 45;
-    grass.push({ x, z, key: i });
+    const seed = i * 1.618;
+    const x = (seededRandom(seed) - 0.5) * 45;
+    const z = (seededRandom(seed + 0.5) - 0.5) * 45;
+    grass.push({ x, z, key: i, seed });
+  }
+
+  // Generate rock positions deterministically
+  const rocks = [];
+  for (let i = 0; i < 20; i++) {
+    const seed = i * 3.14159;
+    const x = (seededRandom(seed) - 0.5) * 35;
+    const z = (seededRandom(seed + 1) - 0.5) * 35;
+    const scale = 0.2 + seededRandom(seed + 2) * 0.4;
+    const rotX = seededRandom(seed + 3) * Math.PI;
+    const rotY = seededRandom(seed + 4) * Math.PI;
+    const rotZ = seededRandom(seed + 5) * Math.PI;
+    rocks.push({ x, z, scale, rotX, rotY, rotZ, key: i });
   }
 
   return (
@@ -382,19 +411,19 @@ function ForestGround() {
       {/* Main ground - forest floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#3d5a2a" roughness={0.9} />
+        <meshStandardMaterial color="#4a6a3a" roughness={0.9} />
       </mesh>
       
       {/* Grass patches layer */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
         <circleGeometry args={[18, 32]} />
-        <meshStandardMaterial color="#4a6a35" roughness={0.85} />
+        <meshStandardMaterial color="#5a7a45" roughness={0.85} />
       </mesh>
       
       {/* Dirt path in center */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <circleGeometry args={[8, 24]} />
-        <meshStandardMaterial color="#5a4a35" roughness={0.95} />
+        <meshStandardMaterial color="#6a5a45" roughness={0.95} />
       </mesh>
       
       {/* Trees */}
@@ -404,21 +433,16 @@ function ForestGround() {
       
       {/* Grass tufts */}
       {grass.map((g) => (
-        <GrassTuft key={g.key} position={[g.x, 0, g.z]} />
+        <GrassTuft key={g.key} position={[g.x, 0, g.z]} seed={g.seed} />
       ))}
       
       {/* Rocks scattered around */}
-      {[...Array(20)].map((_, i) => {
-        const x = (Math.random() - 0.5) * 35;
-        const z = (Math.random() - 0.5) * 35;
-        const scale = 0.2 + Math.random() * 0.4;
-        return (
-          <mesh key={`rock-${i}`} position={[x, scale * 0.3, z]} rotation={[Math.random(), Math.random(), Math.random()]}>
-            <dodecahedronGeometry args={[scale, 0]} />
-            <meshStandardMaterial color="#5a5a5a" roughness={0.9} />
-          </mesh>
-        );
-      })}
+      {rocks.map((rock) => (
+        <mesh key={`rock-${rock.key}`} position={[rock.x, rock.scale * 0.3, rock.z]} rotation={[rock.rotX, rock.rotY, rock.rotZ]}>
+          <dodecahedronGeometry args={[rock.scale, 0]} />
+          <meshStandardMaterial color="#6a6a6a" roughness={0.9} />
+        </mesh>
+      ))}
     </>
   );
 }
@@ -740,14 +764,15 @@ function GameScene({
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
       <ThirdPersonCamera targetPosition={gameState.snailPosition} targetRotation={gameState.snailRotation} />
       
-      {/* Forest lighting */}
-      <ambientLight intensity={0.4} color="#90a080" />
-      <directionalLight position={[10, 30, 10]} intensity={0.8} color="#fff8e0" castShadow />
-      <directionalLight position={[-10, 20, -10]} intensity={0.3} color="#a0c0a0" />
-      <pointLight position={[0, 15, 0]} intensity={0.2} color="#ffeeaa" distance={40} />
+      {/* Forest lighting - brighter */}
+      <ambientLight intensity={0.6} color="#ffffff" />
+      <directionalLight position={[10, 30, 10]} intensity={1} color="#fffef0" castShadow />
+      <directionalLight position={[-10, 20, -10]} intensity={0.4} color="#e0f0e0" />
+      <pointLight position={[0, 15, 0]} intensity={0.3} color="#ffffff" distance={50} />
+      <hemisphereLight args={['#87ceeb', '#4a6a3a', 0.4]} />
       
-      {/* Forest fog for depth */}
-      <fog attach="fog" args={['#4a6a4a', 20, 60]} />
+      {/* Light blue sky fog */}
+      <fog attach="fog" args={['#a8d4e6', 25, 70]} />
       
       <ForestGround />
       
