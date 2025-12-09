@@ -22,7 +22,7 @@ interface Bullet {
 }
 
 interface GameState {
-  status: 'idle' | 'playing' | 'gameover';
+  status: 'idle' | 'playing' | 'gameover' | 'entering_name';
   score: number;
   bugsKilled: number;
   snailPosition: [number, number];
@@ -30,6 +30,12 @@ interface GameState {
   bugs: Bug[];
   bullets: Bullet[];
   health: number;
+}
+
+interface LeaderboardEntry {
+  name: string;
+  score: number;
+  date: string;
 }
 
 type Difficulty = 'slow' | 'medium' | 'hard';
@@ -264,57 +270,80 @@ function Bullet({ bullet }: { bullet: Bullet }) {
   );
 }
 
-// Atmospheric ground with dark swamp feel
+// Bright sunny ground - daytime garden feel
 function Ground() {
   return (
     <>
-      {/* Main ground */}
+      {/* Main grass ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#1a2a1a" />
+        <meshStandardMaterial color="#4a8c3f" />
       </mesh>
-      {/* Darker patches */}
-      {Array.from({ length: 20 }).map((_, i) => (
+      {/* Lighter grass patches */}
+      {Array.from({ length: 25 }).map((_, i) => (
         <mesh 
           key={i}
           rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]} 
           position={[(Math.random() - 0.5) * 25, 0.01, (Math.random() - 0.5) * 25]}
         >
           <circleGeometry args={[0.5 + Math.random() * 1.5, 8]} />
-          <meshStandardMaterial color="#0a1a0a" transparent opacity={0.6} />
+          <meshStandardMaterial color="#5aa04f" />
+        </mesh>
+      ))}
+      {/* Dirt patches */}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <mesh 
+          key={`dirt-${i}`}
+          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]} 
+          position={[(Math.random() - 0.5) * 22, 0.005, (Math.random() - 0.5) * 22]}
+        >
+          <circleGeometry args={[0.3 + Math.random() * 0.5, 6]} />
+          <meshStandardMaterial color="#8a6a4a" />
         </mesh>
       ))}
     </>
   );
 }
 
-// Spooky environment decorations
-function SpookyEnvironment() {
-  const decorations = useRef<{ pos: [number, number, number]; type: string; rot: number }[]>([]);
+// Garden environment decorations (daytime)
+function GardenEnvironment() {
+  const decorations = useRef<{ pos: [number, number, number]; type: string; rot: number; scale: number }[]>([]);
   
   if (decorations.current.length === 0) {
-    // Dead trees/stumps
-    for (let i = 0; i < 15; i++) {
+    // Flowers
+    for (let i = 0; i < 20; i++) {
       decorations.current.push({
         pos: [(Math.random() - 0.5) * 22, 0, (Math.random() - 0.5) * 22],
-        type: Math.random() > 0.5 ? 'stump' : 'rock',
-        rot: Math.random() * Math.PI * 2
+        type: 'flower',
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.8 + Math.random() * 0.5
       });
     }
-    // Bones scattered
-    for (let i = 0; i < 10; i++) {
-      decorations.current.push({
-        pos: [(Math.random() - 0.5) * 20, 0.02, (Math.random() - 0.5) * 20],
-        type: 'bone',
-        rot: Math.random() * Math.PI * 2
-      });
-    }
-    // Mushrooms (toxic looking)
+    // Rocks
     for (let i = 0; i < 12; i++) {
+      decorations.current.push({
+        pos: [(Math.random() - 0.5) * 20, 0, (Math.random() - 0.5) * 20],
+        type: 'rock',
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.6 + Math.random() * 0.8
+      });
+    }
+    // Mushrooms (cute ones)
+    for (let i = 0; i < 8; i++) {
       decorations.current.push({
         pos: [(Math.random() - 0.5) * 18, 0, (Math.random() - 0.5) * 18],
         type: 'mushroom',
-        rot: Math.random() * Math.PI * 2
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.7 + Math.random() * 0.6
+      });
+    }
+    // Leaves on ground
+    for (let i = 0; i < 15; i++) {
+      decorations.current.push({
+        pos: [(Math.random() - 0.5) * 20, 0.02, (Math.random() - 0.5) * 20],
+        type: 'leaf',
+        rot: Math.random() * Math.PI * 2,
+        scale: 1
       });
     }
   }
@@ -322,61 +351,58 @@ function SpookyEnvironment() {
   return (
     <>
       {decorations.current.map((dec, i) => (
-        <group key={i} position={dec.pos} rotation={[0, dec.rot, 0]}>
-          {dec.type === 'stump' && (
+        <group key={i} position={dec.pos} rotation={[0, dec.rot, 0]} scale={dec.scale}>
+          {dec.type === 'flower' && (
             <>
-              <mesh position={[0, 0.15, 0]}>
-                <cylinderGeometry args={[0.2, 0.25, 0.3, 8]} />
-                <meshStandardMaterial color="#2a1a0a" roughness={1} />
+              {/* Stem */}
+              <mesh position={[0, 0.1, 0]}>
+                <cylinderGeometry args={[0.015, 0.02, 0.2, 6]} />
+                <meshStandardMaterial color="#3a7a3a" />
               </mesh>
-              <mesh position={[0.1, 0.35, 0]} rotation={[0, 0, 0.5]}>
-                <cylinderGeometry args={[0.03, 0.05, 0.2, 5]} />
-                <meshStandardMaterial color="#1a0a00" />
+              {/* Petals */}
+              <mesh position={[0, 0.22, 0]}>
+                <sphereGeometry args={[0.06, 8, 8]} />
+                <meshStandardMaterial 
+                  color={['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6eb4'][i % 5]} 
+                />
+              </mesh>
+              {/* Center */}
+              <mesh position={[0, 0.24, 0]}>
+                <sphereGeometry args={[0.025, 6, 6]} />
+                <meshStandardMaterial color="#ffee55" />
               </mesh>
             </>
           )}
           {dec.type === 'rock' && (
-            <mesh position={[0, 0.1, 0]}>
-              <dodecahedronGeometry args={[0.15 + Math.random() * 0.1, 0]} />
-              <meshStandardMaterial color="#2a2a2a" roughness={0.9} />
-            </mesh>
-          )}
-          {dec.type === 'bone' && (
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <capsuleGeometry args={[0.03, 0.15, 4, 8]} />
-              <meshStandardMaterial color="#d4c5a9" />
+            <mesh position={[0, 0.08, 0]}>
+              <dodecahedronGeometry args={[0.12, 0]} />
+              <meshStandardMaterial color="#7a7a7a" roughness={0.9} />
             </mesh>
           )}
           {dec.type === 'mushroom' && (
             <>
-              <mesh position={[0, 0.08, 0]}>
-                <cylinderGeometry args={[0.02, 0.03, 0.1, 6]} />
-                <meshStandardMaterial color="#8a7a6a" />
+              <mesh position={[0, 0.06, 0]}>
+                <cylinderGeometry args={[0.025, 0.035, 0.12, 6]} />
+                <meshStandardMaterial color="#f5f5dc" />
               </mesh>
-              <mesh position={[0, 0.15, 0]}>
-                <sphereGeometry args={[0.08, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                <meshStandardMaterial color="#7a0a2a" emissive="#3a0010" emissiveIntensity={0.3} />
+              <mesh position={[0, 0.14, 0]}>
+                <sphereGeometry args={[0.07, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshStandardMaterial color="#ff6b6b" />
               </mesh>
-              {/* Toxic spots */}
-              <mesh position={[0.04, 0.17, 0.02]}>
+              {/* Spots */}
+              <mesh position={[0.03, 0.16, 0.02]}>
                 <sphereGeometry args={[0.015, 4, 4]} />
-                <meshStandardMaterial color="#ffff00" emissive="#aaaa00" emissiveIntensity={0.5} />
+                <meshStandardMaterial color="#ffffff" />
               </mesh>
             </>
           )}
+          {dec.type === 'leaf' && (
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[0.08, 5]} />
+              <meshStandardMaterial color="#5a9a4a" side={THREE.DoubleSide} />
+            </mesh>
+          )}
         </group>
-      ))}
-      
-      {/* Fog particles */}
-      {Array.from({ length: 8 }).map((_, i) => (
-        <mesh 
-          key={`fog-${i}`}
-          position={[(Math.random() - 0.5) * 15, 0.3, (Math.random() - 0.5) * 15]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <circleGeometry args={[1 + Math.random(), 8]} />
-          <meshStandardMaterial color="#2a4a2a" transparent opacity={0.15} />
-        </mesh>
       ))}
     </>
   );
@@ -579,10 +605,7 @@ function GameScene({
 
       // Check game over
       if (newHealth <= 0) {
-        if (newScore > highScore) {
-          setHighScore(newScore);
-          localStorage.setItem('snail-shooter-highscore', newScore.toString());
-        }
+        // Status will be updated by parent component based on leaderboard check
         return {
           ...prev,
           status: 'gameover',
@@ -612,17 +635,14 @@ function GameScene({
     <>
       <OrthographicCamera makeDefault position={[0, 15, 0]} zoom={45} rotation={[-Math.PI / 2, 0, 0]} />
       
-      {/* Atmospheric lighting */}
-      <ambientLight intensity={0.3} color="#4a6a4a" />
-      <directionalLight position={[5, 10, 5]} intensity={0.6} color="#aaffaa" castShadow />
-      <directionalLight position={[-5, 8, -5]} intensity={0.3} color="#ff6644" />
-      <pointLight position={[0, 3, 0]} intensity={0.5} color="#ffaa44" distance={15} />
-      
-      {/* Fog effect */}
-      <fog attach="fog" args={['#1a2a1a', 8, 20]} />
+      {/* Bright daytime lighting */}
+      <ambientLight intensity={0.7} color="#ffffff" />
+      <directionalLight position={[5, 10, 5]} intensity={1.2} color="#fffaf0" castShadow />
+      <directionalLight position={[-5, 8, -5]} intensity={0.5} color="#87ceeb" />
+      <pointLight position={[0, 5, 0]} intensity={0.3} color="#ffdd88" distance={20} />
       
       <Ground />
-      <SpookyEnvironment />
+      <GardenEnvironment />
       
       <Snail position={gameState.snailPosition} rotation={gameState.snailRotation} />
       
@@ -643,6 +663,11 @@ export const SnailGame = () => {
     const saved = localStorage.getItem('snail-shooter-highscore');
     return saved ? parseInt(saved) : 0;
   });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
+    const saved = localStorage.getItem('snail-shooter-leaderboard');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [playerName, setPlayerName] = useState('');
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -654,6 +679,43 @@ export const SnailGame = () => {
     bullets: [],
     health: 100
   });
+
+  const isHighScore = (score: number) => {
+    if (leaderboard.length < 10) return true;
+    return score > leaderboard[leaderboard.length - 1].score;
+  };
+
+  const handleGameOver = useCallback(() => {
+    const finalScore = Math.floor(gameState.score);
+    if (isHighScore(finalScore) && finalScore > 0) {
+      setGameState(prev => ({ ...prev, status: 'entering_name' }));
+    }
+  }, [gameState.score, leaderboard]);
+
+  const submitScore = () => {
+    if (!playerName.trim()) return;
+    
+    const newEntry: LeaderboardEntry = {
+      name: playerName.trim().slice(0, 12),
+      score: Math.floor(gameState.score),
+      date: new Date().toLocaleDateString()
+    };
+    
+    const newLeaderboard = [...leaderboard, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+    
+    setLeaderboard(newLeaderboard);
+    localStorage.setItem('snail-shooter-leaderboard', JSON.stringify(newLeaderboard));
+    
+    if (newEntry.score > highScore) {
+      setHighScore(newEntry.score);
+      localStorage.setItem('snail-shooter-highscore', newEntry.score.toString());
+    }
+    
+    setPlayerName('');
+    setGameState(prev => ({ ...prev, status: 'gameover' }));
+  };
 
   const startGame = useCallback(() => {
     setGameState({
@@ -668,12 +730,26 @@ export const SnailGame = () => {
     });
   }, []);
 
+  // Check for high score when game ends
+  useEffect(() => {
+    if (gameState.status === 'gameover' && gameState.health === 0) {
+      const finalScore = Math.floor(gameState.score);
+      if (finalScore > 0 && isHighScore(finalScore)) {
+        setGameState(prev => ({ ...prev, status: 'entering_name' }));
+      }
+    }
+  }, [gameState.status, gameState.health, gameState.score]);
+
   return (
     <section className="py-8 sm:py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <h2 className="font-display text-3xl sm:text-4xl text-center text-primary mb-2">
-          Snail Shooter! 🐌💥
-        </h2>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <img src={snailTexture} alt="Snail" className="w-12 h-12 object-contain" />
+          <h2 className="font-display text-3xl sm:text-4xl text-center text-primary">
+            Snail Shooter!
+          </h2>
+          <span className="text-3xl">💥</span>
+        </div>
         <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-4">
           Hold SPACE to unleash machine gun fire! WASD to move, A/D to rotate!
         </p>
@@ -736,7 +812,7 @@ export const SnailGame = () => {
           {/* Overlays */}
           {gameState.status === 'idle' && (
             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-4">
-              <div className="text-6xl mb-4">🐌🔫</div>
+              <img src={snailTexture} alt="Snail" className="w-20 h-20 object-contain mb-2" />
               <p className="font-display text-2xl sm:text-3xl text-primary mb-2">Snail Shooter!</p>
               <p className="font-body text-sm sm:text-base text-foreground text-center mb-4">
                 WASD or Arrows to move & rotate<br/>
@@ -748,14 +824,32 @@ export const SnailGame = () => {
             </div>
           )}
 
+          {gameState.status === 'entering_name' && (
+            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+              <p className="font-display text-2xl sm:text-3xl text-accent mb-2">🏆 New High Score!</p>
+              <p className="font-display text-xl text-foreground mb-4">Score: {Math.floor(gameState.score)}</p>
+              <p className="font-body text-sm text-muted-foreground mb-3">Enter your name for the leaderboard:</p>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitScore()}
+                placeholder="Your name..."
+                maxLength={12}
+                className="px-4 py-2 rounded-lg bg-card border border-border text-foreground font-display text-center mb-4 w-48 focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+              />
+              <Button variant="game" size="lg" onClick={submitScore} disabled={!playerName.trim()}>
+                Submit Score
+              </Button>
+            </div>
+          )}
+
           {gameState.status === 'gameover' && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
               <p className="font-display text-3xl sm:text-4xl text-destructive mb-2">Game Over!</p>
               <p className="font-display text-xl text-foreground mb-1">Score: {Math.floor(gameState.score)}</p>
               <p className="font-body text-lg text-muted-foreground mb-3">Bugs blasted: {gameState.bugsKilled} 💥</p>
-              {Math.floor(gameState.score) >= highScore && gameState.score > 0 && (
-                <p className="font-body text-lg text-accent mb-3">🎉 New High Score! 🎉</p>
-              )}
               <Button variant="game" size="lg" onClick={startGame}>
                 Play Again
               </Button>
@@ -787,6 +881,41 @@ export const SnailGame = () => {
         <p className="text-center text-muted-foreground font-body text-sm mt-3">
           Pro tip: Keep moving and shooting to survive the bug swarm!
         </p>
+
+        {/* Leaderboard */}
+        <div className="mt-8 p-4 bg-card rounded-2xl border border-border">
+          <h3 className="font-display text-xl text-center text-primary mb-4">🏆 Top 10 Leaderboard</h3>
+          {leaderboard.length === 0 ? (
+            <p className="text-center text-muted-foreground font-body text-sm">
+              No scores yet! Be the first to make the leaderboard!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.map((entry, index) => (
+                <div 
+                  key={index}
+                  className={`flex items-center justify-between px-4 py-2 rounded-lg ${
+                    index === 0 ? 'bg-accent/20 border border-accent/40' :
+                    index === 1 ? 'bg-muted/60' :
+                    index === 2 ? 'bg-secondary/40' :
+                    'bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-display text-lg w-8">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                    </span>
+                    <span className="font-display text-foreground">{entry.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-display text-accent">{entry.score.toLocaleString()}</span>
+                    <span className="font-body text-xs text-muted-foreground">{entry.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
