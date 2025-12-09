@@ -406,33 +406,29 @@ function GameScene({
 
     const speedMult = SPEED_MULTIPLIERS[difficulty];
     const moveSpeed = 4 * delta;
-    const rotateSpeed = 3 * delta;
 
-    let dx = 0, dz = 0, dr = 0;
+    let dx = 0, dz = 0;
     
-    // Keyboard controls
+    // Keyboard controls - simplified direct movement (WASD = screen directions)
     if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) {
-      dx += Math.sin(gameState.snailRotation) * moveSpeed;
-      dz += Math.cos(gameState.snailRotation) * moveSpeed;
+      dz -= moveSpeed; // Up on screen = negative Z
     }
     if (keysPressed.current.has('s') || keysPressed.current.has('arrowdown')) {
-      dx -= Math.sin(gameState.snailRotation) * moveSpeed;
-      dz -= Math.cos(gameState.snailRotation) * moveSpeed;
+      dz += moveSpeed; // Down on screen = positive Z
     }
     if (keysPressed.current.has('a') || keysPressed.current.has('arrowleft')) {
-      dr += rotateSpeed;
+      dx -= moveSpeed; // Left on screen = negative X
     }
     if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) {
-      dr -= rotateSpeed;
+      dx += moveSpeed; // Right on screen = positive X
     }
     
-    // Touch controls - apply joystick movement
+    // Touch controls - direct joystick movement
     if (touchMove.current.dy !== 0) {
-      dx += Math.sin(gameState.snailRotation) * moveSpeed * (-touchMove.current.dy);
-      dz += Math.cos(gameState.snailRotation) * moveSpeed * (-touchMove.current.dy);
+      dz += moveSpeed * touchMove.current.dy; // Joystick up = move up on screen
     }
     if (touchMove.current.dx !== 0) {
-      dr -= touchMove.current.dx * rotateSpeed;
+      dx += moveSpeed * touchMove.current.dx; // Joystick right = move right on screen
     }
 
     // Machine gun firing (hold space or touch fire button)
@@ -507,10 +503,15 @@ function GameScene({
       // Update snail position
       let newX = prev.snailPosition[0] + dx;
       let newZ = prev.snailPosition[1] + dz;
-      newX = Math.max(-9, Math.min(9, newX));
-      newZ = Math.max(-9, Math.min(9, newZ));
+      // Keep snail within bounds (tighter bounds to stay visible)
+      newX = Math.max(-6, Math.min(6, newX));
+      newZ = Math.max(-6, Math.min(6, newZ));
       
-      const newRotation = prev.snailRotation + dr;
+      // Update rotation to face movement direction
+      let updatedRotation = prev.snailRotation;
+      if (dx !== 0 || dz !== 0) {
+        updatedRotation = Math.atan2(dx, dz);
+      }
 
       // Update bullets
       let updatedBullets = prev.bullets
@@ -619,7 +620,7 @@ function GameScene({
       return {
         ...prev,
         snailPosition: [newX, newZ],
-        snailRotation: newRotation,
+        snailRotation: updatedRotation,
         bullets: updatedBullets,
         bugs: updatedBugs,
         powerUps: updatedPowerUps,
@@ -796,7 +797,7 @@ export const SnailGame = () => {
           <span className="text-3xl">💥</span>
         </div>
         <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-4">
-          <span className="hidden sm:inline">Hold SPACE to unleash machine gun fire! WASD to move, A/D to rotate!</span>
+          <span className="hidden sm:inline">Hold SPACE to shoot! WASD or Arrow keys to move!</span>
           <span className="sm:hidden">Use joystick to move, FIRE button to shoot!</span>
         </p>
 
@@ -926,7 +927,7 @@ export const SnailGame = () => {
               <img src={snailTexture} alt="Snail" className="w-20 h-20 object-contain mb-2" />
               <p className="font-display text-2xl sm:text-3xl text-primary mb-2">Snail Shooter!</p>
               <p className="font-body text-sm sm:text-base text-foreground text-center mb-4">
-                <span className="hidden sm:inline">WASD or Arrows to move & rotate<br/>Hold SPACE for machine gun fire!</span>
+                <span className="hidden sm:inline">WASD or Arrows to move<br/>Hold SPACE to shoot!</span>
                 <span className="sm:hidden">Use joystick to move<br/>Tap FIRE button to shoot!</span>
               </p>
               <Button variant="game" size="lg" onClick={startGame}>
