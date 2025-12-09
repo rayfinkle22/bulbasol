@@ -32,7 +32,7 @@ interface PowerUp {
 }
 
 interface GameState {
-  status: 'idle' | 'playing' | 'gameover' | 'entering_name';
+  status: 'idle' | 'playing' | 'paused' | 'gameover' | 'entering_name';
   score: number;
   bugsKilled: number;
   snailPosition: [number, number];
@@ -67,7 +67,7 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail using billboard sprite from uploaded image
+// 3D Snail using billboard sprite with properly attached gun
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   const texture = useLoader(THREE.TextureLoader, snail3DImage);
   
@@ -88,39 +88,46 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
       
       {/* Shadow disc on ground */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.8, 32]} />
+        <circleGeometry args={[0.8, 16]} />
         <meshBasicMaterial color="#000000" transparent opacity={0.3} />
       </mesh>
       
-      {/* Gun mount on right side */}
-      <mesh position={[0.8, 0.9, 0.2]} rotation={[0, 0, 0.3]}>
-        <boxGeometry args={[0.35, 0.05, 0.06]} />
-        <meshStandardMaterial color="#4a3a2a" roughness={0.8} />
-      </mesh>
-      
-      {/* Machine gun */}
-      <group position={[0.9, 0.95, 0.5]} rotation={[0, 0, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.06, 0.08, 0.7, 12]} />
-          <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
+      {/* Gun mounted on snail's back - positioned to look attached */}
+      <group position={[0.4, 0.85, 0.3]}>
+        {/* Mount bracket connecting to shell */}
+        <mesh position={[-0.15, -0.1, -0.15]} rotation={[0.2, 0, 0.4]}>
+          <boxGeometry args={[0.08, 0.25, 0.08]} />
+          <meshStandardMaterial color="#4a3a2a" roughness={0.9} metalness={0.3} />
         </mesh>
-        {[0.08, 0.2, 0.32].map((z, i) => (
+        <mesh position={[-0.1, -0.05, -0.1]} rotation={[0, 0.3, 0]}>
+          <boxGeometry args={[0.25, 0.06, 0.06]} />
+          <meshStandardMaterial color="#5a4a3a" roughness={0.85} metalness={0.2} />
+        </mesh>
+        
+        {/* Machine gun body */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.05, 0.07, 0.6, 8]} />
+          <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.15} />
+        </mesh>
+        
+        {/* Gun barrel rings */}
+        {[0.1, 0.22, 0.34].map((z, i) => (
           <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.07, 0.012, 8, 16]} />
+            <torusGeometry args={[0.06, 0.01, 6, 12]} />
             <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
           </mesh>
         ))}
-        <mesh position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.09, 0.06, 0.1, 12]} />
+        
+        {/* Muzzle */}
+        <mesh position={[0, 0, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.07, 0.05, 0.08, 8]} />
           <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
         </mesh>
-        <mesh position={[0, 0.04, -0.12]}>
-          <boxGeometry args={[0.12, 0.15, 0.25]} />
-          <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, -0.08, -0.12]}>
-          <boxGeometry args={[0.08, 0.16, 0.06]} />
-          <meshStandardMaterial color="#4a4a4a" metalness={0.7} roughness={0.3} />
+        
+        {/* Ammo box */}
+        <mesh position={[0, 0.06, -0.08]}>
+          <boxGeometry args={[0.1, 0.12, 0.18]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.25} />
         </mesh>
       </group>
     </group>
@@ -684,10 +691,13 @@ function GameScene({
 
   useFrame((_, delta) => {
     if (gameState.status !== 'playing') return;
+    
+    // Cap delta to prevent huge jumps when tab is inactive
+    const clampedDelta = Math.min(delta, 0.05);
 
     const speedMult = SPEED_MULTIPLIERS[difficulty];
-    const moveSpeed = 5 * delta;
-    const rotateSpeed = 3 * delta;
+    const moveSpeed = 5 * clampedDelta;
+    const rotateSpeed = 3 * clampedDelta;
 
     let forward = 0;
     let turn = 0;
@@ -811,20 +821,47 @@ function GameScene({
           Math.abs(b.position[2] - newZ) < 20
         );
 
-      // Update bugs - move toward snail
+      // Update bugs - roam around terrain with occasional chasing
       let updatedBugs = prev.bugs.map(bug => {
         const dirX = newX - bug.position[0];
         const dirZ = newZ - bug.position[2];
         const dist = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        const speed = 2 * speedMult * delta;
+        const speed = 1.5 * speedMult * clampedDelta;
+        
+        // Give each bug a unique behavior based on its ID
+        const bugSeed = bug.id % 1000;
+        const time = performance.now() * 0.001;
+        
+        // Roaming pattern with occasional pursuit
+        let moveX: number, moveZ: number;
+        
+        if (dist < 8) {
+          // Close to player - chase more aggressively
+          moveX = (dirX / dist) * speed * 1.5;
+          moveZ = (dirZ / dist) * speed * 1.5;
+        } else if (dist < 15) {
+          // Medium distance - wander with slight attraction
+          const wanderAngle = Math.sin(time * 0.8 + bugSeed) * Math.PI;
+          const attraction = 0.3;
+          moveX = (Math.sin(wanderAngle) * (1 - attraction) + (dirX / dist) * attraction) * speed;
+          moveZ = (Math.cos(wanderAngle) * (1 - attraction) + (dirZ / dist) * attraction) * speed;
+        } else {
+          // Far away - mostly random wandering
+          const wanderAngle = Math.sin(time * 0.5 + bugSeed * 0.1) * Math.PI * 2;
+          moveX = Math.sin(wanderAngle) * speed * 0.7;
+          moveZ = Math.cos(wanderAngle) * speed * 0.7;
+        }
+        
+        // Keep bugs in bounds
+        let newBugX = bug.position[0] + moveX;
+        let newBugZ = bug.position[2] + moveZ;
+        newBugX = Math.max(-25, Math.min(25, newBugX));
+        newBugZ = Math.max(-25, Math.min(25, newBugZ));
         
         return {
           ...bug,
-          position: [
-            bug.position[0] + (dirX / dist) * speed,
-            bug.position[1],
-            bug.position[2] + (dirZ / dist) * speed
-          ] as [number, number, number]
+          position: [newBugX, bug.position[1], newBugZ] as [number, number, number],
+          velocity: [moveX, moveZ] as [number, number]
         };
       });
 
@@ -1120,11 +1157,11 @@ export const SnailGame3rdPerson = () => {
           </Canvas>
 
           {/* HUD */}
-          {gameState.status === 'playing' && (
-            <div className="absolute top-0 left-0 right-0 p-3 pointer-events-none">
+          {(gameState.status === 'playing' || gameState.status === 'paused') && (
+            <div className="absolute top-0 left-0 right-0 p-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pointer-events-none">
                     <span className="text-red-500 text-lg">❤️</span>
                     <div className="w-32 h-4 bg-black/50 rounded-full overflow-hidden border border-white/20">
                       <div 
@@ -1142,20 +1179,56 @@ export const SnailGame3rdPerson = () => {
                     <span className="text-white font-display text-sm drop-shadow-lg">{gameState.health}</span>
                   </div>
                   {gameState.doubleDamageUntil > performance.now() && (
-                    <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse">
+                    <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse pointer-events-none">
                       <span className="text-white font-display text-xs">⚡2X DAMAGE⚡</span>
                     </div>
                   )}
                 </div>
                 
-                <div className="flex items-center gap-4 font-display text-white drop-shadow-lg">
-                  <span className="bg-black/40 px-3 py-1 rounded-lg">
-                    Score: <span className="text-yellow-400">{Math.floor(gameState.score)}</span>
-                  </span>
-                  <span className="bg-black/40 px-3 py-1 rounded-lg">
-                    💀 <span className="text-red-400">{gameState.bugsKilled}</span>
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4 font-display text-white drop-shadow-lg pointer-events-none">
+                    <span className="bg-black/40 px-3 py-1 rounded-lg">
+                      Score: <span className="text-yellow-400">{Math.floor(gameState.score)}</span>
+                    </span>
+                    <span className="bg-black/40 px-3 py-1 rounded-lg">
+                      💀 <span className="text-red-400">{gameState.bugsKilled}</span>
+                    </span>
+                  </div>
+                  {/* Pause button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setGameState(prev => ({ 
+                      ...prev, 
+                      status: prev.status === 'paused' ? 'playing' : 'paused' 
+                    }))}
+                    className="font-display bg-black/40 border-white/30 text-white hover:bg-black/60"
+                  >
+                    {gameState.status === 'paused' ? '▶️ Resume' : '⏸️ Pause'}
+                  </Button>
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Pause overlay */}
+          {gameState.status === 'paused' && (
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+              <h3 className="font-display text-3xl text-primary mb-4">PAUSED</h3>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => setGameState(prev => ({ ...prev, status: 'playing' }))}
+                  className="font-display"
+                >
+                  ▶️ Resume
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setGameState(prev => ({ ...prev, status: 'gameover' }))}
+                  className="font-display"
+                >
+                  🚪 Quit
+                </Button>
               </div>
             </div>
           )}
