@@ -270,142 +270,19 @@ function Bullet({ bullet }: { bullet: Bullet }) {
   );
 }
 
-// Bright sunny ground - daytime garden feel
+// Solid green ground - no flickering
 function Ground() {
   return (
-    <>
-      {/* Main grass ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#4a8c3f" />
-      </mesh>
-      {/* Lighter grass patches */}
-      {Array.from({ length: 25 }).map((_, i) => (
-        <mesh 
-          key={i}
-          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]} 
-          position={[(Math.random() - 0.5) * 25, 0.01, (Math.random() - 0.5) * 25]}
-        >
-          <circleGeometry args={[0.5 + Math.random() * 1.5, 8]} />
-          <meshStandardMaterial color="#5aa04f" />
-        </mesh>
-      ))}
-      {/* Dirt patches */}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <mesh 
-          key={`dirt-${i}`}
-          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]} 
-          position={[(Math.random() - 0.5) * 22, 0.005, (Math.random() - 0.5) * 22]}
-        >
-          <circleGeometry args={[0.3 + Math.random() * 0.5, 6]} />
-          <meshStandardMaterial color="#8a6a4a" />
-        </mesh>
-      ))}
-    </>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <planeGeometry args={[30, 30]} />
+      <meshBasicMaterial color="#4a9c3f" />
+    </mesh>
   );
 }
 
-// Garden environment decorations (daytime)
+// Minimal garden decorations - static positions to prevent flickering
 function GardenEnvironment() {
-  const decorations = useRef<{ pos: [number, number, number]; type: string; rot: number; scale: number }[]>([]);
-  
-  if (decorations.current.length === 0) {
-    // Flowers
-    for (let i = 0; i < 20; i++) {
-      decorations.current.push({
-        pos: [(Math.random() - 0.5) * 22, 0, (Math.random() - 0.5) * 22],
-        type: 'flower',
-        rot: Math.random() * Math.PI * 2,
-        scale: 0.8 + Math.random() * 0.5
-      });
-    }
-    // Rocks
-    for (let i = 0; i < 12; i++) {
-      decorations.current.push({
-        pos: [(Math.random() - 0.5) * 20, 0, (Math.random() - 0.5) * 20],
-        type: 'rock',
-        rot: Math.random() * Math.PI * 2,
-        scale: 0.6 + Math.random() * 0.8
-      });
-    }
-    // Mushrooms (cute ones)
-    for (let i = 0; i < 8; i++) {
-      decorations.current.push({
-        pos: [(Math.random() - 0.5) * 18, 0, (Math.random() - 0.5) * 18],
-        type: 'mushroom',
-        rot: Math.random() * Math.PI * 2,
-        scale: 0.7 + Math.random() * 0.6
-      });
-    }
-    // Leaves on ground
-    for (let i = 0; i < 15; i++) {
-      decorations.current.push({
-        pos: [(Math.random() - 0.5) * 20, 0.02, (Math.random() - 0.5) * 20],
-        type: 'leaf',
-        rot: Math.random() * Math.PI * 2,
-        scale: 1
-      });
-    }
-  }
-  
-  return (
-    <>
-      {decorations.current.map((dec, i) => (
-        <group key={i} position={dec.pos} rotation={[0, dec.rot, 0]} scale={dec.scale}>
-          {dec.type === 'flower' && (
-            <>
-              {/* Stem */}
-              <mesh position={[0, 0.1, 0]}>
-                <cylinderGeometry args={[0.015, 0.02, 0.2, 6]} />
-                <meshStandardMaterial color="#3a7a3a" />
-              </mesh>
-              {/* Petals */}
-              <mesh position={[0, 0.22, 0]}>
-                <sphereGeometry args={[0.06, 8, 8]} />
-                <meshStandardMaterial 
-                  color={['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6eb4'][i % 5]} 
-                />
-              </mesh>
-              {/* Center */}
-              <mesh position={[0, 0.24, 0]}>
-                <sphereGeometry args={[0.025, 6, 6]} />
-                <meshStandardMaterial color="#ffee55" />
-              </mesh>
-            </>
-          )}
-          {dec.type === 'rock' && (
-            <mesh position={[0, 0.08, 0]}>
-              <dodecahedronGeometry args={[0.12, 0]} />
-              <meshStandardMaterial color="#7a7a7a" roughness={0.9} />
-            </mesh>
-          )}
-          {dec.type === 'mushroom' && (
-            <>
-              <mesh position={[0, 0.06, 0]}>
-                <cylinderGeometry args={[0.025, 0.035, 0.12, 6]} />
-                <meshStandardMaterial color="#f5f5dc" />
-              </mesh>
-              <mesh position={[0, 0.14, 0]}>
-                <sphereGeometry args={[0.07, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                <meshStandardMaterial color="#ff6b6b" />
-              </mesh>
-              {/* Spots */}
-              <mesh position={[0.03, 0.16, 0.02]}>
-                <sphereGeometry args={[0.015, 4, 4]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-            </>
-          )}
-          {dec.type === 'leaf' && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[0.08, 5]} />
-              <meshStandardMaterial color="#5a9a4a" side={THREE.DoubleSide} />
-            </mesh>
-          )}
-        </group>
-      ))}
-    </>
-  );
+  return null; // Removed decorations for solid clean background
 }
 
 // Game logic component
@@ -414,13 +291,17 @@ function GameScene({
   setGameState, 
   difficulty,
   highScore,
-  setHighScore 
+  setHighScore,
+  touchMove,
+  touchShooting
 }: { 
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   difficulty: Difficulty;
   highScore: number;
   setHighScore: React.Dispatch<React.SetStateAction<number>>;
+  touchMove: React.MutableRefObject<{ dx: number; dy: number }>;
+  touchShooting: React.MutableRefObject<boolean>;
 }) {
   const keysPressed = useRef<Set<string>>(new Set());
   const lastSpawn = useRef(0);
@@ -463,6 +344,7 @@ function GameScene({
 
     let dx = 0, dz = 0, dr = 0;
     
+    // Keyboard controls
     if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) {
       dx += Math.sin(gameState.snailRotation) * moveSpeed;
       dz += Math.cos(gameState.snailRotation) * moveSpeed;
@@ -477,10 +359,19 @@ function GameScene({
     if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) {
       dr -= rotateSpeed;
     }
+    
+    // Touch controls - apply joystick movement
+    if (touchMove.current.dy !== 0) {
+      dx += Math.sin(gameState.snailRotation) * moveSpeed * (-touchMove.current.dy);
+      dz += Math.cos(gameState.snailRotation) * moveSpeed * (-touchMove.current.dy);
+    }
+    if (touchMove.current.dx !== 0) {
+      dr -= touchMove.current.dx * rotateSpeed;
+    }
 
-    // Machine gun firing (hold space)
+    // Machine gun firing (hold space or touch fire button)
     const now = performance.now();
-    if (isShooting.current && gameState.status === 'playing' && now - lastShot.current > 80) {
+    if ((isShooting.current || touchShooting.current) && gameState.status === 'playing' && now - lastShot.current > 80) {
       lastShot.current = now;
       const angle = gameState.snailRotation;
       const spread = (Math.random() - 0.5) * 0.15; // slight spread
@@ -670,6 +561,12 @@ export const SnailGame = () => {
   const [playerName, setPlayerName] = useState('');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   
+  // Touch control refs
+  const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+  const touchShooting = useRef(false);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const joystickStartPos = useRef<{ x: number; y: number } | null>(null);
+  
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
     score: 0,
@@ -747,7 +644,8 @@ export const SnailGame = () => {
           <span className="text-3xl">💥</span>
         </div>
         <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-4">
-          Hold SPACE to unleash machine gun fire! WASD to move, A/D to rotate!
+          <span className="hidden sm:inline">Hold SPACE to unleash machine gun fire! WASD to move, A/D to rotate!</span>
+          <span className="sm:hidden">Use joystick to move, FIRE button to shoot!</span>
         </p>
 
 
@@ -763,6 +661,8 @@ export const SnailGame = () => {
               difficulty={difficulty}
               highScore={highScore}
               setHighScore={setHighScore}
+              touchMove={touchMove}
+              touchShooting={touchShooting}
             />
           </Canvas>
 
@@ -805,14 +705,71 @@ export const SnailGame = () => {
               </div>
             </div>
           )}
+          
+          {/* Mobile Touch Controls - only show on touch devices during gameplay */}
+          {gameState.status === 'playing' && (
+            <>
+              {/* Virtual Joystick - left side */}
+              <div
+                ref={joystickRef}
+                className="absolute bottom-4 left-4 w-28 h-28 sm:hidden touch-none"
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  joystickStartPos.current = {
+                    x: touch.clientX - rect.left - rect.width / 2,
+                    y: touch.clientY - rect.top - rect.height / 2
+                  };
+                }}
+                onTouchMove={(e) => {
+                  if (!joystickStartPos.current) return;
+                  const touch = e.touches[0];
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const dx = (touch.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+                  const dy = (touch.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+                  touchMove.current = {
+                    dx: Math.max(-1, Math.min(1, dx)),
+                    dy: Math.max(-1, Math.min(1, dy))
+                  };
+                }}
+                onTouchEnd={() => {
+                  joystickStartPos.current = null;
+                  touchMove.current = { dx: 0, dy: 0 };
+                }}
+              >
+                <div className="w-full h-full rounded-full bg-black/40 border-2 border-white/30 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-white/50 border-2 border-white/70" />
+                </div>
+                <div className="absolute -bottom-6 left-0 right-0 text-center text-white/70 text-xs font-display">
+                  MOVE
+                </div>
+              </div>
+              
+              {/* Fire Button - right side */}
+              <div
+                className="absolute bottom-4 right-4 w-24 h-24 sm:hidden touch-none"
+                onTouchStart={() => {
+                  touchShooting.current = true;
+                }}
+                onTouchEnd={() => {
+                  touchShooting.current = false;
+                }}
+              >
+                <div className="w-full h-full rounded-full bg-red-600/80 border-4 border-red-400 flex items-center justify-center active:bg-red-500 active:scale-95 transition-transform">
+                  <span className="text-white font-display text-lg">FIRE</span>
+                </div>
+              </div>
+            </>
+          )}
+          
           {/* Overlays */}
           {gameState.status === 'idle' && (
             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-4">
               <img src={snailTexture} alt="Snail" className="w-20 h-20 object-contain mb-2" />
               <p className="font-display text-2xl sm:text-3xl text-primary mb-2">Snail Shooter!</p>
               <p className="font-body text-sm sm:text-base text-foreground text-center mb-4">
-                WASD or Arrows to move & rotate<br/>
-                Hold SPACE for machine gun fire!
+                <span className="hidden sm:inline">WASD or Arrows to move & rotate<br/>Hold SPACE for machine gun fire!</span>
+                <span className="sm:hidden">Use joystick to move<br/>Tap FIRE button to shoot!</span>
               </p>
               <Button variant="game" size="lg" onClick={startGame}>
                 Start Game
