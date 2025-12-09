@@ -52,25 +52,30 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
   return (
     <group position={[position[0], 0.5, position[1]]} rotation={[0, rotation, 0]}>
       {/* Snail sprite billboard */}
-      <sprite scale={[1.8, 1.8, 1]}>
+      <sprite scale={[1.6, 1.6, 1]} position={[-0.2, 0, 0]}>
         <spriteMaterial map={texture} transparent />
       </sprite>
-      {/* Machine gun bazooka */}
-      <group position={[0.5, -0.1, 0]} rotation={[0, 0, -0.3]}>
+      {/* Machine gun - positioned in front of snail */}
+      <group position={[0.8, 0.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
         {/* Main barrel */}
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.06, 0.08, 0.7, 12]} />
+        <mesh>
+          <cylinderGeometry args={[0.08, 0.1, 0.8, 12]} />
           <meshStandardMaterial color="#2F4F4F" metalness={0.8} roughness={0.2} />
         </mesh>
-        {/* Muzzle */}
-        <mesh position={[0.35, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.09, 0.06, 0.15, 12]} />
+        {/* Muzzle flash area */}
+        <mesh position={[0, 0.45, 0]}>
+          <cylinderGeometry args={[0.12, 0.08, 0.15, 12]} />
           <meshStandardMaterial color="#1a1a1a" metalness={0.9} roughness={0.1} />
         </mesh>
         {/* Magazine */}
-        <mesh position={[-0.1, -0.12, 0]}>
-          <boxGeometry args={[0.15, 0.2, 0.08]} />
+        <mesh position={[0, -0.1, -0.15]} rotation={[0.3, 0, 0]}>
+          <boxGeometry args={[0.12, 0.25, 0.1]} />
           <meshStandardMaterial color="#4a4a4a" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {/* Handle */}
+        <mesh position={[0, -0.25, -0.08]} rotation={[0.5, 0, 0]}>
+          <boxGeometry args={[0.08, 0.2, 0.06]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.5} roughness={0.5} />
         </mesh>
       </group>
     </group>
@@ -189,9 +194,12 @@ function GameScene({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent arrow keys and space from scrolling page
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
       keysPressed.current.add(e.key.toLowerCase());
       if (e.key === ' ') {
-        e.preventDefault();
         isShooting.current = true;
       }
     };
@@ -454,13 +462,6 @@ export const SnailGame = () => {
           Hold SPACE to unleash machine gun fire! WASD to move, A/D to rotate!
         </p>
 
-        {/* Score & Health display */}
-        <div className="flex justify-between items-center mb-3 font-display text-lg">
-          <span className="text-foreground">Score: <span className="text-accent">{Math.floor(gameState.score)}</span></span>
-          <span className="text-foreground">❤️ <span className={gameState.health <= 30 ? 'text-destructive' : 'text-primary'}>{gameState.health}</span></span>
-          <span className="text-foreground">💀 <span className="text-primary">{gameState.bugsKilled}</span></span>
-          <span className="text-muted-foreground">Best: <span className="text-primary">{highScore}</span></span>
-        </div>
 
         {/* Game area */}
         <div 
@@ -477,6 +478,45 @@ export const SnailGame = () => {
             />
           </Canvas>
 
+          {/* In-game HUD overlay */}
+          {gameState.status === 'playing' && (
+            <div className="absolute top-0 left-0 right-0 p-3 pointer-events-none">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  {/* Health bar */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500 text-lg">❤️</span>
+                    <div className="w-32 h-4 bg-black/50 rounded-full overflow-hidden border border-white/20">
+                      <div 
+                        className="h-full transition-all duration-200"
+                        style={{ 
+                          width: `${gameState.health}%`,
+                          background: gameState.health > 50 
+                            ? 'linear-gradient(90deg, #22c55e, #4ade80)' 
+                            : gameState.health > 25 
+                              ? 'linear-gradient(90deg, #eab308, #facc15)'
+                              : 'linear-gradient(90deg, #dc2626, #ef4444)'
+                        }}
+                      />
+                    </div>
+                    <span className="text-white font-display text-sm drop-shadow-lg">{gameState.health}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 font-display text-white drop-shadow-lg">
+                  <span className="bg-black/40 px-3 py-1 rounded-lg">
+                    Score: <span className="text-yellow-400">{Math.floor(gameState.score)}</span>
+                  </span>
+                  <span className="bg-black/40 px-3 py-1 rounded-lg">
+                    💀 <span className="text-red-400">{gameState.bugsKilled}</span>
+                  </span>
+                  <span className="bg-black/40 px-3 py-1 rounded-lg text-sm">
+                    Best: {highScore}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Overlays */}
           {gameState.status === 'idle' && (
             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-4">
