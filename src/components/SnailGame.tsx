@@ -669,6 +669,8 @@ export const SnailGame = () => {
   const [playerName, setPlayerName] = useState('');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [gamesPlayed, setGamesPlayed] = useState<number>(0);
+  const gameStartTime = useRef<number>(0);
   
   // Touch control refs
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -689,30 +691,42 @@ export const SnailGame = () => {
     doubleDamageUntil: 0
   });
 
-  // Fetch leaderboard from database on mount
+  // Fetch leaderboard and game stats from database on mount
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch leaderboard
+        const { data: leaderboardData, error: leaderboardError } = await supabase
           .from('leaderboard')
           .select('*')
           .order('score', { ascending: false })
           .limit(10);
         
-        if (error) throw error;
+        if (leaderboardError) throw leaderboardError;
         
-        setLeaderboard(data || []);
-        if (data && data.length > 0) {
-          setHighScore(data[0].score);
+        setLeaderboard(leaderboardData || []);
+        if (leaderboardData && leaderboardData.length > 0) {
+          setHighScore(leaderboardData[0].score);
+        }
+
+        // Fetch total games played
+        const { data: statsData, error: statsError } = await supabase
+          .from('game_stats')
+          .select('games_played')
+          .eq('id', 'global')
+          .maybeSingle();
+        
+        if (!statsError && statsData) {
+          setGamesPlayed(statsData.games_played);
         }
       } catch (error) {
-        console.error('Error fetching leaderboard:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchLeaderboard();
+    fetchData();
   }, []);
 
   const isHighScore = (score: number) => {
@@ -723,17 +737,30 @@ export const SnailGame = () => {
   const submitScore = async () => {
     if (!playerName.trim()) return;
     
-    const newEntry = {
-      name: playerName.trim().slice(0, 12),
-      score: Math.floor(gameState.score)
-    };
+    const gameDuration = Math.floor((Date.now() - gameStartTime.current) / 1000);
+    const score = Math.floor(gameState.score);
+    const bugsKilled = gameState.bugsKilled;
+    const name = playerName.trim().slice(0, 50);
     
     try {
-      const { error } = await supabase
-        .from('leaderboard')
-        .insert(newEntry);
+      // Use the secure submit_score function for validation
+      const { data: success, error } = await supabase
+        .rpc('submit_score', {
+          p_name: name,
+          p_score: score,
+          p_game_duration: gameDuration,
+          p_bugs_killed: bugsKilled
+        });
       
       if (error) throw error;
+      
+      if (!success) {
+        toast.error("Score validation failed. Please play legitimately!");
+        setPlayerName('');
+        setScoreSubmitted(true);
+        setGameState(prev => ({ ...prev, status: 'gameover' }));
+        return;
+      }
       
       // Refresh leaderboard after successful insert
       const { data } = await supabase
@@ -760,8 +787,20 @@ export const SnailGame = () => {
     setGameState(prev => ({ ...prev, status: 'gameover' }));
   };
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback(async () => {
     setScoreSubmitted(false);
+    gameStartTime.current = Date.now();
+    
+    // Increment games played counter
+    try {
+      const { data: newCount } = await supabase.rpc('increment_games_played');
+      if (newCount) {
+        setGamesPlayed(newCount);
+      }
+    } catch (error) {
+      console.error('Error incrementing games counter:', error);
+    }
+    
     setGameState({
       status: 'playing',
       score: 0,
@@ -796,9 +835,12 @@ export const SnailGame = () => {
           </h2>
           <span className="text-3xl">💥</span>
         </div>
-        <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-4">
+        <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-2">
           <span className="hidden sm:inline">Hold SPACE to shoot! WASD or Arrow keys to move!</span>
           <span className="sm:hidden">Use joystick to move, FIRE button to shoot!</span>
+        </p>
+        <p className="font-display text-sm text-center text-accent mb-4">
+          🎮 {gamesPlayed.toLocaleString()} games played worldwide!
         </p>
 
 
