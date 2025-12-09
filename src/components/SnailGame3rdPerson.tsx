@@ -219,7 +219,7 @@ function Bug({ bug }: { bug: Bug }) {
   const legWiggle = Math.sin(legPhase.current) * 0.3;
   
   return (
-    <group position={[bug.position[0], 0.08, bug.position[2]]} ref={meshRef} scale={[s, s, s]}>
+    <group position={[bug.position[0], 0.35, bug.position[2]]} ref={meshRef} scale={[s * 1.5, s * 1.5, s * 1.5]}>
       {bug.type === 'beetle' && (
         <>
           {/* Body - oval shaped */}
