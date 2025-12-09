@@ -32,7 +32,7 @@ export const HeroSection = () => {
               loop
               muted
               playsInline
-              className="w-full h-auto max-h-48 sm:max-h-64 object-cover"
+              className="w-full h-auto object-contain"
             />
           </div>
         </div>
