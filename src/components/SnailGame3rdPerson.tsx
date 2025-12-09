@@ -820,14 +820,14 @@ function GameScene({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'j'].includes(e.key.toLowerCase())) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Alt'].includes(e.key)) {
         e.preventDefault();
       }
       keysPressed.current.add(e.key.toLowerCase());
       if (e.key === ' ') {
         isShooting.current = true;
       }
-      if (e.key.toLowerCase() === 'j') {
+      if (e.key === 'Alt') {
         jumpPressed.current = true;
       }
     };
@@ -837,7 +837,7 @@ function GameScene({
       if (e.key === ' ') {
         isShooting.current = false;
       }
-      if (e.key.toLowerCase() === 'j') {
+      if (e.key === 'Alt') {
         jumpPressed.current = false;
       }
     };
@@ -1473,7 +1473,7 @@ export const SnailGame3rdPerson = () => {
             <span className="mx-2">•</span>
             <span className="font-semibold text-primary">SPACE</span> to shoot
             <span className="mx-2">•</span>
-            <span className="font-semibold text-primary">J</span> to jump
+            <span className="font-semibold text-primary">ALT</span> to jump
           </p>
           <p className="font-body text-sm text-muted-foreground/80">
             Pick up 🔥 Flamethrower or 🚀 Rocket Launcher for special weapons (30 sec)!

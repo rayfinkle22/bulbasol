@@ -14,6 +14,8 @@ const QUICK_REPLIES = [
   { label: "🔥 Is it pumping?", message: "Is $SNAIL pumping right now? What's the momentum?" },
   { label: "💰 How to buy?", message: "How do I buy $SNAIL tokens?" },
   { label: "🐢 Who's Franklin?", message: "Tell me about Franklin the Turtle and your friendship!" },
+  { label: "🎮 How to play?", message: "How do I play the Snail Shooter game? What are the controls?" },
+  { label: "🏆 High scores?", message: "Who has the highest scores on the leaderboard?" },
 ];
 
 export const SnailChatbot = () => {
