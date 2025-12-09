@@ -994,6 +994,7 @@ export const SnailGame3rdPerson = () => {
   const [playerName, setPlayerName] = useState('');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
   const gameStartTime = useRef<number>(0);
   
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -1028,6 +1029,17 @@ export const SnailGame3rdPerson = () => {
         setLeaderboard(leaderboardData || []);
         if (leaderboardData && leaderboardData.length > 0) {
           setHighScore(leaderboardData[0].score);
+        }
+
+        // Fetch total games played
+        const { data: statsData, error: statsError } = await supabase
+          .from('game_stats')
+          .select('games_played')
+          .eq('id', 'global')
+          .maybeSingle();
+        
+        if (!statsError && statsData) {
+          setGamesPlayed(statsData.games_played);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -1095,9 +1107,32 @@ export const SnailGame3rdPerson = () => {
     setGameState(prev => ({ ...prev, status: 'gameover' }));
   };
 
+  // Generate a stable session hash for rate limiting
+  const getSessionHash = useCallback(() => {
+    let sessionHash = sessionStorage.getItem('snail_game_session_3d');
+    if (!sessionHash) {
+      sessionHash = crypto.randomUUID() + '-' + Date.now();
+      sessionStorage.setItem('snail_game_session_3d', sessionHash);
+    }
+    return sessionHash;
+  }, []);
+
   const startGame = useCallback(async () => {
     setScoreSubmitted(false);
     gameStartTime.current = Date.now();
+    
+    // Increment games played counter with session-based rate limiting
+    try {
+      const sessionHash = getSessionHash();
+      const { data: newCount } = await supabase.rpc('increment_games_played', { 
+        p_session_hash: sessionHash 
+      });
+      if (newCount) {
+        setGamesPlayed(newCount);
+      }
+    } catch (error) {
+      console.error('Error incrementing games counter:', error);
+    }
     
     setGameState({
       status: 'playing',
@@ -1111,7 +1146,7 @@ export const SnailGame3rdPerson = () => {
       health: 100,
       doubleDamageUntil: 0
     });
-  }, []);
+  }, [getSessionHash]);
 
   useEffect(() => {
     if (gameState.status === 'gameover' && gameState.health === 0 && !scoreSubmitted) {
@@ -1137,7 +1172,7 @@ export const SnailGame3rdPerson = () => {
           <span className="sm:hidden">Use joystick to move/turn, FIRE button to shoot!</span>
         </p>
         <p className="font-display text-sm text-center text-accent mb-4">
-          🧪 3rd Person Mode - BETA
+          🎮 {gamesPlayed.toLocaleString()} games played worldwide!
         </p>
 
         {/* Game area - taller for 3rd person view */}

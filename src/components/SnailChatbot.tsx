@@ -176,18 +176,19 @@ export const SnailChatbot = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-background/50">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ backgroundColor: 'hsl(140 30% 88%)' }}>
             {messages.map((msg, i) => (
               <div
                 key={i}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm text-white ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-secondary text-secondary-foreground rounded-bl-sm"
+                      ? "bg-primary rounded-br-sm"
+                      : "rounded-bl-sm"
                   }`}
+                  style={msg.role === "assistant" ? { backgroundColor: 'hsl(140 35% 40%)' } : {}}
                 >
                   {msg.content}
                 </div>
@@ -211,7 +212,7 @@ export const SnailChatbot = () => {
             
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
-                <div className="bg-secondary text-secondary-foreground px-3 py-2 rounded-2xl rounded-bl-sm text-sm">
+                <div className="px-3 py-2 rounded-2xl rounded-bl-sm text-sm text-white" style={{ backgroundColor: 'hsl(140 35% 40%)' }}>
                   <span className="animate-pulse">🐌 slooowly thinking...</span>
                 </div>
               </div>
