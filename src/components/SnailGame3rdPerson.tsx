@@ -1513,7 +1513,7 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
-  // Fullscreen handling - tries native API first, falls back to CSS
+  // Fullscreen handling - CSS-based immersive mode
   const toggleFullscreen = useCallback(async () => {
     const elem = gameContainerRef.current as any;
     const doc = document as any;
@@ -1526,20 +1526,36 @@ export const SnailGame3rdPerson = () => {
         } else if (doc.webkitFullscreenElement) {
           await doc.webkitExitFullscreen();
         }
-        // Unlock orientation
-        if (screen.orientation && 'unlock' in screen.orientation) {
-          try { (screen.orientation as any).unlock(); } catch {}
-        }
       } catch {}
+      
       setIsFullscreen(false);
+      setIsPortrait(false);
+      
+      // Restore body styles
       document.body.style.overflow = '';
       document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
       document.body.style.width = '';
       document.body.style.height = '';
+      document.documentElement.style.overflow = '';
     } else {
-      // Enter fullscreen
+      // Enter fullscreen - check if portrait mode
+      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(isCurrentlyPortrait);
+      setIsFullscreen(true);
+      
+      // Lock body to prevent scrolling
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = '0';
+      document.body.style.left = '0';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Try native fullscreen (works on Android/Desktop)
       try {
-        // Try native fullscreen first
         if (elem?.requestFullscreen) {
           await elem.requestFullscreen();
         } else if (elem?.webkitRequestFullscreen) {
@@ -1552,27 +1568,28 @@ export const SnailGame3rdPerson = () => {
           } catch {}
         }
       } catch {}
-      setIsFullscreen(true);
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
+      
+      // Scroll to top to minimize browser chrome on iOS
+      window.scrollTo(0, 0);
     }
   }, [isFullscreen]);
 
-  // Track orientation for CSS-based landscape rotation (only when in fullscreen)
+  // Keep checking orientation while in fullscreen
   useEffect(() => {
     if (!isFullscreen) return;
     
     const checkOrientation = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
+      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(isCurrentlyPortrait);
     };
     
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
     
     return () => {
       window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
     };
   }, [isFullscreen]);
 
@@ -1652,30 +1669,34 @@ export const SnailGame3rdPerson = () => {
               : 'w-full rounded-2xl retro-border'
           }`}
           style={isFullscreen ? {
-            // When fullscreen in portrait mode, rotate to landscape
-            ...(isPortrait ? {
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              width: '100vh',
-              height: '100vw',
-              transform: 'translate(-50%, -50%) rotate(90deg)',
-              transformOrigin: 'center center',
-              zIndex: 50,
-            } : {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 50,
-            })
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 50,
           } : { 
             aspectRatio: '16 / 9',
             minHeight: '300px',
             maxHeight: '500px'
           }}
         >
+          {/* Rotate phone message - shown in portrait fullscreen mode */}
+          {isFullscreen && isPortrait && (
+            <div className="absolute inset-0 z-[60] bg-black flex flex-col items-center justify-center text-white text-center p-4">
+              <div className="text-6xl mb-4 animate-pulse">📱↔️</div>
+              <h3 className="font-display text-2xl mb-2">Rotate Your Phone</h3>
+              <p className="font-body text-muted-foreground mb-4">Turn your phone sideways for the best experience</p>
+              <Button
+                onClick={toggleFullscreen}
+                variant="outline"
+                className="font-display border-white/30 text-white hover:bg-white/10"
+              >
+                Exit Fullscreen
+              </Button>
+            </div>
+          )}
+
           {/* Mute/Unmute button */}
           <button
             onClick={() => {
