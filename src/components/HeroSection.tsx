@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import heroBanner from "@/assets/hero-banner.png";
 import snailImage from "@/assets/snail-game.png";
-
 const CONTRACT_ADDRESS = "5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump";
 
 export const HeroSection = () => {
@@ -28,9 +26,12 @@ export const HeroSection = () => {
         {/* Hero banner */}
         <div className="mb-6 relative">
           <div className="w-full max-w-3xl mx-auto rounded-2xl retro-border overflow-hidden">
-            <img 
-              src={heroBanner} 
-              alt="Franklin and Snail - $SNAIL Token" 
+            <video 
+              src="/videos/snail-animation.mp4" 
+              autoPlay
+              loop
+              muted
+              playsInline
               className="w-full h-auto object-cover"
             />
           </div>
