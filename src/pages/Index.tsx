@@ -4,6 +4,7 @@ import { SnailGame } from "@/components/SnailGame";
 import { DexChart } from "@/components/DexChart";
 import { Footer } from "@/components/Footer";
 import { FloatingLeaves } from "@/components/FloatingLeaves";
+import { SnailChatbot } from "@/components/SnailChatbot";
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
         <DexChart />
       </main>
       <Footer />
+      <SnailChatbot />
     </div>
   );
 };
