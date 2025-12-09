@@ -1,7 +1,8 @@
 import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
 
 export const DexChart = () => {
-  const { marketCap, priceUsd, priceChange24h, isLoading } = useMarketData();
+  const { marketCap, priceUsd, priceChange, isLoading } = useMarketData();
+  const priceChange24h = priceChange.h24;
 
   return (
     <section className="py-8 sm:py-12 px-4">
