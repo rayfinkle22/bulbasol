@@ -43,7 +43,7 @@ export const HeroSection = () => {
         
         {/* Tagline */}
         <p className="font-body text-xl sm:text-2xl md:text-3xl text-foreground mb-4">
-          Franklin&apos;s Best Friend on the Blockchain 🐢
+          Franklin&apos;s ride or die homie. The only one that rides his shell 🐢
         </p>
         
         {/* Catchphrase */}
