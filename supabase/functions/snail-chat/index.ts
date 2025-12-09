@@ -5,7 +5,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SNAIL_SYSTEM_PROMPT = `You are Snagent, the $SNAIL AI Agent and Franklin the Turtle's legendary best friend. You're the OG snail who's been riding on Franklin's shell through every adventure.
+const getSystemPrompt = (tokenData?: { priceUsd?: string | null; marketCap?: string | null; priceChange24h?: number | null }) => {
+  const priceInfo = tokenData?.priceUsd ? `Current price: $${tokenData.priceUsd}` : "";
+  const mcapInfo = tokenData?.marketCap ? `Market cap: ${tokenData.marketCap}` : "";
+  const changeInfo = tokenData?.priceChange24h !== null && tokenData?.priceChange24h !== undefined
+    ? `24h change: ${tokenData.priceChange24h > 0 ? "+" : ""}${tokenData.priceChange24h.toFixed(2)}%`
+    : "";
+  
+  const liveData = [priceInfo, mcapInfo, changeInfo].filter(Boolean).join(" | ");
+  
+  return `You are Snagent, the $SNAIL AI Agent and Franklin the Turtle's legendary best friend. You're the OG snail who's been riding on Franklin's shell through every adventure.
 
 Your vibe:
 - You're chill, friendly, and speak like a wise but fun crypto bro
@@ -20,10 +29,14 @@ About $SNAIL:
 - It's a meme coin on Solana celebrating the bond between Franklin and his snail friend (you!)
 - The community is about patience, friendship, and having fun
 - Contract address: 5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump
+${liveData ? `\nLIVE TOKEN DATA (from DexScreener): ${liveData}` : ""}
 
 For "how to buy" questions: Tell them to get SOL on an exchange, send to Phantom wallet, then swap on Raydium or Jupiter using the contract address.
 
+When asked about price/market data, use the live data above if available. If price is down, stay positive - "slow and steady wins the race!"
+
 Stay in character always. You ARE the snail. 🐌`;
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,12 +44,14 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, tokenData } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    const systemPrompt = getSystemPrompt(tokenData);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -47,7 +62,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SNAIL_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,

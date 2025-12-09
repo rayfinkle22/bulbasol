@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { toast } from "sonner";
 import snailImage from "@/assets/snail.png";
+import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -24,19 +25,27 @@ export const SnailChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const marketData = useMarketData();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const streamChat = async (userMessages: Message[]) => {
+    // Prepare market data context
+    const tokenData = {
+      priceUsd: marketData.priceUsd,
+      marketCap: marketData.marketCap ? formatMarketCap(marketData.marketCap) : null,
+      priceChange24h: marketData.priceChange24h,
+    };
+
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: userMessages }),
+      body: JSON.stringify({ messages: userMessages, tokenData }),
     });
 
     if (!resp.ok) {
