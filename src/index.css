@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    /* Dark, badass theme */
-    --background: 160 30% 8%;
-    --foreground: 120 20% 90%;
+    /* Brighter, more readable theme */
+    --background: 160 25% 15%;
+    --foreground: 120 15% 92%;
 
-    --card: 160 25% 12%;
-    --card-foreground: 120 20% 90%;
+    --card: 160 22% 18%;
+    --card-foreground: 120 15% 92%;
 
-    --popover: 160 25% 12%;
-    --popover-foreground: 120 20% 90%;
+    --popover: 160 22% 18%;
+    --popover-foreground: 120 15% 92%;
 
     /* Neon green accent */
     --primary: 120 70% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Deep teal secondary */
-    --secondary: 170 40% 20%;
-    --secondary-foreground: 120 20% 90%;
+    /* Lighter teal secondary for chat bubbles */
+    --secondary: 140 35% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 160 20% 18%;
-    --muted-foreground: 120 15% 55%;
+    --muted: 160 18% 25%;
+    --muted-foreground: 120 12% 70%;
 
     /* Electric yellow/gold accent */
     --accent: 50 100% 50%;
@@ -34,11 +34,16 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 20% 25%;
-    --input: 160 20% 25%;
+    --border: 160 18% 30%;
+    --input: 160 18% 30%;
     --ring: 120 70% 45%;
 
     --radius: 0.75rem;
+    
+    /* Chat-specific colors */
+    --chat-bg: 140 30% 88%;
+    --chat-bubble-assistant: 140 35% 40%;
+    --chat-bubble-user: 120 70% 40%;
 
     /* Game colors */
     --sky: 195 70% 75%;
@@ -46,13 +51,13 @@
     --grass-light: 90 55% 70%;
     --dirt: 35 40% 50%;
 
-    --sidebar-background: 160 25% 10%;
-    --sidebar-foreground: 120 20% 90%;
+    --sidebar-background: 160 22% 14%;
+    --sidebar-foreground: 120 15% 92%;
     --sidebar-primary: 120 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 50 100% 50%;
     --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 160 20% 25%;
+    --sidebar-border: 160 18% 30%;
     --sidebar-ring: 120 70% 45%;
   }
 
