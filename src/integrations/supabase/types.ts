@@ -77,6 +77,33 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_3d: {
+        Row: {
+          bugs_killed: number | null
+          created_at: string
+          game_duration_seconds: number | null
+          id: string
+          name: string
+          score: number
+        }
+        Insert: {
+          bugs_killed?: number | null
+          created_at?: string
+          game_duration_seconds?: number | null
+          id?: string
+          name: string
+          score: number
+        }
+        Update: {
+          bugs_killed?: number | null
+          created_at?: string
+          game_duration_seconds?: number | null
+          id?: string
+          name?: string
+          score?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -87,6 +114,15 @@ export type Database = {
         | { Args: never; Returns: number }
         | { Args: { p_session_hash?: string }; Returns: number }
       submit_score: {
+        Args: {
+          p_bugs_killed: number
+          p_game_duration: number
+          p_name: string
+          p_score: number
+        }
+        Returns: boolean
+      }
+      submit_score_3d: {
         Args: {
           p_bugs_killed: number
           p_game_duration: number
