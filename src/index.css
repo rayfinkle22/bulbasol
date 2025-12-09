@@ -6,11 +6,11 @@
 
 @layer base {
   :root {
-    /* Brighter, lighter green theme */
-    --background: 140 25% 35%;
+    /* Balanced green theme */
+    --background: 150 22% 18%;
     --foreground: 100 10% 95%;
 
-    --card: 140 22% 40%;
+    --card: 150 20% 22%;
     --card-foreground: 100 10% 95%;
 
     --popover: 160 18% 26%;
