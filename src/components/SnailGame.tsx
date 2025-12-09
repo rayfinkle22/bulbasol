@@ -10,8 +10,9 @@ interface Bug {
   id: number;
   position: [number, number, number];
   velocity: [number, number];
-  type: 'beetle' | 'fly' | 'spider';
+  type: 'beetle' | 'centipede' | 'spider' | 'scorpion' | 'wasp';
   health: number;
+  scale: number;
 }
 
 interface Bullet {
@@ -39,86 +40,212 @@ const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
   hard: 1.0,
 };
 
-const BUG_COLORS = {
-  beetle: '#2d5a27',
-  fly: '#1a1a2e',
-  spider: '#4a1f1f',
+const BUG_CONFIGS = {
+  beetle: { color: '#1a0a00', glowColor: '#ff3300', bodyScale: 1 },
+  centipede: { color: '#2a0a1a', glowColor: '#ff00ff', bodyScale: 1.5 },
+  spider: { color: '#0a0a0a', glowColor: '#00ff00', bodyScale: 0.8 },
+  scorpion: { color: '#3a1a00', glowColor: '#ffaa00', bodyScale: 1.3 },
+  wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail component with texture sprite
+// 3D Snail component with texture sprite and attached gun
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   const texture = useLoader(TextureLoader, snailTexture);
   
   return (
     <group position={[position[0], 0.5, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Snail sprite billboard */}
-      <sprite scale={[1.6, 1.6, 1]} position={[-0.2, 0, 0]}>
+      {/* Snail sprite - slightly back */}
+      <sprite scale={[1.4, 1.4, 1]} position={[0, 0.1, 0]}>
         <spriteMaterial map={texture} transparent />
       </sprite>
-      {/* Machine gun - positioned in front of snail */}
-      <group position={[0.8, 0.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      
+      {/* Gun mount/strap connecting to snail */}
+      <mesh position={[0.3, 0, 0]} rotation={[0, 0, 0.2]}>
+        <boxGeometry args={[0.4, 0.06, 0.08]} />
+        <meshStandardMaterial color="#5a4a3a" roughness={0.8} />
+      </mesh>
+      
+      {/* Machine gun - attached via strap */}
+      <group position={[0.6, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
         {/* Main barrel */}
         <mesh>
-          <cylinderGeometry args={[0.08, 0.1, 0.8, 12]} />
-          <meshStandardMaterial color="#2F4F4F" metalness={0.8} roughness={0.2} />
+          <cylinderGeometry args={[0.07, 0.09, 0.7, 12]} />
+          <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
         </mesh>
-        {/* Muzzle flash area */}
-        <mesh position={[0, 0.45, 0]}>
-          <cylinderGeometry args={[0.12, 0.08, 0.15, 12]} />
-          <meshStandardMaterial color="#1a1a1a" metalness={0.9} roughness={0.1} />
+        {/* Barrel ridges */}
+        {[0.1, 0.2, 0.3].map((y, i) => (
+          <mesh key={i} position={[0, y, 0]}>
+            <torusGeometry args={[0.08, 0.015, 8, 16]} />
+            <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
+          </mesh>
+        ))}
+        {/* Muzzle */}
+        <mesh position={[0, 0.4, 0]}>
+          <cylinderGeometry args={[0.1, 0.07, 0.12, 12]} />
+          <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
+        </mesh>
+        {/* Body/receiver */}
+        <mesh position={[0, -0.15, -0.08]}>
+          <boxGeometry args={[0.14, 0.3, 0.16]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
         </mesh>
         {/* Magazine */}
-        <mesh position={[0, -0.1, -0.15]} rotation={[0.3, 0, 0]}>
-          <boxGeometry args={[0.12, 0.25, 0.1]} />
+        <mesh position={[0, -0.1, -0.18]} rotation={[0.2, 0, 0]}>
+          <boxGeometry args={[0.1, 0.22, 0.08]} />
           <meshStandardMaterial color="#4a4a4a" metalness={0.7} roughness={0.3} />
-        </mesh>
-        {/* Handle */}
-        <mesh position={[0, -0.25, -0.08]} rotation={[0.5, 0, 0]}>
-          <boxGeometry args={[0.08, 0.2, 0.06]} />
-          <meshStandardMaterial color="#3a3a3a" metalness={0.5} roughness={0.5} />
         </mesh>
       </group>
     </group>
   );
 }
 
-// Bug component
+// Scary Bug component with varied shapes
 function Bug({ bug }: { bug: Bug }) {
-  const color = BUG_COLORS[bug.type];
+  const config = BUG_CONFIGS[bug.type];
+  const s = bug.scale * config.bodyScale;
+  const meshRef = useRef<THREE.Group>(null);
+  
+  // Slight wobble animation
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 2;
+    }
+  });
   
   return (
-    <group position={bug.position}>
-      {/* Body */}
-      <mesh>
-        <sphereGeometry args={[0.25, 12, 12]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0.2, 0, 0]}>
-        <sphereGeometry args={[0.15, 10, 10]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Legs */}
-      {[-0.12, 0, 0.12].map((z, i) => (
-        <group key={i}>
-          <mesh position={[0, -0.1, z + 0.2]} rotation={[0.5, 0, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.15, 6]} />
-            <meshStandardMaterial color="#1a1a1a" />
+    <group position={bug.position} ref={meshRef} scale={[s, s, s]}>
+      {bug.type === 'beetle' && (
+        <>
+          {/* Armored body */}
+          <mesh>
+            <dodecahedronGeometry args={[0.3, 0]} />
+            <meshStandardMaterial color={config.color} metalness={0.3} roughness={0.7} />
           </mesh>
-          <mesh position={[0, -0.1, z - 0.2]} rotation={[-0.5, 0, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.15, 6]} />
-            <meshStandardMaterial color="#1a1a1a" />
+          {/* Pincers */}
+          <mesh position={[0.25, 0, 0.15]} rotation={[0, 0.3, 0]}>
+            <coneGeometry args={[0.08, 0.25, 4]} />
+            <meshStandardMaterial color="#1a0000" />
           </mesh>
-        </group>
-      ))}
-      {/* Eyes */}
-      <mesh position={[0.3, 0.08, 0.08]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+          <mesh position={[0.25, 0, -0.15]} rotation={[0, -0.3, 0]}>
+            <coneGeometry args={[0.08, 0.25, 4]} />
+            <meshStandardMaterial color="#1a0000" />
+          </mesh>
+        </>
+      )}
+      
+      {bug.type === 'centipede' && (
+        <>
+          {/* Segmented body */}
+          {[0, 0.2, 0.4, -0.2, -0.4].map((x, i) => (
+            <mesh key={i} position={[x, 0, 0]}>
+              <sphereGeometry args={[0.15, 8, 8]} />
+              <meshStandardMaterial color={config.color} />
+            </mesh>
+          ))}
+          {/* Many legs */}
+          {[-0.4, -0.2, 0, 0.2, 0.4].map((x, i) => (
+            <group key={i}>
+              <mesh position={[x, -0.1, 0.2]} rotation={[0.5, 0, 0]}>
+                <cylinderGeometry args={[0.015, 0.015, 0.2, 4]} />
+                <meshStandardMaterial color="#2a0a1a" />
+              </mesh>
+              <mesh position={[x, -0.1, -0.2]} rotation={[-0.5, 0, 0]}>
+                <cylinderGeometry args={[0.015, 0.015, 0.2, 4]} />
+                <meshStandardMaterial color="#2a0a1a" />
+              </mesh>
+            </group>
+          ))}
+        </>
+      )}
+      
+      {bug.type === 'spider' && (
+        <>
+          {/* Bulbous body */}
+          <mesh>
+            <sphereGeometry args={[0.2, 12, 12]} />
+            <meshStandardMaterial color={config.color} />
+          </mesh>
+          <mesh position={[0.15, 0.05, 0]}>
+            <sphereGeometry args={[0.12, 10, 10]} />
+            <meshStandardMaterial color={config.color} />
+          </mesh>
+          {/* 8 spindly legs */}
+          {[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((angle, i) => (
+            <mesh key={i} position={[Math.cos(angle * Math.PI) * 0.15, -0.05, Math.sin(angle * Math.PI) * 0.15]} rotation={[Math.sin(angle) * 0.5, 0, Math.cos(angle) * 0.5]}>
+              <cylinderGeometry args={[0.01, 0.02, 0.35, 4]} />
+              <meshStandardMaterial color="#0a0a0a" />
+            </mesh>
+          ))}
+        </>
+      )}
+      
+      {bug.type === 'scorpion' && (
+        <>
+          {/* Body */}
+          <mesh>
+            <boxGeometry args={[0.35, 0.12, 0.2]} />
+            <meshStandardMaterial color={config.color} />
+          </mesh>
+          {/* Tail segments */}
+          {[0.25, 0.4, 0.5, 0.55].map((x, i) => (
+            <mesh key={i} position={[-x, 0.1 + i * 0.08, 0]}>
+              <sphereGeometry args={[0.06 - i * 0.01, 6, 6]} />
+              <meshStandardMaterial color={config.color} />
+            </mesh>
+          ))}
+          {/* Stinger */}
+          <mesh position={[-0.6, 0.45, 0]} rotation={[0, 0, -0.5]}>
+            <coneGeometry args={[0.04, 0.15, 6]} />
+            <meshStandardMaterial color="#ff3300" emissive="#ff0000" emissiveIntensity={0.5} />
+          </mesh>
+          {/* Claws */}
+          <mesh position={[0.25, 0, 0.15]}>
+            <boxGeometry args={[0.15, 0.08, 0.1]} />
+            <meshStandardMaterial color={config.color} />
+          </mesh>
+          <mesh position={[0.25, 0, -0.15]}>
+            <boxGeometry args={[0.15, 0.08, 0.1]} />
+            <meshStandardMaterial color={config.color} />
+          </mesh>
+        </>
+      )}
+      
+      {bug.type === 'wasp' && (
+        <>
+          {/* Striped body */}
+          <mesh>
+            <capsuleGeometry args={[0.1, 0.25, 6, 12]} />
+            <meshStandardMaterial color="#1a1a00" />
+          </mesh>
+          <mesh position={[0, 0, 0]} scale={[1.05, 0.3, 1.05]}>
+            <torusGeometry args={[0.1, 0.03, 6, 12]} />
+            <meshStandardMaterial color="#ffcc00" />
+          </mesh>
+          {/* Wings */}
+          <mesh position={[0, 0.15, 0.12]} rotation={[0.3, 0, 0]}>
+            <planeGeometry args={[0.15, 0.25]} />
+            <meshStandardMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0.15, -0.12]} rotation={[-0.3, 0, 0]}>
+            <planeGeometry args={[0.15, 0.25]} />
+            <meshStandardMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Stinger */}
+          <mesh position={[-0.2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <coneGeometry args={[0.03, 0.12, 6]} />
+            <meshStandardMaterial color="#1a0a00" />
+          </mesh>
+        </>
+      )}
+      
+      {/* Glowing eyes for all bugs */}
+      <mesh position={[0.2, 0.08, 0.06]}>
+        <sphereGeometry args={[0.04, 6, 6]} />
+        <meshStandardMaterial color={config.glowColor} emissive={config.glowColor} emissiveIntensity={1} />
       </mesh>
-      <mesh position={[0.3, 0.08, -0.08]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+      <mesh position={[0.2, 0.08, -0.06]}>
+        <sphereGeometry args={[0.04, 6, 6]} />
+        <meshStandardMaterial color={config.glowColor} emissive={config.glowColor} emissiveIntensity={1} />
       </mesh>
     </group>
   );
@@ -137,36 +264,118 @@ function Bullet({ bullet }: { bullet: Bullet }) {
   );
 }
 
-// Ground plane
+// Atmospheric ground with dark swamp feel
 function Ground() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <planeGeometry args={[30, 30]} />
-      <meshStandardMaterial color="#4a7c3f" />
-    </mesh>
+    <>
+      {/* Main ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        <planeGeometry args={[30, 30]} />
+        <meshStandardMaterial color="#1a2a1a" />
+      </mesh>
+      {/* Darker patches */}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <mesh 
+          key={i}
+          rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]} 
+          position={[(Math.random() - 0.5) * 25, 0.01, (Math.random() - 0.5) * 25]}
+        >
+          <circleGeometry args={[0.5 + Math.random() * 1.5, 8]} />
+          <meshStandardMaterial color="#0a1a0a" transparent opacity={0.6} />
+        </mesh>
+      ))}
+    </>
   );
 }
 
-// Grass patches
-function GrassPatches() {
-  const patches = useRef<[number, number, number][]>([]);
+// Spooky environment decorations
+function SpookyEnvironment() {
+  const decorations = useRef<{ pos: [number, number, number]; type: string; rot: number }[]>([]);
   
-  if (patches.current.length === 0) {
-    for (let i = 0; i < 50; i++) {
-      patches.current.push([
-        (Math.random() - 0.5) * 20,
-        0.02,
-        (Math.random() - 0.5) * 20
-      ]);
+  if (decorations.current.length === 0) {
+    // Dead trees/stumps
+    for (let i = 0; i < 15; i++) {
+      decorations.current.push({
+        pos: [(Math.random() - 0.5) * 22, 0, (Math.random() - 0.5) * 22],
+        type: Math.random() > 0.5 ? 'stump' : 'rock',
+        rot: Math.random() * Math.PI * 2
+      });
+    }
+    // Bones scattered
+    for (let i = 0; i < 10; i++) {
+      decorations.current.push({
+        pos: [(Math.random() - 0.5) * 20, 0.02, (Math.random() - 0.5) * 20],
+        type: 'bone',
+        rot: Math.random() * Math.PI * 2
+      });
+    }
+    // Mushrooms (toxic looking)
+    for (let i = 0; i < 12; i++) {
+      decorations.current.push({
+        pos: [(Math.random() - 0.5) * 18, 0, (Math.random() - 0.5) * 18],
+        type: 'mushroom',
+        rot: Math.random() * Math.PI * 2
+      });
     }
   }
   
   return (
     <>
-      {patches.current.map((pos, i) => (
-        <mesh key={i} position={pos} rotation={[-Math.PI / 2, 0, Math.random() * Math.PI]}>
-          <circleGeometry args={[0.15 + Math.random() * 0.1, 6]} />
-          <meshStandardMaterial color="#3d6b35" />
+      {decorations.current.map((dec, i) => (
+        <group key={i} position={dec.pos} rotation={[0, dec.rot, 0]}>
+          {dec.type === 'stump' && (
+            <>
+              <mesh position={[0, 0.15, 0]}>
+                <cylinderGeometry args={[0.2, 0.25, 0.3, 8]} />
+                <meshStandardMaterial color="#2a1a0a" roughness={1} />
+              </mesh>
+              <mesh position={[0.1, 0.35, 0]} rotation={[0, 0, 0.5]}>
+                <cylinderGeometry args={[0.03, 0.05, 0.2, 5]} />
+                <meshStandardMaterial color="#1a0a00" />
+              </mesh>
+            </>
+          )}
+          {dec.type === 'rock' && (
+            <mesh position={[0, 0.1, 0]}>
+              <dodecahedronGeometry args={[0.15 + Math.random() * 0.1, 0]} />
+              <meshStandardMaterial color="#2a2a2a" roughness={0.9} />
+            </mesh>
+          )}
+          {dec.type === 'bone' && (
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <capsuleGeometry args={[0.03, 0.15, 4, 8]} />
+              <meshStandardMaterial color="#d4c5a9" />
+            </mesh>
+          )}
+          {dec.type === 'mushroom' && (
+            <>
+              <mesh position={[0, 0.08, 0]}>
+                <cylinderGeometry args={[0.02, 0.03, 0.1, 6]} />
+                <meshStandardMaterial color="#8a7a6a" />
+              </mesh>
+              <mesh position={[0, 0.15, 0]}>
+                <sphereGeometry args={[0.08, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshStandardMaterial color="#7a0a2a" emissive="#3a0010" emissiveIntensity={0.3} />
+              </mesh>
+              {/* Toxic spots */}
+              <mesh position={[0.04, 0.17, 0.02]}>
+                <sphereGeometry args={[0.015, 4, 4]} />
+                <meshStandardMaterial color="#ffff00" emissive="#aaaa00" emissiveIntensity={0.5} />
+              </mesh>
+            </>
+          )}
+        </group>
+      ))}
+      
+      {/* Fog particles */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh 
+          key={`fog-${i}`}
+          position={[(Math.random() - 0.5) * 15, 0.3, (Math.random() - 0.5) * 15]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <circleGeometry args={[1 + Math.random(), 8]} />
+          <meshStandardMaterial color="#2a4a2a" transparent opacity={0.15} />
         </mesh>
       ))}
     </>
@@ -268,12 +477,12 @@ function GameScene({
       }));
     }
 
-    // Spawn bugs
+    // Spawn bugs with variety
     if (now - lastSpawn.current > 2000 / speedMult) {
       lastSpawn.current = now;
       const angle = Math.random() * Math.PI * 2;
       const distance = 8 + Math.random() * 2;
-      const bugTypes: Bug['type'][] = ['beetle', 'fly', 'spider'];
+      const bugTypes: Bug['type'][] = ['beetle', 'centipede', 'spider', 'scorpion', 'wasp'];
       const newBug: Bug = {
         id: Date.now() + Math.random(),
         position: [
@@ -283,7 +492,8 @@ function GameScene({
         ],
         velocity: [0, 0],
         type: bugTypes[Math.floor(Math.random() * bugTypes.length)],
-        health: 1
+        health: 1,
+        scale: 0.7 + Math.random() * 0.8 // Varied sizes
       };
       setGameState(prev => ({
         ...prev,
@@ -401,12 +611,18 @@ function GameScene({
   return (
     <>
       <OrthographicCamera makeDefault position={[0, 15, 0]} zoom={45} rotation={[-Math.PI / 2, 0, 0]} />
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
-      <directionalLight position={[-5, 8, -5]} intensity={0.4} />
+      
+      {/* Atmospheric lighting */}
+      <ambientLight intensity={0.3} color="#4a6a4a" />
+      <directionalLight position={[5, 10, 5]} intensity={0.6} color="#aaffaa" castShadow />
+      <directionalLight position={[-5, 8, -5]} intensity={0.3} color="#ff6644" />
+      <pointLight position={[0, 3, 0]} intensity={0.5} color="#ffaa44" distance={15} />
+      
+      {/* Fog effect */}
+      <fog attach="fog" args={['#1a2a1a', 8, 20]} />
       
       <Ground />
-      <GrassPatches />
+      <SpookyEnvironment />
       
       <Snail position={gameState.snailPosition} rotation={gameState.snailRotation} />
       
