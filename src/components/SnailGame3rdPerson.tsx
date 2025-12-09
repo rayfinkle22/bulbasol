@@ -64,85 +64,131 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail component - true 3rd person model (viewed from behind)
+// 3D Snail with realistic spiral shell
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   return (
-    <group position={[position[0], 0.3, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Snail body - elongated shell shape */}
-      <mesh position={[0, 0.4, -0.2]} rotation={[0.3, 0, 0]}>
-        <sphereGeometry args={[0.6, 16, 16]} />
-        <meshStandardMaterial color="#8B7355" roughness={0.6} />
+    <group position={[position[0], 0.25, position[1]]} rotation={[0, rotation, 0]}>
+      {/* Realistic spiral shell - main dome */}
+      <mesh position={[0, 0.45, -0.15]} rotation={[0.2, 0, 0]}>
+        <sphereGeometry args={[0.55, 24, 24]} />
+        <meshStandardMaterial color="#c9a66b" roughness={0.4} metalness={0.1} />
       </mesh>
       
-      {/* Shell spiral detail */}
-      <mesh position={[0, 0.5, -0.3]} rotation={[0.3, 0, 0]}>
-        <torusGeometry args={[0.3, 0.08, 8, 16]} />
-        <meshStandardMaterial color="#6B5344" roughness={0.7} />
+      {/* Shell spiral pattern - multiple layers creating spiral effect */}
+      <mesh position={[0.15, 0.55, -0.2]} rotation={[0.3, 0.5, 0.2]}>
+        <torusGeometry args={[0.35, 0.06, 12, 24]} />
+        <meshStandardMaterial color="#a67c4a" roughness={0.5} />
       </mesh>
-      <mesh position={[0, 0.55, -0.35]} rotation={[0.3, 0, 0]}>
-        <torusGeometry args={[0.18, 0.06, 8, 12]} />
-        <meshStandardMaterial color="#5B4334" roughness={0.7} />
+      <mesh position={[0.08, 0.5, -0.15]} rotation={[0.2, 0.3, 0.1]}>
+        <torusGeometry args={[0.25, 0.05, 12, 20]} />
+        <meshStandardMaterial color="#8b6239" roughness={0.5} />
       </mesh>
-      
-      {/* Snail head/body (front part) */}
-      <mesh position={[0, 0.15, 0.4]}>
-        <capsuleGeometry args={[0.2, 0.4, 8, 12]} />
-        <meshStandardMaterial color="#C4A882" roughness={0.5} />
+      <mesh position={[0.05, 0.48, -0.1]} rotation={[0.1, 0.2, 0]}>
+        <torusGeometry args={[0.15, 0.04, 10, 16]} />
+        <meshStandardMaterial color="#6b4423" roughness={0.5} />
       </mesh>
-      
-      {/* Eye stalks */}
-      <mesh position={[-0.12, 0.4, 0.55]} rotation={[-0.3, 0, -0.2]}>
-        <capsuleGeometry args={[0.04, 0.25, 6, 8]} />
-        <meshStandardMaterial color="#C4A882" roughness={0.5} />
-      </mesh>
-      <mesh position={[0.12, 0.4, 0.55]} rotation={[-0.3, 0, 0.2]}>
-        <capsuleGeometry args={[0.04, 0.25, 6, 8]} />
-        <meshStandardMaterial color="#C4A882" roughness={0.5} />
+      {/* Shell center spiral */}
+      <mesh position={[0.02, 0.5, -0.05]} rotation={[0, 0.1, 0]}>
+        <sphereGeometry args={[0.08, 12, 12]} />
+        <meshStandardMaterial color="#5a3a1a" roughness={0.6} />
       </mesh>
       
-      {/* Eyes */}
-      <mesh position={[-0.15, 0.55, 0.6]}>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshStandardMaterial color="#1a1a1a" />
+      {/* Shell bands/stripes for realism */}
+      <mesh position={[-0.2, 0.4, -0.2]} rotation={[0.4, -0.3, 0]}>
+        <torusGeometry args={[0.4, 0.02, 8, 24]} />
+        <meshStandardMaterial color="#8b6239" roughness={0.5} />
       </mesh>
-      <mesh position={[0.15, 0.55, 0.6]}>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      
-      {/* Gun mount on back of shell */}
-      <mesh position={[0.5, 0.6, -0.1]} rotation={[0, 0, 0.3]}>
-        <boxGeometry args={[0.4, 0.06, 0.08]} />
-        <meshStandardMaterial color="#5a4a3a" roughness={0.8} />
+      <mesh position={[-0.1, 0.35, -0.25]} rotation={[0.5, -0.2, 0]}>
+        <torusGeometry args={[0.45, 0.02, 8, 24]} />
+        <meshStandardMaterial color="#a67c4a" roughness={0.5} />
       </mesh>
       
-      {/* Machine gun - mounted on shell, pointing forward */}
-      <group position={[0.6, 0.65, 0.3]} rotation={[0, 0, 0]}>
-        {/* Main barrel - pointing forward (Z direction) */}
+      {/* Snail body - soft, slug-like */}
+      <mesh position={[0, 0.12, 0.35]}>
+        <capsuleGeometry args={[0.18, 0.5, 12, 16]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} metalness={0} />
+      </mesh>
+      
+      {/* Body texture bumps */}
+      <mesh position={[0.08, 0.15, 0.25]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color="#c9b898" roughness={0.8} />
+      </mesh>
+      <mesh position={[-0.08, 0.14, 0.3]}>
+        <sphereGeometry args={[0.04, 8, 8]} />
+        <meshStandardMaterial color="#c9b898" roughness={0.8} />
+      </mesh>
+      
+      {/* Head */}
+      <mesh position={[0, 0.18, 0.6]}>
+        <sphereGeometry args={[0.14, 12, 12]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+      
+      {/* Eye stalks - realistic tentacles */}
+      <mesh position={[-0.08, 0.28, 0.65]} rotation={[-0.4, 0, -0.15]}>
+        <capsuleGeometry args={[0.025, 0.22, 8, 10]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.08, 0.28, 0.65]} rotation={[-0.4, 0, 0.15]}>
+        <capsuleGeometry args={[0.025, 0.22, 8, 10]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+      
+      {/* Eyes on stalks */}
+      <mesh position={[-0.1, 0.42, 0.72]}>
+        <sphereGeometry args={[0.04, 10, 10]} />
+        <meshStandardMaterial color="#2a2a2a" />
+      </mesh>
+      <mesh position={[0.1, 0.42, 0.72]}>
+        <sphereGeometry args={[0.04, 10, 10]} />
+        <meshStandardMaterial color="#2a2a2a" />
+      </mesh>
+      
+      {/* Lower tentacles (feelers) */}
+      <mesh position={[-0.05, 0.12, 0.7]} rotation={[-0.2, 0, -0.1]}>
+        <capsuleGeometry args={[0.015, 0.1, 6, 8]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.05, 0.12, 0.7]} rotation={[-0.2, 0, 0.1]}>
+        <capsuleGeometry args={[0.015, 0.1, 6, 8]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+      
+      {/* Foot/base of snail */}
+      <mesh position={[0, 0.02, 0.2]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[0.25, 0.04, 0.8]} />
+        <meshStandardMaterial color="#c9b898" roughness={0.8} />
+      </mesh>
+      
+      {/* Gun mount on shell */}
+      <mesh position={[0.45, 0.55, -0.1]} rotation={[0, 0, 0.3]}>
+        <boxGeometry args={[0.35, 0.05, 0.06]} />
+        <meshStandardMaterial color="#4a3a2a" roughness={0.8} />
+      </mesh>
+      
+      {/* Machine gun */}
+      <group position={[0.55, 0.6, 0.25]} rotation={[0, 0, 0]}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.08, 0.1, 0.8, 12]} />
+          <cylinderGeometry args={[0.06, 0.08, 0.7, 12]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
         </mesh>
-        {/* Barrel ridges */}
-        {[0.1, 0.25, 0.4].map((z, i) => (
+        {[0.08, 0.2, 0.32].map((z, i) => (
           <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.09, 0.015, 8, 16]} />
+            <torusGeometry args={[0.07, 0.012, 8, 16]} />
             <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
           </mesh>
         ))}
-        {/* Muzzle */}
-        <mesh position={[0, 0, 0.45]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.11, 0.08, 0.12, 12]} />
+        <mesh position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.09, 0.06, 0.1, 12]} />
           <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
         </mesh>
-        {/* Body/receiver */}
-        <mesh position={[0, 0.05, -0.15]}>
-          <boxGeometry args={[0.14, 0.18, 0.3]} />
+        <mesh position={[0, 0.04, -0.12]}>
+          <boxGeometry args={[0.12, 0.15, 0.25]} />
           <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
         </mesh>
-        {/* Magazine */}
-        <mesh position={[0, -0.1, -0.15]}>
-          <boxGeometry args={[0.1, 0.2, 0.08]} />
+        <mesh position={[0, -0.08, -0.12]}>
+          <boxGeometry args={[0.08, 0.16, 0.06]} />
           <meshStandardMaterial color="#4a4a4a" metalness={0.7} roughness={0.3} />
         </mesh>
       </group>
@@ -150,99 +196,244 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
   );
 }
 
-// Bug component
+// Realistic bug component - crawls on ground
 function Bug({ bug }: { bug: Bug }) {
   const config = BUG_CONFIGS[bug.type];
   const s = bug.scale * config.bodyScale;
   const meshRef = useRef<THREE.Group>(null);
+  const legPhase = useRef(Math.random() * Math.PI * 2);
   
-  useFrame((_, delta) => {
+  useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 2;
+      // Face direction of movement
+      const dx = bug.velocity[0];
+      const dz = bug.velocity[1];
+      if (dx !== 0 || dz !== 0) {
+        meshRef.current.rotation.y = Math.atan2(dx, dz);
+      }
+      // Crawling leg animation
+      legPhase.current += 0.15;
     }
   });
   
+  const legWiggle = Math.sin(legPhase.current) * 0.3;
+  
   return (
-    <group position={bug.position} ref={meshRef} scale={[s, s, s]}>
+    <group position={[bug.position[0], 0.08, bug.position[2]]} ref={meshRef} scale={[s, s, s]}>
       {bug.type === 'beetle' && (
         <>
-          <mesh>
-            <dodecahedronGeometry args={[0.4, 0]} />
-            <meshStandardMaterial color={config.color} metalness={0.3} roughness={0.7} />
+          {/* Body - oval shaped */}
+          <mesh position={[0, 0.12, 0]} rotation={[0, 0, 0]}>
+            <sphereGeometry args={[0.3, 16, 12]} />
+            <meshStandardMaterial color="#1a1206" roughness={0.3} metalness={0.4} />
           </mesh>
-          <mesh position={[0.35, 0, 0.2]} rotation={[0, 0.3, 0]}>
-            <coneGeometry args={[0.1, 0.3, 4]} />
-            <meshStandardMaterial color="#1a0000" />
+          {/* Shell/elytra */}
+          <mesh position={[0, 0.18, -0.05]} scale={[1, 0.6, 1.2]}>
+            <sphereGeometry args={[0.28, 16, 12]} />
+            <meshStandardMaterial color="#2a1f10" roughness={0.2} metalness={0.5} />
           </mesh>
-          <mesh position={[0.35, 0, -0.2]} rotation={[0, -0.3, 0]}>
-            <coneGeometry args={[0.1, 0.3, 4]} />
-            <meshStandardMaterial color="#1a0000" />
+          {/* Head */}
+          <mesh position={[0, 0.1, 0.3]}>
+            <sphereGeometry args={[0.12, 12, 10]} />
+            <meshStandardMaterial color="#1a1206" roughness={0.4} />
           </mesh>
+          {/* Mandibles */}
+          <mesh position={[-0.06, 0.08, 0.4]} rotation={[0, 0.4, 0]}>
+            <coneGeometry args={[0.03, 0.1, 6]} />
+            <meshStandardMaterial color="#0a0a00" />
+          </mesh>
+          <mesh position={[0.06, 0.08, 0.4]} rotation={[0, -0.4, 0]}>
+            <coneGeometry args={[0.03, 0.1, 6]} />
+            <meshStandardMaterial color="#0a0a00" />
+          </mesh>
+          {/* Antennae */}
+          <mesh position={[-0.05, 0.15, 0.35]} rotation={[-0.5, -0.3, 0]}>
+            <capsuleGeometry args={[0.01, 0.15, 4, 6]} />
+            <meshStandardMaterial color="#1a1206" />
+          </mesh>
+          <mesh position={[0.05, 0.15, 0.35]} rotation={[-0.5, 0.3, 0]}>
+            <capsuleGeometry args={[0.01, 0.15, 4, 6]} />
+            <meshStandardMaterial color="#1a1206" />
+          </mesh>
+          {/* Legs - 6 legs with crawling animation */}
+          {[-1, 1].map((side) => (
+            [0.15, 0, -0.15].map((zOff, i) => (
+              <mesh key={`leg-${side}-${i}`} position={[side * 0.2, 0.05, zOff]} rotation={[legWiggle * (i % 2 === 0 ? 1 : -1), 0, side * 0.8]}>
+                <capsuleGeometry args={[0.02, 0.2, 4, 6]} />
+                <meshStandardMaterial color="#1a1206" />
+              </mesh>
+            ))
+          ))}
         </>
       )}
       
       {bug.type === 'centipede' && (
         <>
-          {[0, 0.25, 0.5, -0.25, -0.5].map((x, i) => (
-            <mesh key={i} position={[x, 0, 0]}>
-              <sphereGeometry args={[0.2, 8, 8]} />
-              <meshStandardMaterial color={config.color} />
-            </mesh>
+          {/* Segmented body */}
+          {[0, 0.18, 0.36, -0.18, -0.36, -0.54].map((z, i) => (
+            <group key={i}>
+              <mesh position={[0, 0.08, z]}>
+                <sphereGeometry args={[0.12, 10, 8]} />
+                <meshStandardMaterial color={i === 0 ? "#3a1515" : "#2a0a0a"} roughness={0.5} />
+              </mesh>
+              {/* Legs per segment */}
+              <mesh position={[-0.12, 0.03, z]} rotation={[legWiggle * (i % 2 === 0 ? 1 : -1), 0, -0.6]}>
+                <capsuleGeometry args={[0.015, 0.12, 4, 6]} />
+                <meshStandardMaterial color="#2a0a0a" />
+              </mesh>
+              <mesh position={[0.12, 0.03, z]} rotation={[legWiggle * (i % 2 === 0 ? -1 : 1), 0, 0.6]}>
+                <capsuleGeometry args={[0.015, 0.12, 4, 6]} />
+                <meshStandardMaterial color="#2a0a0a" />
+              </mesh>
+            </group>
           ))}
+          {/* Antennae */}
+          <mesh position={[-0.05, 0.1, 0.12]} rotation={[-0.4, -0.3, 0]}>
+            <capsuleGeometry args={[0.01, 0.15, 4, 6]} />
+            <meshStandardMaterial color="#3a1515" />
+          </mesh>
+          <mesh position={[0.05, 0.1, 0.12]} rotation={[-0.4, 0.3, 0]}>
+            <capsuleGeometry args={[0.01, 0.15, 4, 6]} />
+            <meshStandardMaterial color="#3a1515" />
+          </mesh>
         </>
       )}
       
       {bug.type === 'spider' && (
         <>
-          <mesh>
-            <sphereGeometry args={[0.25, 12, 12]} />
-            <meshStandardMaterial color={config.color} />
+          {/* Abdomen */}
+          <mesh position={[0, 0.15, -0.15]} scale={[1, 0.8, 1.3]}>
+            <sphereGeometry args={[0.2, 12, 10]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.6} />
           </mesh>
-          <mesh position={[0.2, 0.05, 0]}>
-            <sphereGeometry args={[0.15, 10, 10]} />
-            <meshStandardMaterial color={config.color} />
+          {/* Cephalothorax */}
+          <mesh position={[0, 0.12, 0.1]}>
+            <sphereGeometry args={[0.12, 10, 8]} />
+            <meshStandardMaterial color="#2a2a2a" roughness={0.5} />
+          </mesh>
+          {/* 8 legs */}
+          {[-1, 1].map((side) => (
+            [0.12, 0.04, -0.04, -0.12].map((zOff, i) => (
+              <group key={`leg-${side}-${i}`}>
+                <mesh position={[side * 0.1, 0.1, zOff]} rotation={[legWiggle * (i % 2 === 0 ? 1 : -1) * 0.5, 0, side * (0.5 + i * 0.15)]}>
+                  <capsuleGeometry args={[0.015, 0.25, 4, 6]} />
+                  <meshStandardMaterial color="#1a1a1a" />
+                </mesh>
+              </group>
+            ))
+          ))}
+          {/* Fangs */}
+          <mesh position={[-0.03, 0.08, 0.2]} rotation={[0.3, 0, 0]}>
+            <coneGeometry args={[0.015, 0.06, 6]} />
+            <meshStandardMaterial color="#3a0000" />
+          </mesh>
+          <mesh position={[0.03, 0.08, 0.2]} rotation={[0.3, 0, 0]}>
+            <coneGeometry args={[0.015, 0.06, 6]} />
+            <meshStandardMaterial color="#3a0000" />
           </mesh>
         </>
       )}
       
       {bug.type === 'scorpion' && (
         <>
-          <mesh>
-            <boxGeometry args={[0.45, 0.15, 0.25]} />
-            <meshStandardMaterial color={config.color} />
+          {/* Body */}
+          <mesh position={[0, 0.08, 0]} scale={[1, 0.5, 1.5]}>
+            <boxGeometry args={[0.25, 0.15, 0.35]} />
+            <meshStandardMaterial color="#3a2810" roughness={0.6} />
           </mesh>
-          <mesh position={[-0.5, 0.4, 0]} rotation={[0, 0, -0.5]}>
-            <coneGeometry args={[0.05, 0.2, 6]} />
-            <meshStandardMaterial color="#ff3300" emissive="#ff0000" emissiveIntensity={0.5} />
+          {/* Tail segments */}
+          {[0.25, 0.4, 0.52, 0.62].map((z, i) => (
+            <mesh key={i} position={[0, 0.1 + i * 0.08, -z]} rotation={[-0.3 * i, 0, 0]}>
+              <sphereGeometry args={[0.06 - i * 0.01, 8, 6]} />
+              <meshStandardMaterial color="#3a2810" roughness={0.5} />
+            </mesh>
+          ))}
+          {/* Stinger */}
+          <mesh position={[0, 0.45, -0.7]} rotation={[0.5, 0, 0]}>
+            <coneGeometry args={[0.03, 0.12, 6]} />
+            <meshStandardMaterial color="#2a0000" />
           </mesh>
+          {/* Pincers */}
+          <mesh position={[-0.15, 0.08, 0.25]}>
+            <sphereGeometry args={[0.08, 8, 6]} />
+            <meshStandardMaterial color="#3a2810" />
+          </mesh>
+          <mesh position={[0.15, 0.08, 0.25]}>
+            <sphereGeometry args={[0.08, 8, 6]} />
+            <meshStandardMaterial color="#3a2810" />
+          </mesh>
+          {/* Legs */}
+          {[-1, 1].map((side) => (
+            [0.1, 0, -0.1, -0.2].map((zOff, i) => (
+              <mesh key={`leg-${side}-${i}`} position={[side * 0.12, 0.04, zOff]} rotation={[legWiggle * (i % 2 === 0 ? 1 : -1), 0, side * 0.7]}>
+                <capsuleGeometry args={[0.015, 0.15, 4, 6]} />
+                <meshStandardMaterial color="#3a2810" />
+              </mesh>
+            ))
+          ))}
         </>
       )}
       
       {bug.type === 'wasp' && (
         <>
-          <mesh>
-            <capsuleGeometry args={[0.12, 0.3, 6, 12]} />
+          {/* Abdomen - striped */}
+          <mesh position={[0, 0.12, -0.12]} scale={[0.8, 0.8, 1.2]}>
+            <capsuleGeometry args={[0.1, 0.15, 8, 12]} />
+            <meshStandardMaterial color="#1a1a00" roughness={0.4} />
+          </mesh>
+          {/* Yellow stripes */}
+          <mesh position={[0, 0.12, -0.08]} scale={[0.82, 0.82, 0.15]}>
+            <sphereGeometry args={[0.1, 8, 6]} />
+            <meshStandardMaterial color="#ffd700" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.12, -0.18]} scale={[0.82, 0.82, 0.15]}>
+            <sphereGeometry args={[0.1, 8, 6]} />
+            <meshStandardMaterial color="#ffd700" roughness={0.4} />
+          </mesh>
+          {/* Thorax */}
+          <mesh position={[0, 0.12, 0.08]}>
+            <sphereGeometry args={[0.08, 10, 8]} />
+            <meshStandardMaterial color="#1a1a00" roughness={0.4} />
+          </mesh>
+          {/* Head */}
+          <mesh position={[0, 0.12, 0.18]}>
+            <sphereGeometry args={[0.06, 8, 6]} />
             <meshStandardMaterial color="#1a1a00" />
           </mesh>
-          <mesh position={[0, 0.2, 0.15]} rotation={[0.3, 0, 0]}>
-            <planeGeometry args={[0.2, 0.3]} />
-            <meshStandardMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
+          {/* Wings */}
+          <mesh position={[-0.08, 0.18, 0]} rotation={[0, 0, -0.3]}>
+            <planeGeometry args={[0.2, 0.08]} />
+            <meshStandardMaterial color="#ffffff" transparent opacity={0.3} side={THREE.DoubleSide} />
           </mesh>
-          <mesh position={[0, 0.2, -0.15]} rotation={[-0.3, 0, 0]}>
-            <planeGeometry args={[0.2, 0.3]} />
-            <meshStandardMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
+          <mesh position={[0.08, 0.18, 0]} rotation={[0, 0, 0.3]}>
+            <planeGeometry args={[0.2, 0.08]} />
+            <meshStandardMaterial color="#ffffff" transparent opacity={0.3} side={THREE.DoubleSide} />
           </mesh>
+          {/* Stinger */}
+          <mesh position={[0, 0.1, -0.28]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.015, 0.08, 6]} />
+            <meshStandardMaterial color="#1a0a00" />
+          </mesh>
+          {/* Legs */}
+          {[-1, 1].map((side) => (
+            [0.05, 0, -0.05].map((zOff, i) => (
+              <mesh key={`leg-${side}-${i}`} position={[side * 0.06, 0.05, zOff]} rotation={[0, 0, side * 0.5]}>
+                <capsuleGeometry args={[0.01, 0.1, 4, 6]} />
+                <meshStandardMaterial color="#1a1a00" />
+              </mesh>
+            ))
+          ))}
         </>
       )}
       
-      {/* Glowing eyes */}
-      <mesh position={[0.25, 0.1, 0.08]}>
-        <sphereGeometry args={[0.05, 6, 6]} />
-        <meshStandardMaterial color={config.glowColor} emissive={config.glowColor} emissiveIntensity={1} />
+      {/* Eyes */}
+      <mesh position={[0.04, 0.14, 0.25]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#200000" />
       </mesh>
-      <mesh position={[0.25, 0.1, -0.08]}>
-        <sphereGeometry args={[0.05, 6, 6]} />
-        <meshStandardMaterial color={config.glowColor} emissive={config.glowColor} emissiveIntensity={1} />
+      <mesh position={[-0.04, 0.14, 0.25]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#200000" />
       </mesh>
     </group>
   );
@@ -764,15 +955,21 @@ function GameScene({
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
       <ThirdPersonCamera targetPosition={gameState.snailPosition} targetRotation={gameState.snailRotation} />
       
-      {/* Forest lighting - brighter */}
-      <ambientLight intensity={0.6} color="#ffffff" />
-      <directionalLight position={[10, 30, 10]} intensity={1} color="#fffef0" castShadow />
-      <directionalLight position={[-10, 20, -10]} intensity={0.4} color="#e0f0e0" />
-      <pointLight position={[0, 15, 0]} intensity={0.3} color="#ffffff" distance={50} />
-      <hemisphereLight args={['#87ceeb', '#4a6a3a', 0.4]} />
+      {/* Bright daylight lighting */}
+      <ambientLight intensity={0.8} color="#ffffff" />
+      <directionalLight position={[15, 40, 15]} intensity={1.2} color="#fffef5" castShadow />
+      <directionalLight position={[-10, 25, -10]} intensity={0.5} color="#ffffff" />
+      <pointLight position={[0, 20, 0]} intensity={0.4} color="#fffef0" distance={60} />
+      <hemisphereLight args={['#87ceeb', '#7cba5c', 0.6]} />
       
-      {/* Light blue sky fog */}
-      <fog attach="fog" args={['#a8d4e6', 25, 70]} />
+      {/* Bright blue sky fog */}
+      <fog attach="fog" args={['#87ceeb', 30, 80]} />
+      
+      {/* Sky background */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[100, 32, 32]} />
+        <meshBasicMaterial color="#87ceeb" side={THREE.BackSide} />
+      </mesh>
       
       <ForestGround />
       
