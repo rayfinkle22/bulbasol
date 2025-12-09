@@ -223,7 +223,8 @@ export const SnailChatbot = () => {
                   <button
                     key={i}
                     onClick={() => sendMessage(qr.message)}
-                    className="px-3 py-1.5 text-xs bg-accent/20 hover:bg-accent/40 text-accent-foreground rounded-full border border-accent/30 transition-colors"
+                    className="px-3 py-1.5 bg-accent/20 hover:bg-accent/40 text-accent-foreground rounded-full border border-accent/30 transition-colors"
+                    style={{ fontSize: `${fontSize - 2}px` }}
                   >
                     {qr.label}
                   </button>
