@@ -24,13 +24,13 @@ export const HeroSection = () => {
     <section className="relative flex flex-col items-center justify-center px-4 py-8 sm:py-12 overflow-hidden">
       {/* Main content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto w-full">
-        {/* Hero banner */}
+        {/* Hero banner - matching game width */}
         <div className="mb-6 relative">
-          <div className="w-full max-w-md mx-auto rounded-2xl retro-border overflow-hidden">
+          <div className="w-full rounded-2xl retro-border overflow-hidden">
             <img 
               src={heroBanner} 
               alt="Franklin and Snail" 
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           </div>
         </div>
