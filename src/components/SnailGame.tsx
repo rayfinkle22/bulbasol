@@ -335,12 +335,12 @@ function PowerUpMesh({ powerUp }: { powerUp: PowerUp }) {
   );
 }
 
-// Solid green ground - no flickering
+// Solid light green ground - no flickering
 function Ground() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
       <planeGeometry args={[30, 30]} />
-      <meshBasicMaterial color="#4a9c3f" />
+      <meshBasicMaterial color="#c8e6c9" />
     </mesh>
   );
 }
