@@ -71,7 +71,7 @@ export function RealisticTree({ position, scale = 1, variant = 0 }: {
               <mesh position={[0, y, 0]} castShadow receiveShadow>
                 <coneGeometry args={[1.4 - i * 0.25, 1.2 - i * 0.15, 12]} />
                 <meshStandardMaterial 
-                  color={`hsl(120, ${45 + i * 5}%, ${18 + i * 3}%)`}
+                  color={`hsl(120, ${45 + i * 5}%, ${22 + i * 4}%)`}
                   roughness={0.85}
                   metalness={0}
                 />
@@ -79,7 +79,7 @@ export function RealisticTree({ position, scale = 1, variant = 0 }: {
               {/* Branch detail */}
               <mesh position={[0, y - 0.1, 0]} castShadow>
                 <coneGeometry args={[1.35 - i * 0.25, 0.15, 12]} />
-                <meshStandardMaterial color="#1a3315" roughness={0.9} />
+                <meshStandardMaterial color="#1a4015" roughness={0.9} />
               </mesh>
             </group>
           ))}
@@ -93,7 +93,7 @@ export function RealisticTree({ position, scale = 1, variant = 0 }: {
             {/* Main canopy sphere */}
             <mesh castShadow receiveShadow>
               <icosahedronGeometry args={[1.8, 2]} />
-              <meshStandardMaterial color="#2a5a22" roughness={0.9} />
+              <meshStandardMaterial color="#2a6a22" roughness={0.9} />
             </mesh>
             {/* Canopy detail clusters */}
             {[0, 1.2, 2.4, 3.6, 4.8, 6].map((angle, i) => (
@@ -108,7 +108,7 @@ export function RealisticTree({ position, scale = 1, variant = 0 }: {
               >
                 <icosahedronGeometry args={[0.9 + seededRandom(i + variant) * 0.3, 1]} />
                 <meshStandardMaterial 
-                  color={`hsl(115, ${50 + i * 3}%, ${22 + i * 2}%)`} 
+                  color={`hsl(115, ${55 + i * 3}%, ${26 + i * 2}%)`} 
                   roughness={0.85} 
                 />
               </mesh>
@@ -146,15 +146,15 @@ export function RealisticTree({ position, scale = 1, variant = 0 }: {
           <group position={[0, 3.2, 0]}>
             <mesh castShadow receiveShadow>
               <icosahedronGeometry args={[1.4, 1]} />
-              <meshStandardMaterial color="#4a8a3a" roughness={0.85} />
+              <meshStandardMaterial color="#4a9a3a" roughness={0.85} />
             </mesh>
             <mesh position={[0.6, 0.3, 0.4]} castShadow>
               <icosahedronGeometry args={[0.7, 1]} />
-              <meshStandardMaterial color="#5a9a4a" roughness={0.8} />
+              <meshStandardMaterial color="#5aaa4a" roughness={0.8} />
             </mesh>
             <mesh position={[-0.5, -0.2, 0.5]} castShadow>
               <icosahedronGeometry args={[0.6, 1]} />
-              <meshStandardMaterial color="#3a7a2a" roughness={0.85} />
+              <meshStandardMaterial color="#3a8a2a" roughness={0.85} />
             </mesh>
           </group>
         </>
@@ -180,7 +180,7 @@ export function RealisticRock({ position, scale = 1, variant = 0 }: {
       >
         <dodecahedronGeometry args={[scale * 0.5, 1]} />
         <meshStandardMaterial 
-          color={isMossy ? "#5a6a5a" : "#6a6865"} 
+          color={isMossy ? "#6a7a6a" : "#7a7875"} 
           roughness={0.95}
           metalness={0}
         />
@@ -188,7 +188,75 @@ export function RealisticRock({ position, scale = 1, variant = 0 }: {
       {isMossy && (
         <mesh position={[0, scale * 0.25, 0]} scale={[1.05, 0.3, 1.05]}>
           <sphereGeometry args={[scale * 0.35, 8, 6]} />
-          <meshStandardMaterial color="#3a5a30" roughness={1} transparent opacity={0.8} />
+          <meshStandardMaterial color="#4a7a40" roughness={1} transparent opacity={0.8} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Large boulder for terrain variety
+export function Boulder({ position, scale = 1, variant = 0 }: {
+  position: [number, number, number];
+  scale?: number;
+  variant?: number;
+}) {
+  return (
+    <group position={position}>
+      {/* Main boulder */}
+      <mesh 
+        rotation={[seededRandom(variant) * 0.3, seededRandom(variant + 1) * Math.PI, 0]}
+        castShadow
+        receiveShadow
+      >
+        <dodecahedronGeometry args={[scale, 2]} />
+        <meshStandardMaterial 
+          color="#8a8580" 
+          roughness={0.9}
+          metalness={0.1}
+        />
+      </mesh>
+      {/* Smaller attached rocks */}
+      <mesh position={[scale * 0.6, -scale * 0.2, scale * 0.3]} castShadow>
+        <dodecahedronGeometry args={[scale * 0.4, 1]} />
+        <meshStandardMaterial color="#7a7570" roughness={0.95} />
+      </mesh>
+      <mesh position={[-scale * 0.5, -scale * 0.3, -scale * 0.2]} castShadow>
+        <dodecahedronGeometry args={[scale * 0.35, 1]} />
+        <meshStandardMaterial color="#9a9590" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+// Hill/mound for terrain elevation
+export function Hill({ position, scale = 1, variant = 0 }: {
+  position: [number, number, number];
+  scale?: number;
+  variant?: number;
+}) {
+  const stretch = 1 + seededRandom(variant) * 0.5;
+  
+  return (
+    <group position={position}>
+      {/* Main hill body */}
+      <mesh scale={[scale * stretch, scale * 0.4, scale]} receiveShadow castShadow>
+        <sphereGeometry args={[1, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#5a8a45" roughness={0.9} />
+      </mesh>
+      {/* Grass texture overlay */}
+      <mesh 
+        position={[0, scale * 0.01, 0]} 
+        scale={[scale * stretch * 0.95, scale * 0.42, scale * 0.95]}
+      >
+        <sphereGeometry args={[1, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#6a9a55" roughness={0.95} />
+      </mesh>
+      {/* Rocky patches */}
+      {variant % 2 === 0 && (
+        <mesh position={[scale * 0.3, scale * 0.15, scale * 0.2]} castShadow>
+          <dodecahedronGeometry args={[scale * 0.15, 1]} />
+          <meshStandardMaterial color="#8a8580" roughness={0.95} />
         </mesh>
       )}
     </group>
@@ -215,7 +283,7 @@ export function GrassClump({ position, seed }: { position: [number, number, numb
           >
             <planeGeometry args={[0.04, height]} />
             <meshStandardMaterial 
-              color={`hsl(95, ${55 + seededRandom(seed + i) * 20}%, ${28 + seededRandom(seed + i + 50) * 15}%)`}
+              color={`hsl(95, ${55 + seededRandom(seed + i) * 20}%, ${32 + seededRandom(seed + i + 50) * 18}%)`}
               side={THREE.DoubleSide}
               roughness={0.9}
             />
@@ -237,13 +305,13 @@ export function Fern({ position, scale = 1 }: { position: [number, number, numbe
             {/* Fern frond */}
             <mesh position={[0, 0.2, 0.3]}>
               <planeGeometry args={[0.15, 0.5]} />
-              <meshStandardMaterial color="#3a6a2a" side={THREE.DoubleSide} roughness={0.85} />
+              <meshStandardMaterial color="#4a8a3a" side={THREE.DoubleSide} roughness={0.85} />
             </mesh>
             {/* Leaflets */}
             {[0.1, 0.2, 0.3, 0.4].map((y, j) => (
               <mesh key={j} position={[(j % 2 === 0 ? 0.06 : -0.06), y, 0.3]} rotation={[0, 0, (j % 2 === 0 ? 0.4 : -0.4)]}>
                 <planeGeometry args={[0.08, 0.06]} />
-                <meshStandardMaterial color="#4a7a3a" side={THREE.DoubleSide} roughness={0.85} />
+                <meshStandardMaterial color="#5a9a4a" side={THREE.DoubleSide} roughness={0.85} />
               </mesh>
             ))}
           </group>
@@ -263,13 +331,13 @@ export function FallenLog({ position, rotation = 0, length = 3 }: {
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
         <cylinderGeometry args={[0.2, 0.25, length, 12]} />
-        <meshStandardMaterial color="#3a2815" roughness={0.95} />
+        <meshStandardMaterial color="#4a3820" roughness={0.95} />
       </mesh>
       {/* Moss patches */}
       {[0, 0.5, 1].map((offset, i) => (
         <mesh key={i} position={[offset - 0.5, 0.18, 0]} scale={[0.3, 0.1, 0.2]}>
           <sphereGeometry args={[0.5, 6, 4]} />
-          <meshStandardMaterial color="#4a6a3a" roughness={1} />
+          <meshStandardMaterial color="#5a8a4a" roughness={1} />
         </mesh>
       ))}
       {/* Mushrooms on log */}
@@ -285,14 +353,51 @@ export function FallenLog({ position, rotation = 0, length = 3 }: {
   );
 }
 
+// Wildflower patch
+export function FlowerPatch({ position, variant = 0 }: {
+  position: [number, number, number];
+  variant?: number;
+}) {
+  const colors = ['#ff6b6b', '#ffd93d', '#6bcbff', '#ff9ff3', '#ffffff'];
+  const flowerColor = colors[variant % colors.length];
+  
+  return (
+    <group position={position}>
+      {[0, 1, 2, 3, 4].map((i) => {
+        const angle = (i / 5) * Math.PI * 2 + seededRandom(variant + i) * 0.5;
+        const dist = 0.1 + seededRandom(variant + i + 10) * 0.15;
+        const height = 0.15 + seededRandom(variant + i + 20) * 0.1;
+        
+        return (
+          <group key={i} position={[Math.sin(angle) * dist, 0, Math.cos(angle) * dist]}>
+            {/* Stem */}
+            <mesh position={[0, height / 2, 0]}>
+              <cylinderGeometry args={[0.008, 0.01, height, 6]} />
+              <meshStandardMaterial color="#3a6a2a" roughness={0.9} />
+            </mesh>
+            {/* Flower head */}
+            <mesh position={[0, height + 0.02, 0]}>
+              <sphereGeometry args={[0.03, 8, 6]} />
+              <meshStandardMaterial color={flowerColor} roughness={0.6} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 // Main realistic forest ground component
 export function RealisticForestGround() {
   const forestElements = useMemo(() => {
     const trees: Array<{ x: number; z: number; scale: number; variant: number; key: number }> = [];
     const rocks: Array<{ x: number; z: number; scale: number; variant: number; key: number }> = [];
+    const boulders: Array<{ x: number; z: number; scale: number; variant: number; key: number }> = [];
+    const hills: Array<{ x: number; z: number; scale: number; variant: number; key: number }> = [];
     const grass: Array<{ x: number; z: number; seed: number; key: number }> = [];
     const ferns: Array<{ x: number; z: number; scale: number; key: number }> = [];
     const logs: Array<{ x: number; z: number; rotation: number; length: number; key: number }> = [];
+    const flowers: Array<{ x: number; z: number; variant: number; key: number }> = [];
     
     // Generate dense tree ring around play area
     for (let i = 0; i < 80; i++) {
@@ -324,8 +429,38 @@ export function RealisticForestGround() {
       }
     }
     
-    // Rocks
-    for (let i = 0; i < 35; i++) {
+    // Hills scattered around the play area
+    for (let i = 0; i < 12; i++) {
+      const seed = i * 7.89;
+      const angle = seededRandom(seed) * Math.PI * 2;
+      const dist = 8 + seededRandom(seed + 1) * 15;
+      hills.push({
+        x: Math.sin(angle) * dist,
+        z: Math.cos(angle) * dist,
+        scale: 2 + seededRandom(seed + 2) * 3,
+        variant: i,
+        key: i
+      });
+    }
+    
+    // Large boulders
+    for (let i = 0; i < 15; i++) {
+      const seed = i * 5.67;
+      const x = (seededRandom(seed) - 0.5) * 35;
+      const z = (seededRandom(seed + 1) - 0.5) * 35;
+      const dist = Math.sqrt(x * x + z * z);
+      if (dist > 6) {
+        boulders.push({
+          x, z,
+          scale: 0.8 + seededRandom(seed + 2) * 1.2,
+          variant: i,
+          key: i
+        });
+      }
+    }
+    
+    // Small rocks
+    for (let i = 0; i < 45; i++) {
       const seed = i * 3.14159;
       const x = (seededRandom(seed) - 0.5) * 40;
       const z = (seededRandom(seed + 1) - 0.5) * 40;
@@ -338,7 +473,7 @@ export function RealisticForestGround() {
     }
     
     // Dense grass
-    for (let i = 0; i < 350; i++) {
+    for (let i = 0; i < 400; i++) {
       const seed = i * 1.414;
       grass.push({
         x: (seededRandom(seed) - 0.5) * 50,
@@ -349,7 +484,7 @@ export function RealisticForestGround() {
     }
     
     // Ferns scattered
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 50; i++) {
       const seed = i * 2.236;
       ferns.push({
         x: (seededRandom(seed) - 0.5) * 45,
@@ -360,11 +495,11 @@ export function RealisticForestGround() {
     }
     
     // Fallen logs
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 10; i++) {
       const seed = i * 4.567;
       const x = (seededRandom(seed) - 0.5) * 35;
       const z = (seededRandom(seed + 1) - 0.5) * 35;
-      if (Math.sqrt(x * x + z * z) > 10) {
+      if (Math.sqrt(x * x + z * z) > 8) {
         logs.push({
           x, z,
           rotation: seededRandom(seed + 2) * Math.PI,
@@ -374,7 +509,19 @@ export function RealisticForestGround() {
       }
     }
     
-    return { trees, rocks, grass, ferns, logs };
+    // Wildflowers in sunny patches
+    for (let i = 0; i < 30; i++) {
+      const seed = i * 3.33;
+      const x = (seededRandom(seed) - 0.5) * 30;
+      const z = (seededRandom(seed + 1) - 0.5) * 30;
+      flowers.push({
+        x, z,
+        variant: i,
+        key: i
+      });
+    }
+    
+    return { trees, rocks, boulders, hills, grass, ferns, logs, flowers };
   }, []);
 
   return (
@@ -383,35 +530,45 @@ export function RealisticForestGround() {
       {/* Base dark soil */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#2a2218" roughness={1} />
+        <meshStandardMaterial color="#3a3528" roughness={1} />
       </mesh>
       
       {/* Forest floor - leaf litter texture simulation */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <circleGeometry args={[45, 64]} />
         <meshStandardMaterial 
-          color="#3a3525" 
+          color="#4a4535" 
           roughness={0.95}
         />
       </mesh>
       
-      {/* Grass meadow area */}
+      {/* Grass meadow area - brighter for sunny day */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
-        <circleGeometry args={[18, 48]} />
-        <meshStandardMaterial color="#4a6a35" roughness={0.9} />
+        <circleGeometry args={[20, 48]} />
+        <meshStandardMaterial color="#5a8a45" roughness={0.9} />
       </mesh>
       
-      {/* Central clearing with worn grass */}
+      {/* Central clearing with lush grass */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-        <circleGeometry args={[10, 32]} />
-        <meshStandardMaterial color="#5a7a42" roughness={0.85} />
+        <circleGeometry args={[12, 32]} />
+        <meshStandardMaterial color="#6a9a52" roughness={0.85} />
       </mesh>
       
       {/* Dirt path texture */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]} receiveShadow>
         <ringGeometry args={[3, 6, 32]} />
-        <meshStandardMaterial color="#5a4a35" roughness={0.95} />
+        <meshStandardMaterial color="#6a5a45" roughness={0.95} />
       </mesh>
+      
+      {/* Hills */}
+      {forestElements.hills.map((hill) => (
+        <Hill 
+          key={`hill-${hill.key}`} 
+          position={[hill.x, 0, hill.z]} 
+          scale={hill.scale}
+          variant={hill.variant}
+        />
+      ))}
       
       {/* Trees */}
       {forestElements.trees.map((tree) => (
@@ -420,6 +577,16 @@ export function RealisticForestGround() {
           position={[tree.x, 0, tree.z]} 
           scale={tree.scale}
           variant={tree.variant}
+        />
+      ))}
+      
+      {/* Boulders */}
+      {forestElements.boulders.map((boulder) => (
+        <Boulder 
+          key={`boulder-${boulder.key}`} 
+          position={[boulder.x, boulder.scale * 0.3, boulder.z]} 
+          scale={boulder.scale}
+          variant={boulder.variant}
         />
       ))}
       
@@ -450,6 +617,15 @@ export function RealisticForestGround() {
           position={[log.x, 0.15, log.z]} 
           rotation={log.rotation}
           length={log.length}
+        />
+      ))}
+      
+      {/* Wildflowers */}
+      {forestElements.flowers.map((flower) => (
+        <FlowerPatch 
+          key={`flower-${flower.key}`} 
+          position={[flower.x, 0, flower.z]} 
+          variant={flower.variant}
         />
       ))}
     </>

@@ -4,7 +4,6 @@ import * as THREE from 'three';
 
 export function RealisticLighting() {
   const sunRef = useRef<THREE.DirectionalLight>(null);
-  const { scene } = useThree();
   
   useFrame(() => {
     if (sunRef.current) {
@@ -24,48 +23,48 @@ export function RealisticLighting() {
 
   return (
     <>
-      {/* Main sunlight - warm golden hour */}
+      {/* Bright midday sun - strong and warm */}
       <directionalLight
         ref={sunRef}
-        position={[20, 30, 15]}
-        intensity={1.8}
-        color="#fff5e0"
+        position={[25, 50, 20]}
+        intensity={2.5}
+        color="#fffef5"
         castShadow
       />
       
-      {/* Sky ambient - blue fill */}
-      <ambientLight intensity={0.35} color="#8899bb" />
+      {/* Sky ambient - bright blue daylight fill */}
+      <ambientLight intensity={0.6} color="#a8c8ff" />
       
-      {/* Hemisphere light for natural sky/ground color */}
+      {/* Hemisphere light for bright sunny sky/ground */}
       <hemisphereLight
-        args={['#87ceeb', '#3a5a25', 0.6]}
+        args={['#87ceeb', '#90b060', 0.8]}
         position={[0, 50, 0]}
       />
       
-      {/* Rim light from behind - atmospheric */}
+      {/* Secondary sun for rim highlights */}
       <directionalLight
-        position={[-15, 10, -20]}
-        intensity={0.4}
-        color="#ffd4a0"
+        position={[-20, 40, -15]}
+        intensity={0.8}
+        color="#fff8e0"
       />
       
-      {/* Fill light to soften shadows */}
+      {/* Bright fill light */}
       <directionalLight
-        position={[-10, 5, 10]}
-        intensity={0.25}
-        color="#99aacc"
+        position={[-15, 20, 25]}
+        intensity={0.5}
+        color="#e0f0ff"
       />
       
-      {/* Ground bounce light */}
+      {/* Ground bounce - green tint from grass */}
       <pointLight
-        position={[0, 0.5, 0]}
-        intensity={0.15}
-        color="#5a7a4a"
-        distance={20}
+        position={[0, 1, 0]}
+        intensity={0.3}
+        color="#80a060"
+        distance={30}
       />
       
-      {/* Fog for depth and atmosphere */}
-      <fog attach="fog" args={['#c5d8c5', 25, 60]} />
+      {/* Light fog for depth - very subtle for sunny day */}
+      <fog attach="fog" args={['#c8e0f0', 40, 100]} />
     </>
   );
 }
@@ -73,41 +72,71 @@ export function RealisticLighting() {
 export function ForestSkybox() {
   return (
     <>
-      {/* Sky dome */}
+      {/* Bright blue sky dome */}
       <mesh position={[0, 0, 0]} scale={[-1, 1, 1]}>
-        <sphereGeometry args={[80, 32, 32]} />
+        <sphereGeometry args={[90, 64, 64]} />
         <meshBasicMaterial 
-          color="#7ab5d4" 
+          color="#4a90d9" 
           side={THREE.BackSide}
         />
       </mesh>
       
-      {/* Clouds layer */}
-      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-        const angle = (i / 8) * Math.PI * 2;
-        const radius = 50 + Math.sin(i * 2.5) * 10;
+      {/* Gradient overlay - lighter at horizon */}
+      <mesh position={[0, -20, 0]} scale={[-1, 1, 1]}>
+        <sphereGeometry args={[89, 32, 32]} />
+        <meshBasicMaterial 
+          color="#a8d4f5" 
+          side={THREE.BackSide}
+          transparent
+          opacity={0.6}
+        />
+      </mesh>
+      
+      {/* Fluffy white clouds */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => {
+        const angle = (i / 12) * Math.PI * 2;
+        const radius = 55 + Math.sin(i * 2.5) * 12;
+        const y = 40 + Math.sin(i * 1.7) * 10;
         return (
-          <mesh 
-            key={i}
-            position={[Math.sin(angle) * radius, 35 + Math.sin(i * 1.3) * 8, Math.cos(angle) * radius]}
-            scale={[12 + Math.sin(i) * 4, 2.5, 6 + Math.cos(i) * 2]}
-          >
-            <sphereGeometry args={[1, 8, 6]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.85} />
-          </mesh>
+          <group key={i} position={[Math.sin(angle) * radius, y, Math.cos(angle) * radius]}>
+            {/* Main cloud body */}
+            <mesh scale={[14 + Math.sin(i) * 5, 3.5, 8 + Math.cos(i) * 3]}>
+              <sphereGeometry args={[1, 12, 8]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            {/* Cloud puffs */}
+            <mesh position={[6, 1, 2]} scale={[6, 3, 5]}>
+              <sphereGeometry args={[1, 10, 8]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            <mesh position={[-5, 0.5, -1]} scale={[5, 2.5, 4]}>
+              <sphereGeometry args={[1, 10, 8]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            <mesh position={[3, 1.5, -3]} scale={[4, 2, 3]}>
+              <sphereGeometry args={[1, 8, 6]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+          </group>
         );
       })}
       
-      {/* Sun disc */}
-      <mesh position={[20, 30, 15]}>
-        <circleGeometry args={[3, 32]} />
-        <meshBasicMaterial color="#fffae0" />
+      {/* Bright sun disc */}
+      <mesh position={[25, 50, 20]}>
+        <circleGeometry args={[5, 32]} />
+        <meshBasicMaterial color="#ffffd0" />
       </mesh>
       
       {/* Sun glow */}
-      <mesh position={[20, 30, 14.9]}>
-        <circleGeometry args={[6, 32]} />
-        <meshBasicMaterial color="#fff8d0" transparent opacity={0.3} />
+      <mesh position={[25, 50, 19.8]}>
+        <circleGeometry args={[12, 32]} />
+        <meshBasicMaterial color="#ffffc0" transparent opacity={0.25} />
+      </mesh>
+      
+      {/* Sun rays effect */}
+      <mesh position={[25, 50, 19.5]}>
+        <circleGeometry args={[20, 32]} />
+        <meshBasicMaterial color="#ffffe0" transparent opacity={0.1} />
       </mesh>
     </>
   );
