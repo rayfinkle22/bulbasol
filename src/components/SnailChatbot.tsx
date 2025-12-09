@@ -124,8 +124,8 @@ export const SnailChatbot = () => {
           <div className="bg-primary p-3 flex items-center gap-3">
             <img src={snailImage} alt="Snail" className="w-10 h-10 object-contain" />
             <div>
-              <h3 className="font-display text-primary-foreground font-bold">Snail Says</h3>
-              <p className="text-xs text-primary-foreground/70">Franklin's ride or die 🐢</p>
+              <h3 className="font-display text-primary-foreground font-bold">Snagent</h3>
+              <p className="text-xs text-primary-foreground/70">Your $SNAIL AI Agent 🐌</p>
             </div>
           </div>
 
