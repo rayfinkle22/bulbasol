@@ -668,6 +668,7 @@ export const SnailGame = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [playerName, setPlayerName] = useState('');
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -684,13 +685,6 @@ export const SnailGame = () => {
     if (leaderboard.length < 10) return true;
     return score > leaderboard[leaderboard.length - 1].score;
   };
-
-  const handleGameOver = useCallback(() => {
-    const finalScore = Math.floor(gameState.score);
-    if (isHighScore(finalScore) && finalScore > 0) {
-      setGameState(prev => ({ ...prev, status: 'entering_name' }));
-    }
-  }, [gameState.score, leaderboard]);
 
   const submitScore = () => {
     if (!playerName.trim()) return;
@@ -714,10 +708,12 @@ export const SnailGame = () => {
     }
     
     setPlayerName('');
+    setScoreSubmitted(true);
     setGameState(prev => ({ ...prev, status: 'gameover' }));
   };
 
   const startGame = useCallback(() => {
+    setScoreSubmitted(false);
     setGameState({
       status: 'playing',
       score: 0,
@@ -730,15 +726,15 @@ export const SnailGame = () => {
     });
   }, []);
 
-  // Check for high score when game ends
+  // Check for high score when game ends (only if score not already submitted)
   useEffect(() => {
-    if (gameState.status === 'gameover' && gameState.health === 0) {
+    if (gameState.status === 'gameover' && gameState.health === 0 && !scoreSubmitted) {
       const finalScore = Math.floor(gameState.score);
       if (finalScore > 0 && isHighScore(finalScore)) {
         setGameState(prev => ({ ...prev, status: 'entering_name' }));
       }
     }
-  }, [gameState.status, gameState.health, gameState.score]);
+  }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
   return (
     <section className="py-8 sm:py-12 px-4">
