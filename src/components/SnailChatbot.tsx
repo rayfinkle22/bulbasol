@@ -17,7 +17,7 @@ const QUICK_REPLIES = [
 ];
 
 export const SnailChatbot = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Auto-open on first visit
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Heyyy friend! 🐌 I'm Snagent, your $SNAIL AI buddy. I've been riding on Franklin's shell since day one - slow and steady, you know? What can I help you with today?" }
   ]);
