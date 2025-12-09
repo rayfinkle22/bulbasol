@@ -1460,39 +1460,99 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
-  // Fullscreen handling - CSS-based for iOS compatibility
-  const toggleFullscreen = useCallback(() => {
+  // Fullscreen handling - tries native API first, falls back to CSS
+  const toggleFullscreen = useCallback(async () => {
+    const elem = gameContainerRef.current as any;
+    const doc = document as any;
+    
     if (isFullscreen) {
       // Exit fullscreen
+      try {
+        if (doc.fullscreenElement) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitFullscreenElement) {
+          await doc.webkitExitFullscreen();
+        }
+        // Unlock orientation
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          try { (screen.orientation as any).unlock(); } catch {}
+        }
+      } catch {}
       setIsFullscreen(false);
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     } else {
       // Enter fullscreen
+      try {
+        // Try native fullscreen first
+        if (elem?.requestFullscreen) {
+          await elem.requestFullscreen();
+        } else if (elem?.webkitRequestFullscreen) {
+          await elem.webkitRequestFullscreen();
+        }
+        // Try to lock orientation to landscape
+        if (screen.orientation && 'lock' in screen.orientation) {
+          try { 
+            await (screen.orientation as any).lock('landscape'); 
+          } catch {}
+        }
+      } catch {}
       setIsFullscreen(true);
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
     }
   }, [isFullscreen]);
 
-  // Track orientation for CSS-based landscape rotation
+  // Track orientation for CSS-based landscape rotation (only when in fullscreen)
   useEffect(() => {
+    if (!isFullscreen) return;
+    
     const checkOrientation = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
     };
     
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
     
     return () => {
       window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
     };
-  }, []);
+  }, [isFullscreen]);
 
-  // Clean up body overflow on unmount
+  // Listen for native fullscreen exit (e.g., pressing Escape)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const doc = document as any;
+      const isNativeFullscreen = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
+      if (!isNativeFullscreen && isFullscreen) {
+        // User exited via browser controls, sync our state
+        setIsFullscreen(false);
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreen]);
+
+  // Clean up body styles on unmount
   useEffect(() => {
     return () => {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
   }, []);
 
@@ -1525,6 +1585,11 @@ export const SnailGame3rdPerson = () => {
           🎮 {gamesPlayed.toLocaleString()} games played worldwide!
         </p>
 
+        {/* Fullscreen backdrop */}
+        {isFullscreen && (
+          <div className="fixed inset-0 z-40 bg-black" />
+        )}
+
         {/* Game area - taller for 3rd person view */}
         <div 
           ref={gameContainerRef}
@@ -1543,12 +1608,14 @@ export const SnailGame3rdPerson = () => {
               height: '100vw',
               transform: 'translate(-50%, -50%) rotate(90deg)',
               transformOrigin: 'center center',
+              zIndex: 50,
             } : {
               position: 'fixed',
               top: 0,
               left: 0,
               width: '100vw',
               height: '100vh',
+              zIndex: 50,
             })
           } : { 
             aspectRatio: '16 / 9',
@@ -1556,13 +1623,17 @@ export const SnailGame3rdPerson = () => {
             maxHeight: '500px'
           }}
         >
-          {/* Fullscreen button - always visible in corner */}
+          {/* Fullscreen/Exit button - always visible in corner */}
           <button
             onClick={toggleFullscreen}
-            className="absolute top-2 right-2 z-50 p-2 bg-black/60 hover:bg-black/80 rounded-lg border border-white/30 text-white transition-colors"
+            className={`absolute z-50 p-2 rounded-lg border text-white transition-colors ${
+              isFullscreen 
+                ? 'top-3 right-3 bg-red-600/80 hover:bg-red-600 border-red-400' 
+                : 'top-2 right-2 bg-black/60 hover:bg-black/80 border-white/30'
+            }`}
             aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
-            {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-5 h-5" />}
           </button>
           <Canvas
             shadows
