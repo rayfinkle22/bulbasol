@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
-import { Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useGameSounds } from "@/hooks/useGameSounds";
 
 interface Bug {
@@ -1341,8 +1341,6 @@ export const SnailGame3rdPerson = () => {
   const joystickRef = useRef<HTMLDivElement>(null);
   const joystickStartPos = useRef<{ x: number; y: number } | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const sounds = useGameSounds();
   
@@ -1513,118 +1511,6 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
-  // Fullscreen handling - CSS-based immersive mode
-  const toggleFullscreen = useCallback(async () => {
-    const elem = gameContainerRef.current as any;
-    const doc = document as any;
-    
-    if (isFullscreen) {
-      // Exit fullscreen
-      try {
-        if (doc.fullscreenElement) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitFullscreenElement) {
-          await doc.webkitExitFullscreen();
-        }
-      } catch {}
-      
-      setIsFullscreen(false);
-      setIsPortrait(false);
-      
-      // Restore body styles
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.documentElement.style.overflow = '';
-    } else {
-      // Enter fullscreen - check if portrait mode
-      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
-      setIsPortrait(isCurrentlyPortrait);
-      setIsFullscreen(true);
-      
-      // Lock body to prevent scrolling
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = '0';
-      document.body.style.left = '0';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-      document.documentElement.style.overflow = 'hidden';
-      
-      // Try native fullscreen (works on Android/Desktop)
-      try {
-        if (elem?.requestFullscreen) {
-          await elem.requestFullscreen();
-        } else if (elem?.webkitRequestFullscreen) {
-          await elem.webkitRequestFullscreen();
-        }
-        // Try to lock orientation to landscape
-        if (screen.orientation && 'lock' in screen.orientation) {
-          try { 
-            await (screen.orientation as any).lock('landscape'); 
-          } catch {}
-        }
-      } catch {}
-      
-      // Scroll to top to minimize browser chrome on iOS
-      window.scrollTo(0, 0);
-    }
-  }, [isFullscreen]);
-
-  // Keep checking orientation while in fullscreen
-  useEffect(() => {
-    if (!isFullscreen) return;
-    
-    const checkOrientation = () => {
-      const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
-      setIsPortrait(isCurrentlyPortrait);
-    };
-    
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-    
-    return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
-    };
-  }, [isFullscreen]);
-
-  // Listen for native fullscreen exit (e.g., pressing Escape)
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const doc = document as any;
-      const isNativeFullscreen = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
-      if (!isNativeFullscreen && isFullscreen) {
-        // User exited via browser controls, sync our state
-        setIsFullscreen(false);
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.width = '';
-        document.body.style.height = '';
-      }
-    };
-    
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-    };
-  }, [isFullscreen]);
-
-  // Clean up body styles on unmount
-  useEffect(() => {
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-    };
-  }, []);
 
   return (
     <section className="py-8 sm:py-12 px-4">
@@ -1655,47 +1541,17 @@ export const SnailGame3rdPerson = () => {
           🎮 {gamesPlayed.toLocaleString()} games played worldwide!
         </p>
 
-        {/* Fullscreen backdrop */}
-        {isFullscreen && (
-          <div className="fixed inset-0 z-40 bg-black" />
-        )}
 
         {/* Game area - taller for 3rd person view */}
         <div 
           ref={gameContainerRef}
-          className={`relative overflow-hidden bg-black ${
-            isFullscreen 
-              ? 'fixed z-50' 
-              : 'w-full rounded-2xl retro-border'
-          }`}
-          style={isFullscreen ? {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            zIndex: 50,
-          } : { 
+          className="relative overflow-hidden bg-black w-full rounded-2xl retro-border"
+          style={{ 
             aspectRatio: '16 / 9',
             minHeight: '300px',
             maxHeight: '500px'
           }}
         >
-          {/* Rotate phone message - shown in portrait fullscreen mode */}
-          {isFullscreen && isPortrait && (
-            <div className="absolute inset-0 z-[60] bg-black flex flex-col items-center justify-center text-white text-center p-4">
-              <div className="text-6xl mb-4 animate-pulse">📱↔️</div>
-              <h3 className="font-display text-2xl mb-2">Rotate Your Phone</h3>
-              <p className="font-body text-muted-foreground mb-4">Turn your phone sideways for the best experience</p>
-              <Button
-                onClick={toggleFullscreen}
-                variant="outline"
-                className="font-display border-white/30 text-white hover:bg-white/10"
-              >
-                Exit Fullscreen
-              </Button>
-            </div>
-          )}
 
           {/* Mute/Unmute button */}
           <button
@@ -1704,28 +1560,12 @@ export const SnailGame3rdPerson = () => {
               setIsMuted(newMuted);
               sounds.setMuted(newMuted);
             }}
-            className={`absolute z-50 p-2 rounded-lg border text-white transition-colors ${
-              isFullscreen 
-                ? 'top-3 right-14 bg-black/60 hover:bg-black/80 border-white/30' 
-                : 'top-2 right-12 bg-black/60 hover:bg-black/80 border-white/30'
-            }`}
+            className="absolute z-50 p-2 rounded-lg border text-white transition-colors top-2 right-2 bg-black/60 hover:bg-black/80 border-white/30"
             aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
 
-          {/* Fullscreen/Exit button - always visible in corner */}
-          <button
-            onClick={toggleFullscreen}
-            className={`absolute z-50 p-2 rounded-lg border text-white transition-colors ${
-              isFullscreen 
-                ? 'top-3 right-3 bg-red-600/80 hover:bg-red-600 border-red-400' 
-                : 'top-2 right-2 bg-black/60 hover:bg-black/80 border-white/30'
-            }`}
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          >
-            {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-5 h-5" />}
-          </button>
           <Canvas
             shadows
             gl={{ 
