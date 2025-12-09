@@ -67,66 +67,58 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail using billboard sprite with properly attached gun
+// 3D Snail using sprite with gun on the side
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   const texture = useLoader(THREE.TextureLoader, snail3DImage);
   
   return (
     <group position={[position[0], 0, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Billboard sprite of the snail - always faces camera */}
-      <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
-        <mesh position={[0, 1.0, 0]} castShadow>
-          <planeGeometry args={[2.2, 2.2]} />
-          <meshStandardMaterial 
-            map={texture} 
-            transparent={true} 
-            alphaTest={0.5}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      </Billboard>
+      {/* Snail sprite - positioned on ground, facing forward */}
+      <sprite position={[0, 0.9, 0]} scale={[1.8, 1.8, 1]}>
+        <spriteMaterial 
+          map={texture} 
+          transparent={true} 
+          alphaTest={0.1}
+        />
+      </sprite>
       
-      {/* Shadow disc on ground */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.8, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.3} />
+      {/* Shadow on ground */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.7, 1]}>
+        <circleGeometry args={[0.6, 16]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.25} />
       </mesh>
       
-      {/* Gun mounted on snail's back - positioned to look attached */}
-      <group position={[0.4, 0.85, 0.3]}>
-        {/* Mount bracket connecting to shell */}
-        <mesh position={[-0.15, -0.1, -0.15]} rotation={[0.2, 0, 0.4]}>
-          <boxGeometry args={[0.08, 0.25, 0.08]} />
-          <meshStandardMaterial color="#4a3a2a" roughness={0.9} metalness={0.3} />
-        </mesh>
-        <mesh position={[-0.1, -0.05, -0.1]} rotation={[0, 0.3, 0]}>
-          <boxGeometry args={[0.25, 0.06, 0.06]} />
-          <meshStandardMaterial color="#5a4a3a" roughness={0.85} metalness={0.2} />
+      {/* Gun mounted on right side of snail body */}
+      <group position={[0.7, 0.5, 0.4]} rotation={[0, 0, 0]}>
+        {/* Mount arm connecting to body */}
+        <mesh position={[-0.2, 0, -0.1]} rotation={[0, 0.2, 0.1]}>
+          <boxGeometry args={[0.3, 0.06, 0.06]} />
+          <meshStandardMaterial color="#5a4a3a" roughness={0.85} />
         </mesh>
         
-        {/* Machine gun body */}
+        {/* Gun barrel pointing forward */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.05, 0.07, 0.6, 8]} />
+          <cylinderGeometry args={[0.04, 0.06, 0.5, 8]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.15} />
         </mesh>
         
-        {/* Gun barrel rings */}
-        {[0.1, 0.22, 0.34].map((z, i) => (
+        {/* Barrel rings */}
+        {[0.08, 0.18, 0.28].map((z, i) => (
           <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.06, 0.01, 6, 12]} />
+            <torusGeometry args={[0.05, 0.008, 6, 12]} />
             <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
           </mesh>
         ))}
         
         {/* Muzzle */}
-        <mesh position={[0, 0, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.07, 0.05, 0.08, 8]} />
+        <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.055, 0.04, 0.06, 8]} />
           <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
         </mesh>
         
-        {/* Ammo box */}
-        <mesh position={[0, 0.06, -0.08]}>
-          <boxGeometry args={[0.1, 0.12, 0.18]} />
+        {/* Receiver/body */}
+        <mesh position={[0, 0.03, -0.1]}>
+          <boxGeometry args={[0.08, 0.1, 0.15]} />
           <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.25} />
         </mesh>
       </group>
