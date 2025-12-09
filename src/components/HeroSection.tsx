@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import heroBanner from "@/assets/hero-banner.png";
+import snailImage from "@/assets/snail-game.png";
 
 const CONTRACT_ADDRESS = "5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump";
 
@@ -103,7 +104,7 @@ export const HeroSection = () => {
             ) : (
               <Copy className="w-4 h-4 text-muted-foreground group-hover:text-accent flex-shrink-0 transition-colors" />
             )}
-            <span className="text-sm">🐌</span>
+            <img src={snailImage} alt="Snail" className="w-6 h-6 object-contain" />
           </button>
         </div>
       </div>

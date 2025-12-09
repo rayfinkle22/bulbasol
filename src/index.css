@@ -6,37 +6,37 @@
 
 @layer base {
   :root {
-    /* Franklin-inspired bright, cheerful palette */
-    --background: 85 25% 78%;
-    --foreground: 120 45% 12%;
+    /* Dark, badass theme */
+    --background: 160 30% 8%;
+    --foreground: 120 20% 90%;
 
-    --card: 85 40% 88%;
-    --card-foreground: 120 30% 20%;
+    --card: 160 25% 12%;
+    --card-foreground: 120 20% 90%;
 
-    --popover: 85 40% 88%;
-    --popover-foreground: 120 30% 20%;
+    --popover: 160 25% 12%;
+    --popover-foreground: 120 20% 90%;
 
-    /* Bright green from Franklin */
-    --primary: 95 55% 45%;
+    /* Neon green accent */
+    --primary: 120 70% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Warm brown/tan */
-    --secondary: 35 45% 65%;
-    --secondary-foreground: 30 40% 20%;
+    /* Deep teal secondary */
+    --secondary: 170 40% 20%;
+    --secondary-foreground: 120 20% 90%;
 
-    --muted: 85 25% 85%;
-    --muted-foreground: 120 20% 40%;
+    --muted: 160 20% 18%;
+    --muted-foreground: 120 15% 55%;
 
-    /* Yellow accent like Franklin title */
-    --accent: 45 90% 55%;
-    --accent-foreground: 30 50% 20%;
+    /* Electric yellow/gold accent */
+    --accent: 50 100% 50%;
+    --accent-foreground: 0 0% 10%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 95 30% 70%;
-    --input: 95 30% 70%;
-    --ring: 95 55% 45%;
+    --border: 160 20% 25%;
+    --input: 160 20% 25%;
+    --ring: 120 70% 45%;
 
     --radius: 0.75rem;
 
@@ -46,44 +46,44 @@
     --grass-light: 90 55% 70%;
     --dirt: 35 40% 50%;
 
-    --sidebar-background: 85 35% 90%;
-    --sidebar-foreground: 120 30% 20%;
-    --sidebar-primary: 95 55% 45%;
+    --sidebar-background: 160 25% 10%;
+    --sidebar-foreground: 120 20% 90%;
+    --sidebar-primary: 120 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 90% 55%;
-    --sidebar-accent-foreground: 30 50% 20%;
-    --sidebar-border: 95 30% 70%;
-    --sidebar-ring: 95 55% 45%;
+    --sidebar-accent: 50 100% 50%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 160 20% 25%;
+    --sidebar-ring: 120 70% 45%;
   }
 
   .dark {
-    --background: 120 25% 15%;
-    --foreground: 85 30% 90%;
-    --card: 120 20% 20%;
-    --card-foreground: 85 30% 90%;
-    --popover: 120 20% 20%;
-    --popover-foreground: 85 30% 90%;
-    --primary: 95 55% 45%;
+    --background: 160 35% 5%;
+    --foreground: 120 20% 92%;
+    --card: 160 30% 8%;
+    --card-foreground: 120 20% 92%;
+    --popover: 160 30% 8%;
+    --popover-foreground: 120 20% 92%;
+    --primary: 120 75% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 35 35% 35%;
-    --secondary-foreground: 85 30% 90%;
-    --muted: 120 15% 25%;
-    --muted-foreground: 85 20% 60%;
-    --accent: 45 90% 55%;
-    --accent-foreground: 30 50% 20%;
+    --secondary: 170 45% 15%;
+    --secondary-foreground: 120 20% 92%;
+    --muted: 160 25% 12%;
+    --muted-foreground: 120 15% 50%;
+    --accent: 50 100% 55%;
+    --accent-foreground: 0 0% 10%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 15% 30%;
-    --input: 120 15% 30%;
-    --ring: 95 55% 45%;
-    --sidebar-background: 120 20% 18%;
-    --sidebar-foreground: 85 30% 90%;
-    --sidebar-primary: 95 55% 45%;
+    --border: 160 20% 20%;
+    --input: 160 20% 20%;
+    --ring: 120 75% 50%;
+    --sidebar-background: 160 30% 6%;
+    --sidebar-foreground: 120 20% 92%;
+    --sidebar-primary: 120 75% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 90% 55%;
-    --sidebar-accent-foreground: 30 50% 20%;
-    --sidebar-border: 120 15% 30%;
-    --sidebar-ring: 95 55% 45%;
+    --sidebar-accent: 50 100% 55%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 160 20% 20%;
+    --sidebar-ring: 120 75% 50%;
   }
 }
 
