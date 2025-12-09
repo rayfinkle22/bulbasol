@@ -1559,13 +1559,17 @@ export const SnailGame3rdPerson = () => {
         {/* Game area - taller for 3rd person view */}
         <div 
           ref={gameContainerRef}
-          className={`relative w-full rounded-2xl retro-border overflow-hidden bg-black ${
-            isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none' : ''
+          className={`relative w-full overflow-hidden bg-black ${
+            isFullscreen 
+              ? 'fixed inset-0 z-50' 
+              : 'rounded-2xl retro-border'
           }`}
           style={{ 
-            height: isFullscreen ? '100%' : undefined,
-            aspectRatio: isFullscreen ? undefined : '16 / 10',
-            maxHeight: isFullscreen ? undefined : '70vh'
+            height: isFullscreen ? '100dvh' : undefined,
+            width: isFullscreen ? '100dvw' : undefined,
+            aspectRatio: isFullscreen ? undefined : '16 / 9',
+            minHeight: isFullscreen ? undefined : '300px',
+            maxHeight: isFullscreen ? undefined : '500px'
           }}
         >
           {/* Fullscreen button - always visible in corner */}
@@ -1599,75 +1603,30 @@ export const SnailGame3rdPerson = () => {
 
           {/* HUD */}
           {(gameState.status === 'playing' || gameState.status === 'paused') && (
-            <div className="absolute top-0 left-0 right-0 p-3 pr-14">
-              {/* Top row - Difficulty buttons */}
-              <div className="flex justify-center gap-2 mb-2">
-                {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                  <Button
-                    key={d}
-                    variant={difficulty === d ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setDifficulty(d)}
-                    className={`font-display text-xs px-3 py-1 ${
-                      difficulty === d 
-                        ? d === 'easy' ? 'bg-green-600 hover:bg-green-700' 
-                          : d === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700'
-                          : 'bg-red-600 hover:bg-red-700'
-                        : 'bg-black/40 border-white/30 text-white hover:bg-black/60'
-                    }`}
-                  >
-                    {DIFFICULTY_LABELS[d]}
-                  </Button>
-                ))}
-              </div>
-              
-              {/* Second row - Health, Score, Pause */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 pointer-events-none">
-                    <span className="text-red-500 text-lg">❤️</span>
-                    <div className="w-32 h-4 bg-black/50 rounded-full overflow-hidden border border-white/20">
+            <div className="absolute top-0 left-0 right-0 p-2 sm:p-3 pr-12 sm:pr-14">
+              {/* Mobile: Simplified compact HUD */}
+              <div className="sm:hidden">
+                <div className="flex justify-between items-center gap-2">
+                  {/* Health bar - compact */}
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-red-500 text-sm">❤️</span>
+                    <div className="flex-1 max-w-20 h-3 bg-black/50 rounded-full overflow-hidden border border-white/20">
                       <div 
                         className="h-full transition-all duration-200"
                         style={{ 
                           width: `${gameState.health}%`,
                           background: gameState.health > 50 
-                            ? 'linear-gradient(90deg, #22c55e, #4ade80)' 
-                            : gameState.health > 25 
-                              ? 'linear-gradient(90deg, #eab308, #facc15)'
-                              : 'linear-gradient(90deg, #dc2626, #ef4444)'
+                            ? '#22c55e' 
+                            : gameState.health > 25 ? '#eab308' : '#dc2626'
                         }}
                       />
                     </div>
-                    <span className="text-white font-display text-sm drop-shadow-lg">{gameState.health}</span>
                   </div>
-                  {gameState.doubleDamageUntil > performance.now() && (
-                    <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse pointer-events-none">
-                      <span className="text-white font-display text-xs">⚡2X DAMAGE⚡</span>
-                    </div>
-                  )}
-                  {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
-                    <div className={`px-2 py-1 rounded-lg pointer-events-none ${
-                      gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
-                    }`}>
-                      <span className="text-white font-display text-xs">
-                        {gameState.specialWeapon === 'flamethrower' ? '🔥 FLAMETHROWER' : '🚀 ROCKET'}
-                        {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-4 font-display text-white drop-shadow-lg pointer-events-none">
-                    <span className="bg-black/40 px-3 py-1 rounded-lg">
-                      Score: <span className="text-yellow-400">{Math.floor(gameState.score)}</span>
-                    </span>
-                    <span className="bg-black/40 px-3 py-1 rounded-lg">
-                      💀 <span className="text-red-400">{gameState.bugsKilled}</span>
-                    </span>
-                  </div>
-                  {/* Pause button */}
+                  {/* Score */}
+                  <span className="bg-black/40 px-2 py-0.5 rounded text-white font-display text-xs">
+                    {Math.floor(gameState.score)}
+                  </span>
+                  {/* Pause */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -1675,10 +1634,106 @@ export const SnailGame3rdPerson = () => {
                       ...prev, 
                       status: prev.status === 'paused' ? 'playing' : 'paused' 
                     }))}
-                    className="font-display bg-black/40 border-white/30 text-white hover:bg-black/60"
+                    className="font-display bg-black/40 border-white/30 text-white hover:bg-black/60 px-2 py-1 h-auto text-xs"
                   >
-                    {gameState.status === 'paused' ? '▶️ Resume' : '⏸️ Pause'}
+                    {gameState.status === 'paused' ? '▶️' : '⏸️'}
                   </Button>
+                </div>
+                {/* Weapon indicator on mobile */}
+                {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
+                  <div className={`mt-1 px-2 py-0.5 rounded text-center text-xs ${
+                    gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
+                  }`}>
+                    <span className="text-white font-display">
+                      {gameState.specialWeapon === 'flamethrower' ? '🔥' : '🚀'}
+                      {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop: Full HUD */}
+              <div className="hidden sm:block">
+                {/* Top row - Difficulty buttons */}
+                <div className="flex justify-center gap-2 mb-2">
+                  {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                    <Button
+                      key={d}
+                      variant={difficulty === d ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDifficulty(d)}
+                      className={`font-display text-xs px-3 py-1 ${
+                        difficulty === d 
+                          ? d === 'easy' ? 'bg-green-600 hover:bg-green-700' 
+                            : d === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700'
+                            : 'bg-red-600 hover:bg-red-700'
+                          : 'bg-black/40 border-white/30 text-white hover:bg-black/60'
+                      }`}
+                    >
+                      {DIFFICULTY_LABELS[d]}
+                    </Button>
+                  ))}
+                </div>
+                
+                {/* Second row - Health, Score, Pause */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 pointer-events-none">
+                      <span className="text-red-500 text-lg">❤️</span>
+                      <div className="w-32 h-4 bg-black/50 rounded-full overflow-hidden border border-white/20">
+                        <div 
+                          className="h-full transition-all duration-200"
+                          style={{ 
+                            width: `${gameState.health}%`,
+                            background: gameState.health > 50 
+                              ? 'linear-gradient(90deg, #22c55e, #4ade80)' 
+                              : gameState.health > 25 
+                                ? 'linear-gradient(90deg, #eab308, #facc15)'
+                                : 'linear-gradient(90deg, #dc2626, #ef4444)'
+                          }}
+                        />
+                      </div>
+                      <span className="text-white font-display text-sm drop-shadow-lg">{gameState.health}</span>
+                    </div>
+                    {gameState.doubleDamageUntil > performance.now() && (
+                      <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse pointer-events-none">
+                        <span className="text-white font-display text-xs">⚡2X DAMAGE⚡</span>
+                      </div>
+                    )}
+                    {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
+                      <div className={`px-2 py-1 rounded-lg pointer-events-none ${
+                        gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
+                      }`}>
+                        <span className="text-white font-display text-xs">
+                          {gameState.specialWeapon === 'flamethrower' ? '🔥 FLAMETHROWER' : '🚀 ROCKET'}
+                          {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 font-display text-white drop-shadow-lg pointer-events-none">
+                      <span className="bg-black/40 px-3 py-1 rounded-lg">
+                        Score: <span className="text-yellow-400">{Math.floor(gameState.score)}</span>
+                      </span>
+                      <span className="bg-black/40 px-3 py-1 rounded-lg">
+                        💀 <span className="text-red-400">{gameState.bugsKilled}</span>
+                      </span>
+                    </div>
+                    {/* Pause button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setGameState(prev => ({ 
+                        ...prev, 
+                        status: prev.status === 'paused' ? 'playing' : 'paused' 
+                      }))}
+                      className="font-display bg-black/40 border-white/30 text-white hover:bg-black/60"
+                    >
+                      {gameState.status === 'paused' ? '▶️ Resume' : '⏸️ Pause'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
