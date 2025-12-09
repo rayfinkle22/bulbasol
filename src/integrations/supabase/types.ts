@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_increment_log: {
+        Row: {
+          created_at: string
+          id: string
+          session_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_hash?: string
+        }
+        Relationships: []
+      }
       game_stats: {
         Row: {
           games_played: number
@@ -64,7 +82,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      increment_games_played: { Args: never; Returns: number }
+      cleanup_old_increment_logs: { Args: never; Returns: undefined }
+      increment_games_played:
+        | { Args: never; Returns: number }
+        | { Args: { p_session_hash?: string }; Returns: number }
       submit_score: {
         Args: {
           p_bugs_killed: number
