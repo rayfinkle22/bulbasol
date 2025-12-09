@@ -272,10 +272,15 @@ function Bug({ bug }: { bug: Bug }) {
 function Bullet({ bullet }: { bullet: Bullet }) {
   return (
     <group position={bullet.position}>
-      {/* Bullet tracer */}
+      {/* Bullet tracer - bold and visible */}
       <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
-        <capsuleGeometry args={[0.05, 0.18, 4, 8]} />
-        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={1.5} />
+        <capsuleGeometry args={[0.12, 0.3, 4, 8]} />
+        <meshBasicMaterial color="#ff0000" />
+      </mesh>
+      {/* Bright glow sphere */}
+      <mesh>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshBasicMaterial color="#ff3300" />
       </mesh>
     </group>
   );
