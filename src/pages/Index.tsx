@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
-import { SnailGame } from "@/components/SnailGame";
+import { SnailGame3rdPerson } from "@/components/SnailGame3rdPerson";
 import { DexChart } from "@/components/DexChart";
 import { Footer } from "@/components/Footer";
 import { FloatingLeaves } from "@/components/FloatingLeaves";
@@ -13,7 +13,7 @@ const Index = () => {
       <Header />
       <main className="flex-1 relative z-10">
         <HeroSection />
-        <SnailGame />
+        <SnailGame3rdPerson />
         <DexChart />
       </main>
       <Footer />

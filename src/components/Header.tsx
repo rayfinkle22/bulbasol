@@ -27,28 +27,28 @@ export const Header = () => {
                 Home
               </Link>
               <Link 
-                to="/testing" 
+                to="/legacy" 
                 className={`font-display text-sm px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${
-                  location.pathname === '/testing' 
-                    ? 'bg-yellow-500/20 text-yellow-500' 
-                    : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
+                  location.pathname === '/legacy' 
+                    ? 'bg-muted text-muted-foreground' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                🧪 In Testing
+                🎮 Legacy Game
               </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
             {/* Mobile nav */}
             <Link 
-              to="/testing" 
+              to="/legacy" 
               className={`sm:hidden font-display text-xs px-2 py-1 rounded-lg ${
-                location.pathname === '/testing' 
-                  ? 'bg-yellow-500/20 text-yellow-500' 
-                  : 'text-yellow-500/70'
+                location.pathname === '/legacy' 
+                  ? 'bg-muted text-muted-foreground' 
+                  : 'text-muted-foreground/70'
               }`}
             >
-              🧪
+              🎮
             </Link>
             <div className="flex items-center gap-2">
               <span className="font-body text-xs sm:text-sm text-muted-foreground">MCap:</span>
