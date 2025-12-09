@@ -7,14 +7,14 @@
 @layer base {
   :root {
     /* Brighter, more readable theme */
-    --background: 160 25% 15%;
-    --foreground: 120 15% 92%;
+    --background: 160 20% 22%;
+    --foreground: 100 10% 95%;
 
-    --card: 160 22% 18%;
-    --card-foreground: 120 15% 92%;
+    --card: 160 18% 26%;
+    --card-foreground: 100 10% 95%;
 
-    --popover: 160 22% 18%;
-    --popover-foreground: 120 15% 92%;
+    --popover: 160 18% 26%;
+    --popover-foreground: 100 10% 95%;
 
     /* Neon green accent */
     --primary: 120 70% 45%;
@@ -24,8 +24,8 @@
     --secondary: 140 35% 35%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 160 18% 25%;
-    --muted-foreground: 120 12% 70%;
+    --muted: 160 15% 32%;
+    --muted-foreground: 100 8% 80%;
 
     /* Electric yellow/gold accent */
     --accent: 50 100% 50%;
