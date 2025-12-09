@@ -1291,6 +1291,7 @@ export const SnailGame3rdPerson = () => {
   const joystickStartPos = useRef<{ x: number; y: number } | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1459,71 +1460,39 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
-  // Fullscreen handling - with iOS webkit support
-  const toggleFullscreen = useCallback(async () => {
-    if (!gameContainerRef.current) return;
-    
-    const elem = gameContainerRef.current as any;
-    const doc = document as any;
-    
-    try {
-      const isCurrentlyFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement;
-      
-      if (!isCurrentlyFullscreen) {
-        // Enter fullscreen - try standard first, then webkit for iOS
-        if (elem.requestFullscreen) {
-          await elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-          await elem.webkitRequestFullscreen();
-        } else if (elem.webkitEnterFullscreen) {
-          await elem.webkitEnterFullscreen();
-        }
-        
-        // Try to lock to landscape on mobile
-        if (screen.orientation && 'lock' in screen.orientation) {
-          try {
-            await (screen.orientation as any).lock('landscape');
-          } catch (e) {
-            // Orientation lock not supported or failed
-          }
-        }
-        setIsFullscreen(true);
-      } else {
-        // Exit fullscreen
-        if (doc.exitFullscreen) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-          await doc.webkitExitFullscreen();
-        }
-        
-        if (screen.orientation && 'unlock' in screen.orientation) {
-          try {
-            (screen.orientation as any).unlock();
-          } catch (e) {
-            // Orientation unlock not supported
-          }
-        }
-        setIsFullscreen(false);
-      }
-    } catch (error) {
-      console.error('Fullscreen error:', error);
-      // Fallback: just toggle the fullscreen state for CSS-based fullscreen
-      setIsFullscreen(prev => !prev);
+  // Fullscreen handling - CSS-based for iOS compatibility
+  const toggleFullscreen = useCallback(() => {
+    if (isFullscreen) {
+      // Exit fullscreen
+      setIsFullscreen(false);
+      document.body.style.overflow = '';
+    } else {
+      // Enter fullscreen
+      setIsFullscreen(true);
+      document.body.style.overflow = 'hidden';
     }
-  }, []);
+  }, [isFullscreen]);
 
-  // Listen for fullscreen changes
+  // Track orientation for CSS-based landscape rotation
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const doc = document as any;
-      setIsFullscreen(!!(doc.fullscreenElement || doc.webkitFullscreenElement));
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
     };
     
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
+  // Clean up body overflow on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
     };
   }, []);
 
@@ -1559,17 +1528,32 @@ export const SnailGame3rdPerson = () => {
         {/* Game area - taller for 3rd person view */}
         <div 
           ref={gameContainerRef}
-          className={`relative w-full overflow-hidden bg-black ${
+          className={`relative overflow-hidden bg-black ${
             isFullscreen 
-              ? 'fixed inset-0 z-50' 
-              : 'rounded-2xl retro-border'
+              ? 'fixed z-50' 
+              : 'w-full rounded-2xl retro-border'
           }`}
-          style={{ 
-            height: isFullscreen ? '100dvh' : undefined,
-            width: isFullscreen ? '100dvw' : undefined,
-            aspectRatio: isFullscreen ? undefined : '16 / 9',
-            minHeight: isFullscreen ? undefined : '300px',
-            maxHeight: isFullscreen ? undefined : '500px'
+          style={isFullscreen ? {
+            // When fullscreen in portrait mode, rotate to landscape
+            ...(isPortrait ? {
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              width: '100vh',
+              height: '100vw',
+              transform: 'translate(-50%, -50%) rotate(90deg)',
+              transformOrigin: 'center center',
+            } : {
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+            })
+          } : { 
+            aspectRatio: '16 / 9',
+            minHeight: '300px',
+            maxHeight: '500px'
           }}
         >
           {/* Fullscreen button - always visible in corner */}
