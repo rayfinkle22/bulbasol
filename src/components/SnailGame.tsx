@@ -274,8 +274,8 @@ function Bullet({ bullet }: { bullet: Bullet }) {
     <group position={bullet.position}>
       {/* Bullet tracer */}
       <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
-        <capsuleGeometry args={[0.04, 0.15, 4, 8]} />
-        <meshStandardMaterial color="#ffcc00" emissive="#ff8800" emissiveIntensity={0.8} />
+        <capsuleGeometry args={[0.05, 0.18, 4, 8]} />
+        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={1.5} />
       </mesh>
     </group>
   );
