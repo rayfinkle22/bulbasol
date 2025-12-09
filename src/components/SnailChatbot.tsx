@@ -168,10 +168,10 @@ export const SnailChatbot = () => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 flex items-center justify-center transition-colors"
-              aria-label="Minimize chat"
+              className="w-7 h-7 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/30 flex items-center justify-center transition-colors border border-primary-foreground/20"
+              aria-label="Close chat"
             >
-              <Minus className="w-4 h-4 text-primary-foreground" />
+              <X className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
 
