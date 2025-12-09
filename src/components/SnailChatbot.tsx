@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Send } from "lucide-react";
+import { X, Send, Minus } from "lucide-react";
 import { toast } from "sonner";
 import snailImage from "@/assets/snail.png";
 import { useMarketData, formatMarketCap, formatVolume, formatAge } from "@/hooks/useMarketData";
@@ -162,10 +162,17 @@ export const SnailChatbot = () => {
           {/* Header */}
           <div className="bg-primary p-3 flex items-center gap-3">
             <img src={snailImage} alt="Snagent" className="w-10 h-10 object-contain" />
-            <div>
+            <div className="flex-1">
               <h3 className="font-display text-primary-foreground font-bold">Snagent</h3>
               <p className="text-xs text-primary-foreground/70">Your $SNAIL AI Agent 🐌</p>
             </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-8 h-8 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 flex items-center justify-center transition-colors"
+              aria-label="Minimize chat"
+            >
+              <Minus className="w-4 h-4 text-primary-foreground" />
+            </button>
           </div>
 
           {/* Messages */}
