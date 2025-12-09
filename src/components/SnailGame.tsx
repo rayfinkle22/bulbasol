@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import * as THREE from "three";
 import { TextureLoader } from "three";
 import snailTexture from "@/assets/snail-game.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Bug {
   id: number;
@@ -33,9 +35,10 @@ interface GameState {
 }
 
 interface LeaderboardEntry {
+  id?: string;
   name: string;
   score: number;
-  date: string;
+  created_at?: string;
 }
 
 type Difficulty = 'slow' | 'medium' | 'hard';
@@ -550,16 +553,11 @@ function GameScene({
 
 export const SnailGame = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [highScore, setHighScore] = useState(() => {
-    const saved = localStorage.getItem('snail-shooter-highscore');
-    return saved ? parseInt(saved) : 0;
-  });
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    const saved = localStorage.getItem('snail-shooter-leaderboard');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [highScore, setHighScore] = useState(0);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [playerName, setPlayerName] = useState('');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Touch control refs
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -578,30 +576,70 @@ export const SnailGame = () => {
     health: 100
   });
 
+  // Fetch leaderboard from database on mount
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('leaderboard')
+          .select('*')
+          .order('score', { ascending: false })
+          .limit(10);
+        
+        if (error) throw error;
+        
+        setLeaderboard(data || []);
+        if (data && data.length > 0) {
+          setHighScore(data[0].score);
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchLeaderboard();
+  }, []);
+
   const isHighScore = (score: number) => {
     if (leaderboard.length < 10) return true;
     return score > leaderboard[leaderboard.length - 1].score;
   };
 
-  const submitScore = () => {
+  const submitScore = async () => {
     if (!playerName.trim()) return;
     
-    const newEntry: LeaderboardEntry = {
+    const newEntry = {
       name: playerName.trim().slice(0, 12),
-      score: Math.floor(gameState.score),
-      date: new Date().toLocaleDateString()
+      score: Math.floor(gameState.score)
     };
     
-    const newLeaderboard = [...leaderboard, newEntry]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
-    
-    setLeaderboard(newLeaderboard);
-    localStorage.setItem('snail-shooter-leaderboard', JSON.stringify(newLeaderboard));
-    
-    if (newEntry.score > highScore) {
-      setHighScore(newEntry.score);
-      localStorage.setItem('snail-shooter-highscore', newEntry.score.toString());
+    try {
+      const { error } = await supabase
+        .from('leaderboard')
+        .insert(newEntry);
+      
+      if (error) throw error;
+      
+      // Refresh leaderboard after successful insert
+      const { data } = await supabase
+        .from('leaderboard')
+        .select('*')
+        .order('score', { ascending: false })
+        .limit(10);
+      
+      if (data) {
+        setLeaderboard(data);
+        if (data.length > 0) {
+          setHighScore(data[0].score);
+        }
+      }
+      
+      toast.success("Score submitted to leaderboard!");
+    } catch (error) {
+      console.error('Error submitting score:', error);
+      toast.error("Failed to submit score. Try again!");
     }
     
     setPlayerName('');
@@ -862,7 +900,9 @@ export const SnailGame = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-display text-accent">{entry.score.toLocaleString()}</span>
-                    <span className="font-body text-xs text-muted-foreground">{entry.date}</span>
+                    <span className="font-body text-xs text-muted-foreground">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : ''}
+                    </span>
                   </div>
                 </div>
               ))}
