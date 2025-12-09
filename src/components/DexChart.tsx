@@ -1,47 +1,7 @@
-import { useEffect, useState } from "react";
+import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
 
 export const DexChart = () => {
-  const [marketCap, setMarketCap] = useState<number | null>(null);
-  const [priceUsd, setPriceUsd] = useState<string | null>(null);
-  const [priceChange24h, setPriceChange24h] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const TOKEN_ADDRESS = "5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump";
-
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      try {
-        const response = await fetch(
-          `https://api.dexscreener.com/latest/dex/tokens/${TOKEN_ADDRESS}`
-        );
-        const data = await response.json();
-        if (data.pairs && data.pairs.length > 0) {
-          const pair = data.pairs[0];
-          setMarketCap(pair.marketCap || pair.fdv);
-          setPriceUsd(pair.priceUsd);
-          setPriceChange24h(pair.priceChange?.h24 || null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch market data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMarketData();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchMarketData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const formatMarketCap = (value: number) => {
-    if (value >= 1_000_000) {
-      return `$${(value / 1_000_000).toFixed(2)}M`;
-    } else if (value >= 1_000) {
-      return `$${(value / 1_000).toFixed(2)}K`;
-    }
-    return `$${value.toFixed(2)}`;
-  };
+  const { marketCap, priceUsd, priceChange24h, isLoading } = useMarketData();
 
   return (
     <section className="py-8 sm:py-12 px-4">
