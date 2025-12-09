@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
-import { TextureLoader } from "three";
 import snailTexture from "@/assets/snail-game.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -65,50 +64,85 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail component with texture sprite and attached gun - larger for 3rd person
+// 3D Snail component - true 3rd person model (viewed from behind)
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
-  const texture = useLoader(TextureLoader, snailTexture);
-  
   return (
-    <group position={[position[0], 0.5, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Snail sprite - larger for 3rd person view */}
-      <sprite scale={[2, 2, 1]} position={[0, 0.2, 0]}>
-        <spriteMaterial map={texture} transparent />
-      </sprite>
+    <group position={[position[0], 0.3, position[1]]} rotation={[0, rotation, 0]}>
+      {/* Snail body - elongated shell shape */}
+      <mesh position={[0, 0.4, -0.2]} rotation={[0.3, 0, 0]}>
+        <sphereGeometry args={[0.6, 16, 16]} />
+        <meshStandardMaterial color="#8B7355" roughness={0.6} />
+      </mesh>
       
-      {/* Gun mount/strap connecting to snail */}
-      <mesh position={[0.4, 0.1, 0]} rotation={[0, 0, 0.2]}>
-        <boxGeometry args={[0.5, 0.08, 0.1]} />
+      {/* Shell spiral detail */}
+      <mesh position={[0, 0.5, -0.3]} rotation={[0.3, 0, 0]}>
+        <torusGeometry args={[0.3, 0.08, 8, 16]} />
+        <meshStandardMaterial color="#6B5344" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.55, -0.35]} rotation={[0.3, 0, 0]}>
+        <torusGeometry args={[0.18, 0.06, 8, 12]} />
+        <meshStandardMaterial color="#5B4334" roughness={0.7} />
+      </mesh>
+      
+      {/* Snail head/body (front part) */}
+      <mesh position={[0, 0.15, 0.4]}>
+        <capsuleGeometry args={[0.2, 0.4, 8, 12]} />
+        <meshStandardMaterial color="#C4A882" roughness={0.5} />
+      </mesh>
+      
+      {/* Eye stalks */}
+      <mesh position={[-0.12, 0.4, 0.55]} rotation={[-0.3, 0, -0.2]}>
+        <capsuleGeometry args={[0.04, 0.25, 6, 8]} />
+        <meshStandardMaterial color="#C4A882" roughness={0.5} />
+      </mesh>
+      <mesh position={[0.12, 0.4, 0.55]} rotation={[-0.3, 0, 0.2]}>
+        <capsuleGeometry args={[0.04, 0.25, 6, 8]} />
+        <meshStandardMaterial color="#C4A882" roughness={0.5} />
+      </mesh>
+      
+      {/* Eyes */}
+      <mesh position={[-0.15, 0.55, 0.6]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      <mesh position={[0.15, 0.55, 0.6]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      
+      {/* Gun mount on back of shell */}
+      <mesh position={[0.5, 0.6, -0.1]} rotation={[0, 0, 0.3]}>
+        <boxGeometry args={[0.4, 0.06, 0.08]} />
         <meshStandardMaterial color="#5a4a3a" roughness={0.8} />
       </mesh>
       
-      {/* Machine gun - attached via strap - bigger */}
-      <group position={[0.8, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        {/* Main barrel */}
-        <mesh>
-          <cylinderGeometry args={[0.1, 0.12, 0.9, 12]} />
+      {/* Machine gun - mounted on shell, pointing forward */}
+      <group position={[0.6, 0.65, 0.3]} rotation={[0, 0, 0]}>
+        {/* Main barrel - pointing forward (Z direction) */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.08, 0.1, 0.8, 12]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
         </mesh>
         {/* Barrel ridges */}
-        {[0.15, 0.3, 0.45].map((y, i) => (
-          <mesh key={i} position={[0, y, 0]}>
-            <torusGeometry args={[0.11, 0.02, 8, 16]} />
+        {[0.1, 0.25, 0.4].map((z, i) => (
+          <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.09, 0.015, 8, 16]} />
             <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
           </mesh>
         ))}
         {/* Muzzle */}
-        <mesh position={[0, 0.5, 0]}>
-          <cylinderGeometry args={[0.13, 0.1, 0.15, 12]} />
+        <mesh position={[0, 0, 0.45]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.11, 0.08, 0.12, 12]} />
           <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
         </mesh>
         {/* Body/receiver */}
-        <mesh position={[0, -0.2, -0.1]}>
-          <boxGeometry args={[0.18, 0.4, 0.2]} />
+        <mesh position={[0, 0.05, -0.15]}>
+          <boxGeometry args={[0.14, 0.18, 0.3]} />
           <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
         </mesh>
         {/* Magazine */}
-        <mesh position={[0, -0.15, -0.22]} rotation={[0.2, 0, 0]}>
-          <boxGeometry args={[0.12, 0.28, 0.1]} />
+        <mesh position={[0, -0.1, -0.15]}>
+          <boxGeometry args={[0.1, 0.2, 0.08]} />
           <meshStandardMaterial color="#4a4a4a" metalness={0.7} roughness={0.3} />
         </mesh>
       </group>
@@ -273,39 +307,149 @@ function PowerUpMesh({ powerUp }: { powerUp: PowerUp }) {
   );
 }
 
-// Ground with grid pattern for better depth perception
-function Ground() {
+// Tree component
+function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      {/* Trunk */}
+      <mesh position={[0, 1, 0]}>
+        <cylinderGeometry args={[0.15, 0.25, 2, 8]} />
+        <meshStandardMaterial color="#4a3728" roughness={0.9} />
+      </mesh>
+      {/* Foliage layers */}
+      <mesh position={[0, 2.5, 0]}>
+        <coneGeometry args={[1.2, 2, 8]} />
+        <meshStandardMaterial color="#2d5a27" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 3.3, 0]}>
+        <coneGeometry args={[0.9, 1.5, 8]} />
+        <meshStandardMaterial color="#3d7a37" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 4, 0]}>
+        <coneGeometry args={[0.5, 1, 8]} />
+        <meshStandardMaterial color="#4d8a47" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+// Grass tuft component
+function GrassTuft({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {[-0.08, 0, 0.08].map((offset, i) => (
+        <mesh key={i} position={[offset, 0.15, offset * 0.5]} rotation={[(Math.random() - 0.5) * 0.3, Math.random() * Math.PI, 0]}>
+          <planeGeometry args={[0.1, 0.3]} />
+          <meshStandardMaterial color={i % 2 === 0 ? "#5a8a3a" : "#4a7a2a"} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Forest ground with trees and grass
+function ForestGround() {
+  // Generate tree positions (avoiding center area where gameplay happens)
+  const trees = [];
+  for (let i = 0; i < 60; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 18 + Math.random() * 15; // Trees at outer edges
+    const x = Math.sin(angle) * distance;
+    const z = Math.cos(angle) * distance;
+    trees.push({ x, z, scale: 0.8 + Math.random() * 0.6, key: i });
+  }
+  
+  // Add some trees scattered around but not too close to center
+  for (let i = 60; i < 100; i++) {
+    const x = (Math.random() - 0.5) * 50;
+    const z = (Math.random() - 0.5) * 50;
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    if (distFromCenter > 12) { // Keep center clear for gameplay
+      trees.push({ x, z, scale: 0.6 + Math.random() * 0.8, key: i });
+    }
+  }
+  
+  // Generate grass positions
+  const grass = [];
+  for (let i = 0; i < 200; i++) {
+    const x = (Math.random() - 0.5) * 45;
+    const z = (Math.random() - 0.5) * 45;
+    grass.push({ x, z, key: i });
+  }
+
   return (
     <>
+      {/* Main ground - forest floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[50, 50]} />
-        <meshStandardMaterial color="#4a7c59" />
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#3d5a2a" roughness={0.9} />
       </mesh>
-      {/* Grid lines for depth perception */}
-      <gridHelper args={[50, 50, '#3d6b4a', '#3d6b4a']} position={[0, 0.01, 0]} />
+      
+      {/* Grass patches layer */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+        <circleGeometry args={[18, 32]} />
+        <meshStandardMaterial color="#4a6a35" roughness={0.85} />
+      </mesh>
+      
+      {/* Dirt path in center */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <circleGeometry args={[8, 24]} />
+        <meshStandardMaterial color="#5a4a35" roughness={0.95} />
+      </mesh>
+      
+      {/* Trees */}
+      {trees.map((tree) => (
+        <Tree key={tree.key} position={[tree.x, 0, tree.z]} scale={tree.scale} />
+      ))}
+      
+      {/* Grass tufts */}
+      {grass.map((g) => (
+        <GrassTuft key={g.key} position={[g.x, 0, g.z]} />
+      ))}
+      
+      {/* Rocks scattered around */}
+      {[...Array(20)].map((_, i) => {
+        const x = (Math.random() - 0.5) * 35;
+        const z = (Math.random() - 0.5) * 35;
+        const scale = 0.2 + Math.random() * 0.4;
+        return (
+          <mesh key={`rock-${i}`} position={[x, scale * 0.3, z]} rotation={[Math.random(), Math.random(), Math.random()]}>
+            <dodecahedronGeometry args={[scale, 0]} />
+            <meshStandardMaterial color="#5a5a5a" roughness={0.9} />
+          </mesh>
+        );
+      })}
     </>
   );
 }
 
-// 3rd person camera that follows the snail
+// True 3rd person camera - behind and slightly above the snail, looking over its shoulder
 function ThirdPersonCamera({ targetPosition, targetRotation }: { targetPosition: [number, number]; targetRotation: number }) {
   const { camera } = useThree();
-  const cameraRef = useRef({ x: 0, y: 8, z: 8 });
+  const cameraRef = useRef({ x: 0, y: 3, z: -5 });
   
   useFrame((_, delta) => {
-    // Camera position: behind and above the snail
-    const distance = 6;
-    const height = 4;
-    const offsetX = targetPosition[0] - Math.sin(targetRotation) * distance;
-    const offsetZ = targetPosition[1] - Math.cos(targetRotation) * distance;
+    // Camera position: directly behind the snail based on its rotation
+    const distance = 4; // Distance behind snail
+    const height = 2.5; // Height above ground
+    const lookAheadDistance = 3; // How far ahead to look
     
-    // Smooth camera follow
-    cameraRef.current.x += (offsetX - cameraRef.current.x) * delta * 3;
-    cameraRef.current.y += (height - cameraRef.current.y) * delta * 3;
-    cameraRef.current.z += (offsetZ - cameraRef.current.z) * delta * 3;
+    // Calculate position behind the snail
+    const behindX = targetPosition[0] - Math.sin(targetRotation) * distance;
+    const behindZ = targetPosition[1] - Math.cos(targetRotation) * distance;
+    
+    // Calculate look-at point (ahead of the snail)
+    const lookAtX = targetPosition[0] + Math.sin(targetRotation) * lookAheadDistance;
+    const lookAtZ = targetPosition[1] + Math.cos(targetRotation) * lookAheadDistance;
+    
+    // Smooth camera follow with faster response
+    const smoothness = 5;
+    cameraRef.current.x += (behindX - cameraRef.current.x) * delta * smoothness;
+    cameraRef.current.y += (height - cameraRef.current.y) * delta * smoothness;
+    cameraRef.current.z += (behindZ - cameraRef.current.z) * delta * smoothness;
     
     camera.position.set(cameraRef.current.x, cameraRef.current.y, cameraRef.current.z);
-    camera.lookAt(targetPosition[0], 0.5, targetPosition[1]);
+    camera.lookAt(lookAtX, 0.8, lookAtZ);
   });
   
   return null;
@@ -596,16 +740,16 @@ function GameScene({
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
       <ThirdPersonCamera targetPosition={gameState.snailPosition} targetRotation={gameState.snailRotation} />
       
-      {/* Lighting */}
-      <ambientLight intensity={0.5} color="#ffffff" />
-      <directionalLight position={[10, 20, 10]} intensity={1} color="#fffaf0" castShadow />
-      <directionalLight position={[-10, 15, -10]} intensity={0.4} color="#87ceeb" />
-      <pointLight position={[0, 10, 0]} intensity={0.3} color="#ffdd88" distance={30} />
+      {/* Forest lighting */}
+      <ambientLight intensity={0.4} color="#90a080" />
+      <directionalLight position={[10, 30, 10]} intensity={0.8} color="#fff8e0" castShadow />
+      <directionalLight position={[-10, 20, -10]} intensity={0.3} color="#a0c0a0" />
+      <pointLight position={[0, 15, 0]} intensity={0.2} color="#ffeeaa" distance={40} />
       
-      {/* Fog for atmosphere */}
-      <fog attach="fog" args={['#87ceeb', 15, 50]} />
+      {/* Forest fog for depth */}
+      <fog attach="fog" args={['#4a6a4a', 20, 60]} />
       
-      <Ground />
+      <ForestGround />
       
       <Snail position={gameState.snailPosition} rotation={gameState.snailRotation} />
       
