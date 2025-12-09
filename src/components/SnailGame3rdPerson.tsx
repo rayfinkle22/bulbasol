@@ -1459,13 +1459,26 @@ export const SnailGame3rdPerson = () => {
     }
   }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
-  // Fullscreen handling
+  // Fullscreen handling - with iOS webkit support
   const toggleFullscreen = useCallback(async () => {
     if (!gameContainerRef.current) return;
     
+    const elem = gameContainerRef.current as any;
+    const doc = document as any;
+    
     try {
-      if (!document.fullscreenElement) {
-        await gameContainerRef.current.requestFullscreen();
+      const isCurrentlyFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement;
+      
+      if (!isCurrentlyFullscreen) {
+        // Enter fullscreen - try standard first, then webkit for iOS
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+          await elem.webkitRequestFullscreen();
+        } else if (elem.webkitEnterFullscreen) {
+          await elem.webkitEnterFullscreen();
+        }
+        
         // Try to lock to landscape on mobile
         if (screen.orientation && 'lock' in screen.orientation) {
           try {
@@ -1476,7 +1489,13 @@ export const SnailGame3rdPerson = () => {
         }
         setIsFullscreen(true);
       } else {
-        await document.exitFullscreen();
+        // Exit fullscreen
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        }
+        
         if (screen.orientation && 'unlock' in screen.orientation) {
           try {
             (screen.orientation as any).unlock();
@@ -1488,17 +1507,24 @@ export const SnailGame3rdPerson = () => {
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
+      // Fallback: just toggle the fullscreen state for CSS-based fullscreen
+      setIsFullscreen(prev => !prev);
     }
   }, []);
 
   // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as any;
+      setIsFullscreen(!!(doc.fullscreenElement || doc.webkitFullscreenElement));
     };
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   return (
@@ -1536,7 +1562,11 @@ export const SnailGame3rdPerson = () => {
           className={`relative w-full rounded-2xl retro-border overflow-hidden bg-black ${
             isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none' : ''
           }`}
-          style={{ height: isFullscreen ? '100%' : 500 }}
+          style={{ 
+            height: isFullscreen ? '100%' : undefined,
+            aspectRatio: isFullscreen ? undefined : '16 / 10',
+            maxHeight: isFullscreen ? undefined : '70vh'
+          }}
         >
           {/* Fullscreen button - always visible in corner */}
           <button
@@ -1714,33 +1744,36 @@ export const SnailGame3rdPerson = () => {
                 </div>
               </div>
               
-              {/* Jump button - left side above joystick */}
-              <div
-                className="absolute bottom-36 left-6 w-16 h-16 sm:hidden touch-none"
-                onTouchStart={() => {
-                  touchJumping.current = true;
-                }}
-                onTouchEnd={() => {
-                  touchJumping.current = false;
-                }}
-              >
-                <div className="w-full h-full rounded-full bg-blue-600/80 border-4 border-blue-400 flex items-center justify-center active:bg-blue-500 active:scale-95 transition-transform">
-                  <span className="text-white font-display text-sm">JUMP</span>
+              {/* Right side buttons - Jump and Fire next to each other */}
+              <div className="absolute bottom-4 right-4 flex gap-3 sm:hidden">
+                {/* Jump button */}
+                <div
+                  className="w-20 h-20 touch-none"
+                  onTouchStart={() => {
+                    touchJumping.current = true;
+                  }}
+                  onTouchEnd={() => {
+                    touchJumping.current = false;
+                  }}
+                >
+                  <div className="w-full h-full rounded-full bg-blue-600/80 border-4 border-blue-400 flex items-center justify-center active:bg-blue-500 active:scale-95 transition-transform">
+                    <span className="text-white font-display text-sm">JUMP</span>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Fire button - right side */}
-              <div
-                className="absolute bottom-4 right-4 w-24 h-24 sm:hidden touch-none"
-                onTouchStart={() => {
-                  touchShooting.current = true;
-                }}
-                onTouchEnd={() => {
-                  touchShooting.current = false;
-                }}
-              >
-                <div className="w-full h-full rounded-full bg-red-600/80 border-4 border-red-400 flex items-center justify-center active:bg-red-500 active:scale-95 transition-transform">
-                  <span className="text-white font-display text-lg">FIRE</span>
+                
+                {/* Fire button */}
+                <div
+                  className="w-20 h-20 touch-none"
+                  onTouchStart={() => {
+                    touchShooting.current = true;
+                  }}
+                  onTouchEnd={() => {
+                    touchShooting.current = false;
+                  }}
+                >
+                  <div className="w-full h-full rounded-full bg-red-600/80 border-4 border-red-400 flex items-center justify-center active:bg-red-500 active:scale-95 transition-transform">
+                    <span className="text-white font-display text-sm">FIRE</span>
+                  </div>
                 </div>
               </div>
             </>
