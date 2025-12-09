@@ -127,30 +127,61 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
   );
 }
 
-// Realistic bug component - crawls on ground
+// Realistic bug component - smooth crawling animation
 function Bug({ bug }: { bug: Bug }) {
   const config = BUG_CONFIGS[bug.type];
   const s = bug.scale * config.bodyScale;
   const meshRef = useRef<THREE.Group>(null);
-  const legPhase = useRef(Math.random() * Math.PI * 2);
+  const legPhaseRef = useRef(Math.random() * Math.PI * 2);
+  const bodyBobRef = useRef(0);
+  const prevPosition = useRef<[number, number, number]>([...bug.position]);
   
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (meshRef.current) {
-      // Face direction of movement
+      // Smooth rotation towards movement direction
       const dx = bug.velocity[0];
       const dz = bug.velocity[1];
       if (dx !== 0 || dz !== 0) {
-        meshRef.current.rotation.y = Math.atan2(dx, dz);
+        const targetRotation = Math.atan2(dx, dz);
+        // Smooth interpolation for rotation
+        meshRef.current.rotation.y = THREE.MathUtils.lerp(
+          meshRef.current.rotation.y,
+          targetRotation,
+          delta * 8
+        );
       }
-      // Crawling leg animation
-      legPhase.current += 0.15;
+      
+      // Calculate speed for animation intensity
+      const speed = Math.sqrt(dx * dx + dz * dz);
+      
+      // Smooth leg animation based on speed
+      legPhaseRef.current += delta * (8 + speed * 15);
+      
+      // Body bobbing - subtle up/down motion while moving
+      bodyBobRef.current = Math.sin(legPhaseRef.current * 2) * 0.015 * speed;
+      meshRef.current.position.y = 0.35 + bodyBobRef.current;
+      
+      // Smooth position interpolation
+      meshRef.current.position.x = THREE.MathUtils.lerp(
+        meshRef.current.position.x,
+        bug.position[0],
+        delta * 12
+      );
+      meshRef.current.position.z = THREE.MathUtils.lerp(
+        meshRef.current.position.z,
+        bug.position[2],
+        delta * 12
+      );
+      
+      prevPosition.current = [...bug.position];
     }
   });
   
-  const legWiggle = Math.sin(legPhase.current) * 0.3;
+  // Use ref for leg animation in render
+  const legWiggle = Math.sin(legPhaseRef.current) * 0.4;
   
   return (
-    <group position={[bug.position[0], 0.35, bug.position[2]]} ref={meshRef} scale={[s * 1.5, s * 1.5, s * 1.5]}>
+    <group ref={meshRef} position={[bug.position[0], 0.35, bug.position[2]]} scale={[s * 1.5, s * 1.5, s * 1.5]}>
       {bug.type === 'beetle' && (
         <>
           {/* Body - oval shaped */}
