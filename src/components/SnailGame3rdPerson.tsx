@@ -478,30 +478,19 @@ function Bug({ bug }: { bug: Bug }) {
   );
 }
 
-// Bullet component - with weapon type variations
+// Bullet component - with weapon type variations (optimized - no point lights on bullets)
 function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } }) {
-  const meshRef = useRef<THREE.Group>(null);
-  
-  useFrame((_, delta) => {
-    if (meshRef.current && bullet.weaponType === 'flamethrower') {
-      meshRef.current.scale.x += delta * 2;
-      meshRef.current.scale.y += delta * 2;
-      meshRef.current.scale.z += delta * 2;
-    }
-  });
-  
   if (bullet.weaponType === 'flamethrower') {
     return (
-      <group ref={meshRef} position={bullet.position}>
+      <group position={bullet.position}>
         <mesh>
-          <sphereGeometry args={[0.3, 8, 8]} />
-          <meshBasicMaterial color="#ff4400" transparent opacity={0.8} />
+          <sphereGeometry args={[0.35, 6, 6]} />
+          <meshBasicMaterial color="#ff4400" transparent opacity={0.7} />
         </mesh>
         <mesh>
-          <sphereGeometry args={[0.2, 8, 8]} />
+          <sphereGeometry args={[0.2, 6, 6]} />
           <meshBasicMaterial color="#ffaa00" />
         </mesh>
-        <pointLight color="#ff4400" intensity={2} distance={3} />
       </group>
     );
   }
@@ -511,13 +500,12 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
       <group position={bullet.position}>
         <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
           <capsuleGeometry args={[0.12, 0.5, 4, 8]} />
-          <meshStandardMaterial color="#4a4a4a" metalness={0.8} />
+          <meshBasicMaterial color="#4a4a4a" />
         </mesh>
         <mesh position={[0, 0, -0.3]}>
-          <coneGeometry args={[0.15, 0.2, 8]} />
+          <coneGeometry args={[0.15, 0.2, 6]} />
           <meshBasicMaterial color="#ff2200" />
         </mesh>
-        <pointLight color="#ff4400" intensity={1.5} distance={2} />
       </group>
     );
   }
@@ -529,7 +517,7 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
         <meshBasicMaterial color="#ff0000" />
       </mesh>
       <mesh>
-        <sphereGeometry args={[0.2, 8, 8]} />
+        <sphereGeometry args={[0.2, 6, 6]} />
         <meshBasicMaterial color="#ff3300" />
       </mesh>
     </group>
@@ -1479,9 +1467,20 @@ export const SnailGame3rdPerson = () => {
           </h2>
           <span className="text-3xl">🎮</span>
         </div>
-        <p className="font-body text-base sm:text-lg text-center text-muted-foreground mb-2">
-          <span className="hidden sm:inline">Hold SPACE to shoot! W/S to move, A/D to turn!</span>
-          <span className="sm:hidden">Use joystick to move/turn, FIRE button to shoot!</span>
+        <div className="hidden sm:block text-center mb-2">
+          <p className="font-body text-base text-muted-foreground">
+            <span className="font-semibold text-primary">WASD</span> or <span className="font-semibold text-primary">Arrow Keys</span> to move
+            <span className="mx-2">•</span>
+            <span className="font-semibold text-primary">SPACE</span> to shoot
+            <span className="mx-2">•</span>
+            <span className="font-semibold text-primary">J</span> to jump
+          </p>
+          <p className="font-body text-sm text-muted-foreground/80">
+            Pick up 🔥 Flamethrower or 🚀 Rocket Launcher for special weapons (30 sec)!
+          </p>
+        </div>
+        <p className="sm:hidden font-body text-sm text-center text-muted-foreground mb-2">
+          Use joystick to move • FIRE to shoot • JUMP to jump
         </p>
         <p className="font-display text-sm text-center text-accent mb-4">
           🎮 {gamesPlayed.toLocaleString()} games played worldwide!
@@ -1560,6 +1559,16 @@ export const SnailGame3rdPerson = () => {
                   {gameState.doubleDamageUntil > performance.now() && (
                     <div className="bg-orange-500/80 px-2 py-1 rounded-lg animate-pulse pointer-events-none">
                       <span className="text-white font-display text-xs">⚡2X DAMAGE⚡</span>
+                    </div>
+                  )}
+                  {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
+                    <div className={`px-2 py-1 rounded-lg pointer-events-none ${
+                      gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
+                    }`}>
+                      <span className="text-white font-display text-xs">
+                        {gameState.specialWeapon === 'flamethrower' ? '🔥 FLAMETHROWER' : '🚀 ROCKET'}
+                        {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1650,6 +1659,22 @@ export const SnailGame3rdPerson = () => {
                 </div>
               </div>
               
+              {/* Jump button - left side above joystick */}
+              <div
+                className="absolute bottom-36 left-6 w-16 h-16 sm:hidden touch-none"
+                onTouchStart={() => {
+                  touchJumping.current = true;
+                }}
+                onTouchEnd={() => {
+                  touchJumping.current = false;
+                }}
+              >
+                <div className="w-full h-full rounded-full bg-blue-600/80 border-4 border-blue-400 flex items-center justify-center active:bg-blue-500 active:scale-95 transition-transform">
+                  <span className="text-white font-display text-sm">JUMP</span>
+                </div>
+              </div>
+              
+              {/* Fire button - right side */}
               <div
                 className="absolute bottom-4 right-4 w-24 h-24 sm:hidden touch-none"
                 onTouchStart={() => {
