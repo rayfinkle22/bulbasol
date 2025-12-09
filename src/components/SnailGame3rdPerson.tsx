@@ -79,12 +79,28 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail using sprite with gun on the side
+// 3D Snail using sprite with gun on the side - with smooth interpolation
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   const texture = useLoader(THREE.TextureLoader, snail3DImage);
+  const groupRef = useRef<THREE.Group>(null);
+  const currentPos = useRef({ x: position[0], z: position[1], rot: rotation });
+  
+  useFrame((_, delta) => {
+    if (groupRef.current) {
+      // Smooth interpolation for position and rotation
+      const lerpSpeed = 12;
+      currentPos.current.x = THREE.MathUtils.lerp(currentPos.current.x, position[0], delta * lerpSpeed);
+      currentPos.current.z = THREE.MathUtils.lerp(currentPos.current.z, position[1], delta * lerpSpeed);
+      currentPos.current.rot = THREE.MathUtils.lerp(currentPos.current.rot, rotation, delta * lerpSpeed);
+      
+      groupRef.current.position.x = currentPos.current.x;
+      groupRef.current.position.z = currentPos.current.z;
+      groupRef.current.rotation.y = currentPos.current.rot;
+    }
+  });
   
   return (
-    <group position={[position[0], 0, position[1]]} rotation={[0, rotation, 0]}>
+    <group ref={groupRef} position={[position[0], 0, position[1]]} rotation={[0, rotation, 0]}>
       {/* Snail sprite - positioned on ground, facing forward */}
       <sprite position={[0, 0.9, 0]} scale={[1.8, 1.8, 1]}>
         <spriteMaterial 
