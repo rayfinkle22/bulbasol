@@ -787,13 +787,26 @@ export const SnailGame = () => {
     setGameState(prev => ({ ...prev, status: 'gameover' }));
   };
 
+  // Generate a stable session hash for rate limiting
+  const getSessionHash = useCallback(() => {
+    let sessionHash = sessionStorage.getItem('snail_game_session');
+    if (!sessionHash) {
+      sessionHash = crypto.randomUUID() + '-' + Date.now();
+      sessionStorage.setItem('snail_game_session', sessionHash);
+    }
+    return sessionHash;
+  }, []);
+
   const startGame = useCallback(async () => {
     setScoreSubmitted(false);
     gameStartTime.current = Date.now();
     
-    // Increment games played counter
+    // Increment games played counter with session-based rate limiting
     try {
-      const { data: newCount } = await supabase.rpc('increment_games_played');
+      const sessionHash = getSessionHash();
+      const { data: newCount } = await supabase.rpc('increment_games_played', { 
+        p_session_hash: sessionHash 
+      });
       if (newCount) {
         setGamesPlayed(newCount);
       }
