@@ -31,17 +31,31 @@ interface PowerUp {
   type: 'health' | 'doubleDamage';
 }
 
+type SpecialWeapon = 'flamethrower' | 'rocketLauncher' | null;
+
+interface WeaponPickup {
+  id: number;
+  position: [number, number, number];
+  type: 'flamethrower' | 'rocketLauncher';
+}
+
 interface GameState {
   status: 'idle' | 'playing' | 'paused' | 'gameover' | 'entering_name';
   score: number;
   bugsKilled: number;
   snailPosition: [number, number];
   snailRotation: number;
+  snailHeight: number;
+  snailVelocityY: number;
+  isJumping: boolean;
   bugs: Bug[];
   bullets: Bullet[];
   powerUps: PowerUp[];
+  weaponPickups: WeaponPickup[];
   health: number;
   doubleDamageUntil: number;
+  specialWeapon: SpecialWeapon;
+  specialWeaponUntil: number;
 }
 
 interface LeaderboardEntry {
@@ -80,27 +94,29 @@ const BUG_CONFIGS = {
 };
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
-function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
+function Snail({ position, rotation, height, specialWeapon }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon }) {
   const texture = useLoader(THREE.TextureLoader, snail3DImage);
   const groupRef = useRef<THREE.Group>(null);
-  const currentPos = useRef({ x: position[0], z: position[1], rot: rotation });
+  const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
   
   useFrame((_, delta) => {
     if (groupRef.current) {
       // Smooth interpolation for position and rotation
       const lerpSpeed = 12;
       currentPos.current.x = THREE.MathUtils.lerp(currentPos.current.x, position[0], delta * lerpSpeed);
+      currentPos.current.y = THREE.MathUtils.lerp(currentPos.current.y, height, delta * lerpSpeed);
       currentPos.current.z = THREE.MathUtils.lerp(currentPos.current.z, position[1], delta * lerpSpeed);
       currentPos.current.rot = THREE.MathUtils.lerp(currentPos.current.rot, rotation, delta * lerpSpeed);
       
       groupRef.current.position.x = currentPos.current.x;
+      groupRef.current.position.y = currentPos.current.y;
       groupRef.current.position.z = currentPos.current.z;
       groupRef.current.rotation.y = currentPos.current.rot;
     }
   });
   
   return (
-    <group ref={groupRef} position={[position[0], 0, position[1]]} rotation={[0, rotation, 0]}>
+    <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Snail sprite - positioned on ground, facing forward */}
       <sprite position={[0, 0.9, 0]} scale={[1.8, 1.8, 1]}>
         <spriteMaterial 
@@ -110,13 +126,13 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
         />
       </sprite>
       
-      {/* Shadow on ground */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.7, 1]}>
+      {/* Shadow on ground - scales with height */}
+      <mesh position={[0, -height + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
         <circleGeometry args={[0.6, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.25} />
+        <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.1, 0.25 - height * 0.05)} />
       </mesh>
       
-      {/* Gun mounted on right side of snail body */}
+      {/* Gun mounted on right side of snail body - changes based on weapon */}
       <group position={[0.7, 0.5, 0.4]} rotation={[0, 0, 0]}>
         {/* Mount arm connecting to body */}
         <mesh position={[-0.2, 0, -0.1]} rotation={[0, 0.2, 0.1]}>
@@ -124,31 +140,65 @@ function Snail({ position, rotation }: { position: [number, number]; rotation: n
           <meshStandardMaterial color="#5a4a3a" roughness={0.85} />
         </mesh>
         
-        {/* Gun barrel pointing forward */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.06, 0.5, 8]} />
-          <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.15} />
-        </mesh>
-        
-        {/* Barrel rings */}
-        {[0.08, 0.18, 0.28].map((z, i) => (
-          <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.05, 0.008, 6, 12]} />
-            <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
-          </mesh>
-        ))}
-        
-        {/* Muzzle */}
-        <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.055, 0.04, 0.06, 8]} />
-          <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
-        </mesh>
-        
-        {/* Receiver/body */}
-        <mesh position={[0, 0.03, -0.1]}>
-          <boxGeometry args={[0.08, 0.1, 0.15]} />
-          <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.25} />
-        </mesh>
+        {specialWeapon === 'flamethrower' ? (
+          <>
+            {/* Flamethrower barrel */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.08, 0.1, 0.6, 8]} />
+              <meshStandardMaterial color="#4a3a2a" metalness={0.7} roughness={0.3} />
+            </mesh>
+            {/* Fuel tank */}
+            <mesh position={[-0.15, 0, -0.2]}>
+              <capsuleGeometry args={[0.08, 0.2, 8, 12]} />
+              <meshStandardMaterial color="#aa4400" metalness={0.6} roughness={0.4} />
+            </mesh>
+            {/* Flame tip glow */}
+            <pointLight position={[0, 0, 0.4]} color="#ff4400" intensity={1} distance={2} />
+          </>
+        ) : specialWeapon === 'rocketLauncher' ? (
+          <>
+            {/* Rocket launcher tube */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.1, 0.1, 0.8, 12]} />
+              <meshStandardMaterial color="#3a4a3a" metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Scope */}
+            <mesh position={[0, 0.12, 0]}>
+              <boxGeometry args={[0.04, 0.06, 0.15]} />
+              <meshStandardMaterial color="#1a1a1a" />
+            </mesh>
+            {/* Back exhaust */}
+            <mesh position={[0, 0, -0.45]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.12, 0.08, 0.1, 12]} />
+              <meshStandardMaterial color="#2a2a2a" />
+            </mesh>
+          </>
+        ) : (
+          <>
+            {/* Default gun barrel */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.04, 0.06, 0.5, 8]} />
+              <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.15} />
+            </mesh>
+            {/* Barrel rings */}
+            {[0.08, 0.18, 0.28].map((z, i) => (
+              <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[0.05, 0.008, 6, 12]} />
+                <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
+              </mesh>
+            ))}
+            {/* Muzzle */}
+            <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.055, 0.04, 0.06, 8]} />
+              <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
+            </mesh>
+            {/* Receiver/body */}
+            <mesh position={[0, 0.03, -0.1]}>
+              <boxGeometry args={[0.08, 0.1, 0.15]} />
+              <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.25} />
+            </mesh>
+          </>
+        )}
       </group>
     </group>
   );
@@ -428,8 +478,50 @@ function Bug({ bug }: { bug: Bug }) {
   );
 }
 
-// Bullet component
-function Bullet({ bullet }: { bullet: Bullet }) {
+// Bullet component - with weapon type variations
+function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } }) {
+  const meshRef = useRef<THREE.Group>(null);
+  
+  useFrame((_, delta) => {
+    if (meshRef.current && bullet.weaponType === 'flamethrower') {
+      meshRef.current.scale.x += delta * 2;
+      meshRef.current.scale.y += delta * 2;
+      meshRef.current.scale.z += delta * 2;
+    }
+  });
+  
+  if (bullet.weaponType === 'flamethrower') {
+    return (
+      <group ref={meshRef} position={bullet.position}>
+        <mesh>
+          <sphereGeometry args={[0.3, 8, 8]} />
+          <meshBasicMaterial color="#ff4400" transparent opacity={0.8} />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.2, 8, 8]} />
+          <meshBasicMaterial color="#ffaa00" />
+        </mesh>
+        <pointLight color="#ff4400" intensity={2} distance={3} />
+      </group>
+    );
+  }
+  
+  if (bullet.weaponType === 'rocketLauncher') {
+    return (
+      <group position={bullet.position}>
+        <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
+          <capsuleGeometry args={[0.12, 0.5, 4, 8]} />
+          <meshStandardMaterial color="#4a4a4a" metalness={0.8} />
+        </mesh>
+        <mesh position={[0, 0, -0.3]}>
+          <coneGeometry args={[0.15, 0.2, 8]} />
+          <meshBasicMaterial color="#ff2200" />
+        </mesh>
+        <pointLight color="#ff4400" intensity={1.5} distance={2} />
+      </group>
+    );
+  }
+  
   return (
     <group position={bullet.position}>
       <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
@@ -440,6 +532,57 @@ function Bullet({ bullet }: { bullet: Bullet }) {
         <sphereGeometry args={[0.2, 8, 8]} />
         <meshBasicMaterial color="#ff3300" />
       </mesh>
+    </group>
+  );
+}
+
+// Weapon pickup component
+function WeaponPickupMesh({ pickup }: { pickup: WeaponPickup }) {
+  const meshRef = useRef<THREE.Group>(null);
+  
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 2;
+      meshRef.current.position.y = 0.8 + Math.sin(Date.now() * 0.004) * 0.2;
+    }
+  });
+  
+  return (
+    <group ref={meshRef} position={[pickup.position[0], pickup.position[1], pickup.position[2]]}>
+      {pickup.type === 'flamethrower' && (
+        <>
+          <mesh rotation={[0, 0, Math.PI / 4]}>
+            <cylinderGeometry args={[0.15, 0.2, 0.8, 8]} />
+            <meshStandardMaterial color="#8a4a2a" metalness={0.6} />
+          </mesh>
+          <mesh position={[0.2, 0.2, 0]}>
+            <sphereGeometry args={[0.15, 8, 8]} />
+            <meshStandardMaterial color="#aa4400" metalness={0.5} />
+          </mesh>
+          <pointLight color="#ff4400" intensity={1} distance={4} />
+          <mesh position={[0, 0, 0.5]}>
+            <sphereGeometry args={[0.4, 16, 16]} />
+            <meshBasicMaterial color="#ff4400" transparent opacity={0.2} />
+          </mesh>
+        </>
+      )}
+      {pickup.type === 'rocketLauncher' && (
+        <>
+          <mesh rotation={[0, 0, Math.PI / 4]}>
+            <cylinderGeometry args={[0.18, 0.18, 1, 12]} />
+            <meshStandardMaterial color="#3a5a3a" metalness={0.7} />
+          </mesh>
+          <mesh position={[0.4, 0.4, 0]}>
+            <coneGeometry args={[0.1, 0.25, 8]} />
+            <meshStandardMaterial color="#aa2200" />
+          </mesh>
+          <pointLight color="#44ff44" intensity={0.8} distance={4} />
+          <mesh position={[0, 0, 0.5]}>
+            <sphereGeometry args={[0.4, 16, 16]} />
+            <meshBasicMaterial color="#44aa44" transparent opacity={0.2} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
@@ -667,7 +810,8 @@ function GameScene({
   highScore,
   setHighScore,
   touchMove,
-  touchShooting
+  touchShooting,
+  touchJumping
 }: { 
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -676,21 +820,27 @@ function GameScene({
   setHighScore: React.Dispatch<React.SetStateAction<number>>;
   touchMove: React.MutableRefObject<{ dx: number; dy: number }>;
   touchShooting: React.MutableRefObject<boolean>;
+  touchJumping: React.MutableRefObject<boolean>;
 }) {
   const keysPressed = useRef<Set<string>>(new Set());
   const lastSpawn = useRef(0);
   const lastPowerUpSpawn = useRef(0);
+  const lastWeaponSpawn = useRef(0);
   const lastShot = useRef(0);
   const isShooting = useRef(false);
+  const jumpPressed = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'j'].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
       keysPressed.current.add(e.key.toLowerCase());
       if (e.key === ' ') {
         isShooting.current = true;
+      }
+      if (e.key.toLowerCase() === 'j') {
+        jumpPressed.current = true;
       }
     };
     
@@ -698,6 +848,9 @@ function GameScene({
       keysPressed.current.delete(e.key.toLowerCase());
       if (e.key === ' ') {
         isShooting.current = false;
+      }
+      if (e.key.toLowerCase() === 'j') {
+        jumpPressed.current = false;
       }
     };
 
@@ -746,29 +899,85 @@ function GameScene({
       turn = -rotateSpeed * touchMove.current.dx;
     }
 
-    // Machine gun firing
+    // Weapon firing - different rates and behaviors based on weapon type
     const now = performance.now();
-    if ((isShooting.current || touchShooting.current) && gameState.status === 'playing' && now - lastShot.current > 80) {
+    const currentWeapon = prev => prev.specialWeaponUntil > now ? prev.specialWeapon : null;
+    
+    // Determine fire rate based on weapon
+    let fireRate = 80; // default machine gun
+    if (gameState.specialWeapon === 'flamethrower' && gameState.specialWeaponUntil > now) {
+      fireRate = 50; // faster for flamethrower
+    } else if (gameState.specialWeapon === 'rocketLauncher' && gameState.specialWeaponUntil > now) {
+      fireRate = 500; // slower for rockets
+    }
+    
+    if ((isShooting.current || touchShooting.current) && gameState.status === 'playing' && now - lastShot.current > fireRate) {
       lastShot.current = now;
       const angle = gameState.snailRotation;
-      const spread = (Math.random() - 0.5) * 0.15;
-      const velocity: [number, number] = [
-        Math.sin(angle + spread) * 0.8,
-        Math.cos(angle + spread) * 0.8
-      ];
-      const newBullet: Bullet = {
-        id: Date.now() + Math.random(),
-        position: [
-          gameState.snailPosition[0] + Math.sin(angle) * 1,
-          0.5,
-          gameState.snailPosition[1] + Math.cos(angle) * 1
-        ],
-        velocity
-      };
-      setGameState(prev => ({
-        ...prev,
-        bullets: [...prev.bullets, newBullet]
-      }));
+      const activeWeapon = gameState.specialWeaponUntil > now ? gameState.specialWeapon : null;
+      
+      if (activeWeapon === 'flamethrower') {
+        // Flamethrower shoots multiple short-range flames
+        const spread = (Math.random() - 0.5) * 0.4;
+        const velocity: [number, number] = [
+          Math.sin(angle + spread) * 0.4,
+          Math.cos(angle + spread) * 0.4
+        ];
+        const newBullet = {
+          id: Date.now() + Math.random(),
+          position: [
+            gameState.snailPosition[0] + Math.sin(angle) * 1.2,
+            0.5 + gameState.snailHeight,
+            gameState.snailPosition[1] + Math.cos(angle) * 1.2
+          ] as [number, number, number],
+          velocity,
+          weaponType: 'flamethrower' as SpecialWeapon
+        };
+        setGameState(prev => ({
+          ...prev,
+          bullets: [...prev.bullets, newBullet]
+        }));
+      } else if (activeWeapon === 'rocketLauncher') {
+        // Rocket launcher shoots a single powerful rocket
+        const velocity: [number, number] = [
+          Math.sin(angle) * 0.5,
+          Math.cos(angle) * 0.5
+        ];
+        const newBullet = {
+          id: Date.now() + Math.random(),
+          position: [
+            gameState.snailPosition[0] + Math.sin(angle) * 1.2,
+            0.5 + gameState.snailHeight,
+            gameState.snailPosition[1] + Math.cos(angle) * 1.2
+          ] as [number, number, number],
+          velocity,
+          weaponType: 'rocketLauncher' as SpecialWeapon
+        };
+        setGameState(prev => ({
+          ...prev,
+          bullets: [...prev.bullets, newBullet]
+        }));
+      } else {
+        // Default machine gun
+        const spread = (Math.random() - 0.5) * 0.15;
+        const velocity: [number, number] = [
+          Math.sin(angle + spread) * 0.8,
+          Math.cos(angle + spread) * 0.8
+        ];
+        const newBullet: Bullet = {
+          id: Date.now() + Math.random(),
+          position: [
+            gameState.snailPosition[0] + Math.sin(angle) * 1,
+            0.5 + gameState.snailHeight,
+            gameState.snailPosition[1] + Math.cos(angle) * 1
+          ],
+          velocity
+        };
+        setGameState(prev => ({
+          ...prev,
+          bullets: [...prev.bullets, newBullet]
+        }));
+      }
     }
 
     // Spawn bugs - spawn multiple bugs based on difficulty
@@ -818,6 +1027,25 @@ function GameScene({
         powerUps: [...prev.powerUps, newPowerUp]
       }));
     }
+    
+    // Spawn weapon pickups
+    if (now - lastWeaponSpawn.current > 15000 + Math.random() * 10000) {
+      lastWeaponSpawn.current = now;
+      const weaponType: WeaponPickup['type'] = Math.random() > 0.5 ? 'flamethrower' : 'rocketLauncher';
+      const newWeapon: WeaponPickup = {
+        id: Date.now() + Math.random(),
+        position: [
+          gameState.snailPosition[0] + (Math.random() - 0.5) * 16,
+          0.8,
+          gameState.snailPosition[1] + (Math.random() - 0.5) * 16
+        ],
+        type: weaponType
+      };
+      setGameState(prev => ({
+        ...prev,
+        weaponPickups: [...prev.weaponPickups, newWeapon]
+      }));
+    }
 
     setGameState(prev => {
       // Update rotation
@@ -830,6 +1058,45 @@ function GameScene({
       // Keep snail within bounds
       newX = Math.max(-20, Math.min(20, newX));
       newZ = Math.max(-20, Math.min(20, newZ));
+      
+      // Jump physics
+      let newHeight = prev.snailHeight;
+      let newVelocityY = prev.snailVelocityY;
+      let newIsJumping = prev.isJumping;
+      
+      // Initiate jump
+      if ((jumpPressed.current || touchJumping.current) && !prev.isJumping && prev.snailHeight === 0) {
+        newVelocityY = 8;
+        newIsJumping = true;
+      }
+      
+      // Apply gravity and update height
+      if (newIsJumping || newHeight > 0) {
+        newVelocityY -= 20 * clampedDelta; // gravity
+        newHeight += newVelocityY * clampedDelta;
+        
+        if (newHeight <= 0) {
+          newHeight = 0;
+          newVelocityY = 0;
+          newIsJumping = false;
+        }
+      }
+      
+      // Check weapon pickup collisions
+      let newSpecialWeapon = prev.specialWeapon;
+      let newSpecialWeaponUntil = prev.specialWeaponUntil;
+      let updatedWeaponPickups = prev.weaponPickups.filter(pickup => {
+        const dx = pickup.position[0] - newX;
+        const dz = pickup.position[2] - newZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        
+        if (dist < 1.2) {
+          newSpecialWeapon = pickup.type;
+          newSpecialWeaponUntil = performance.now() + 30000; // 30 seconds
+          return false;
+        }
+        return true;
+      });
 
       // Update bullets
       let updatedBullets = prev.bullets
@@ -963,13 +1230,19 @@ function GameScene({
         ...prev,
         snailPosition: [newX, newZ],
         snailRotation: newRotation,
+        snailHeight: newHeight,
+        snailVelocityY: newVelocityY,
+        isJumping: newIsJumping,
         bullets: updatedBullets,
         bugs: updatedBugs,
         powerUps: updatedPowerUps,
+        weaponPickups: updatedWeaponPickups,
         score: newScore,
         bugsKilled: newBugsKilled,
         health: newHealth,
-        doubleDamageUntil: newDoubleDamageUntil
+        doubleDamageUntil: newDoubleDamageUntil,
+        specialWeapon: newSpecialWeapon,
+        specialWeaponUntil: newSpecialWeaponUntil
       };
     });
   });
@@ -986,7 +1259,12 @@ function GameScene({
       {/* Realistic forest terrain */}
       <RealisticForestGround />
       
-      <Snail position={gameState.snailPosition} rotation={gameState.snailRotation} />
+      <Snail 
+        position={gameState.snailPosition} 
+        rotation={gameState.snailRotation} 
+        height={gameState.snailHeight}
+        specialWeapon={gameState.specialWeapon}
+      />
       
       {gameState.bugs.map(bug => (
         <Bug key={bug.id} bug={bug} />
@@ -998,6 +1276,10 @@ function GameScene({
       
       {gameState.powerUps.map(powerUp => (
         <PowerUpMesh key={powerUp.id} powerUp={powerUp} />
+      ))}
+      
+      {gameState.weaponPickups.map(pickup => (
+        <WeaponPickupMesh key={pickup.id} pickup={pickup} />
       ))}
     </>
   );
@@ -1015,8 +1297,10 @@ export const SnailGame3rdPerson = () => {
   
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const touchShooting = useRef(false);
+  const touchJumping = useRef(false);
   const joystickRef = useRef<HTMLDivElement>(null);
   const joystickStartPos = useRef<{ x: number; y: number } | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1024,11 +1308,17 @@ export const SnailGame3rdPerson = () => {
     bugsKilled: 0,
     snailPosition: [0, 0],
     snailRotation: 0,
+    snailHeight: 0,
+    snailVelocityY: 0,
+    isJumping: false,
     bugs: [],
     bullets: [],
     powerUps: [],
+    weaponPickups: [],
     health: 100,
-    doubleDamageUntil: 0
+    doubleDamageUntil: 0,
+    specialWeapon: null,
+    specialWeaponUntil: 0
   });
 
   useEffect(() => {
@@ -1156,11 +1446,17 @@ export const SnailGame3rdPerson = () => {
       bugsKilled: 0,
       snailPosition: [0, 0],
       snailRotation: 0,
+      snailHeight: 0,
+      snailVelocityY: 0,
+      isJumping: false,
       bugs: [],
       bullets: [],
       powerUps: [],
+      weaponPickups: [],
       health: 100,
-      doubleDamageUntil: 0
+      doubleDamageUntil: 0,
+      specialWeapon: null,
+      specialWeaponUntil: 0
     });
   }, [getSessionHash]);
 
@@ -1213,6 +1509,7 @@ export const SnailGame3rdPerson = () => {
               setHighScore={setHighScore}
               touchMove={touchMove}
               touchShooting={touchShooting}
+              touchJumping={touchJumping}
             />
           </Canvas>
 
