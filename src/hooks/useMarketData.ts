@@ -1,9 +1,47 @@
 import { useEffect, useState } from "react";
 
+interface TransactionData {
+  buys: number;
+  sells: number;
+}
+
+interface PriceChangeData {
+  m5: number | null;
+  h1: number | null;
+  h6: number | null;
+  h24: number | null;
+}
+
+interface VolumeData {
+  m5: number | null;
+  h1: number | null;
+  h6: number | null;
+  h24: number | null;
+}
+
 interface MarketData {
+  // Core pricing
   marketCap: number | null;
   priceUsd: string | null;
-  priceChange24h: number | null;
+  priceNative: string | null;
+  
+  // Price changes across timeframes
+  priceChange: PriceChangeData;
+  
+  // Volume data
+  volume: VolumeData;
+  
+  // Liquidity
+  liquidityUsd: number | null;
+  
+  // Transaction activity
+  txns24h: TransactionData | null;
+  txns1h: TransactionData | null;
+  
+  // Metadata
+  pairCreatedAt: number | null;
+  dexId: string | null;
+  
   isLoading: boolean;
 }
 
@@ -13,7 +51,14 @@ const TOKEN_ADDRESS = "5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump";
 let cachedData: MarketData = {
   marketCap: null,
   priceUsd: null,
-  priceChange24h: null,
+  priceNative: null,
+  priceChange: { m5: null, h1: null, h6: null, h24: null },
+  volume: { m5: null, h1: null, h6: null, h24: null },
+  liquidityUsd: null,
+  txns24h: null,
+  txns1h: null,
+  pairCreatedAt: null,
+  dexId: null,
   isLoading: true,
 };
 
@@ -27,11 +72,30 @@ const fetchMarketData = async () => {
     );
     const data = await response.json();
     if (data.pairs && data.pairs.length > 0) {
-      const pair = data.pairs[0];
+      // Use pumpswap pair (main trading pair) if available
+      const pair = data.pairs.find((p: any) => p.dexId === "pumpswap") || data.pairs[0];
+      
       cachedData = {
         marketCap: pair.marketCap || pair.fdv,
         priceUsd: pair.priceUsd,
-        priceChange24h: pair.priceChange?.h24 || null,
+        priceNative: pair.priceNative,
+        priceChange: {
+          m5: pair.priceChange?.m5 ?? null,
+          h1: pair.priceChange?.h1 ?? null,
+          h6: pair.priceChange?.h6 ?? null,
+          h24: pair.priceChange?.h24 ?? null,
+        },
+        volume: {
+          m5: pair.volume?.m5 ?? null,
+          h1: pair.volume?.h1 ?? null,
+          h6: pair.volume?.h6 ?? null,
+          h24: pair.volume?.h24 ?? null,
+        },
+        liquidityUsd: pair.liquidity?.usd ?? null,
+        txns24h: pair.txns?.h24 ?? null,
+        txns1h: pair.txns?.h1 ?? null,
+        pairCreatedAt: pair.pairCreatedAt ?? null,
+        dexId: pair.dexId ?? null,
         isLoading: false,
       };
     } else {
@@ -77,4 +141,25 @@ export const formatMarketCap = (value: number) => {
     return `$${(value / 1_000).toFixed(2)}K`;
   }
   return `$${value.toFixed(2)}`;
+};
+
+export const formatVolume = (value: number) => {
+  if (value >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(2)}M`;
+  } else if (value >= 1_000) {
+    return `$${(value / 1_000).toFixed(1)}K`;
+  }
+  return `$${value.toFixed(0)}`;
+};
+
+export const formatAge = (timestamp: number) => {
+  const now = Date.now();
+  const ageMs = now - timestamp;
+  const hours = Math.floor(ageMs / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) {
+    return `${days} day${days > 1 ? 's' : ''} old`;
+  }
+  return `${hours} hour${hours !== 1 ? 's' : ''} old`;
 };

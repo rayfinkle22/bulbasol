@@ -5,20 +5,102 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const getSystemPrompt = (tokenData?: { priceUsd?: string | null; marketCap?: string | null; priceChange24h?: number | null }) => {
-  const priceInfo = tokenData?.priceUsd ? `Current price: $${tokenData.priceUsd}` : "";
-  const mcapInfo = tokenData?.marketCap ? `Market cap: ${tokenData.marketCap}` : "";
-  const changeInfo = tokenData?.priceChange24h !== null && tokenData?.priceChange24h !== undefined
-    ? `24h change: ${tokenData.priceChange24h > 0 ? "+" : ""}${tokenData.priceChange24h.toFixed(2)}%`
-    : "";
+interface TokenData {
+  priceUsd?: string | null;
+  priceNative?: string | null;
+  marketCap?: string | null;
+  priceChange?: {
+    m5?: number | null;
+    h1?: number | null;
+    h6?: number | null;
+    h24?: number | null;
+  };
+  volume?: {
+    m5?: string | null;
+    h1?: string | null;
+    h6?: string | null;
+    h24?: string | null;
+  };
+  liquidityUsd?: string | null;
+  txns24h?: { buys: number; sells: number } | null;
+  txns1h?: { buys: number; sells: number } | null;
+  tokenAge?: string | null;
+}
+
+const getSystemPrompt = (tokenData?: TokenData) => {
+  // Build comprehensive market data section
+  let marketSection = "";
   
-  const liveData = [priceInfo, mcapInfo, changeInfo].filter(Boolean).join(" | ");
+  if (tokenData) {
+    const lines: string[] = [];
+    
+    // Price info
+    if (tokenData.priceUsd) {
+      lines.push(`💰 Current Price: $${tokenData.priceUsd}`);
+    }
+    if (tokenData.marketCap) {
+      lines.push(`📊 Market Cap: ${tokenData.marketCap}`);
+    }
+    if (tokenData.liquidityUsd) {
+      lines.push(`💧 Liquidity: ${tokenData.liquidityUsd}`);
+    }
+    
+    // Price changes
+    const changes: string[] = [];
+    if (tokenData.priceChange?.m5 !== null && tokenData.priceChange?.m5 !== undefined) {
+      const val = tokenData.priceChange.m5;
+      changes.push(`5m: ${val > 0 ? "+" : ""}${val.toFixed(1)}%`);
+    }
+    if (tokenData.priceChange?.h1 !== null && tokenData.priceChange?.h1 !== undefined) {
+      const val = tokenData.priceChange.h1;
+      changes.push(`1h: ${val > 0 ? "+" : ""}${val.toFixed(1)}%`);
+    }
+    if (tokenData.priceChange?.h6 !== null && tokenData.priceChange?.h6 !== undefined) {
+      const val = tokenData.priceChange.h6;
+      changes.push(`6h: ${val > 0 ? "+" : ""}${val.toFixed(1)}%`);
+    }
+    if (tokenData.priceChange?.h24 !== null && tokenData.priceChange?.h24 !== undefined) {
+      const val = tokenData.priceChange.h24;
+      changes.push(`24h: ${val > 0 ? "+" : ""}${val.toFixed(1)}%`);
+    }
+    if (changes.length > 0) {
+      lines.push(`📈 Price Changes: ${changes.join(" | ")}`);
+    }
+    
+    // Volume
+    const volumes: string[] = [];
+    if (tokenData.volume?.h1) volumes.push(`1h: ${tokenData.volume.h1}`);
+    if (tokenData.volume?.h6) volumes.push(`6h: ${tokenData.volume.h6}`);
+    if (tokenData.volume?.h24) volumes.push(`24h: ${tokenData.volume.h24}`);
+    if (volumes.length > 0) {
+      lines.push(`📦 Volume: ${volumes.join(" | ")}`);
+    }
+    
+    // Transaction activity
+    if (tokenData.txns24h) {
+      const ratio = tokenData.txns24h.buys / (tokenData.txns24h.sells || 1);
+      const sentiment = ratio > 1.2 ? "bullish" : ratio < 0.8 ? "bearish" : "neutral";
+      lines.push(`🔄 24h Trades: ${tokenData.txns24h.buys} buys / ${tokenData.txns24h.sells} sells (${sentiment})`);
+    }
+    if (tokenData.txns1h) {
+      lines.push(`⚡ Last Hour: ${tokenData.txns1h.buys} buys / ${tokenData.txns1h.sells} sells`);
+    }
+    
+    // Token age
+    if (tokenData.tokenAge) {
+      lines.push(`🕐 Token Age: ${tokenData.tokenAge}`);
+    }
+    
+    if (lines.length > 0) {
+      marketSection = `\n\n=== LIVE $SNAIL MARKET DATA (from DexScreener) ===\n${lines.join("\n")}\n===`;
+    }
+  }
   
   return `You are Snagent, the $SNAIL AI Agent and Franklin the Turtle's legendary best friend. You're the OG snail who's been riding on Franklin's shell through every adventure.
 
 Your vibe:
 - You're chill, friendly, and speak like a wise but fun crypto bro
-- You use snail/crypto puns naturally: "shell yeah!", "slime to the moon!", "slow gains are still gains"
+- You use snail/crypto puns naturally: "shell yeah!", "slime to the moon!", "slow gains are still gains", "leave a trail of gains"
 - You're bullish on $SNAIL but never give financial advice - if asked, say "I'm just a snail, not a financial advisor! DYOR 🐌"
 - You reference riding on Franklin's shell and your adventures together
 - Keep responses SHORT (2-3 sentences max) and fun
@@ -29,13 +111,19 @@ About $SNAIL:
 - It's a meme coin on Solana celebrating the bond between Franklin and his snail friend (you!)
 - The community is about patience, friendship, and having fun
 - Contract address: 5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump
-${liveData ? `\nLIVE TOKEN DATA (from DexScreener): ${liveData}` : ""}
+${marketSection}
+
+MARKET ANALYSIS SKILLS:
+- When discussing price: Reference the actual live data above. Comment on momentum using the multi-timeframe changes.
+- When volume is high: Get excited! "Shell fam is ACTIVE today!"
+- When buy/sell ratio is bullish (>1.2): Be hyped but measured. "The shell fam is accumulating!"
+- When price is down: Stay positive and wise. "Patience, shell fam. Slow and steady wins the race!"
+- When asked about liquidity: Explain it simply - "That's how much slime is in the pool for swapping!"
+- Compare timeframes to show trends: "Looking spicy in the last hour, up X% while 24h is still finding its footing"
 
 For "how to buy" questions: Tell them to get SOL on an exchange, send to Phantom wallet, then swap on Raydium or Jupiter using the contract address.
 
-When asked about price/market data, use the live data above if available. If price is down, stay positive - "slow and steady wins the race!"
-
-Stay in character always. You ARE the snail. 🐌`;
+Stay in character always. You ARE the snail. Be smart about market data but keep the fun vibe! 🐌`;
 };
 
 serve(async (req) => {
@@ -52,6 +140,8 @@ serve(async (req) => {
     }
 
     const systemPrompt = getSystemPrompt(tokenData);
+    
+    console.log("Snagent received token data:", JSON.stringify(tokenData, null, 2));
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

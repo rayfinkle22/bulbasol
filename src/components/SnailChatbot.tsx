@@ -3,17 +3,17 @@ import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { toast } from "sonner";
 import snailImage from "@/assets/snail.png";
-import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
+import { useMarketData, formatMarketCap, formatVolume, formatAge } from "@/hooks/useMarketData";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/snail-chat`;
 
 const QUICK_REPLIES = [
-  { label: "What is $SNAIL?", message: "What is $SNAIL and what makes it special?" },
-  { label: "How to buy?", message: "How do I buy $SNAIL tokens?" },
-  { label: "Who is Franklin?", message: "Tell me about Franklin the Turtle!" },
-  { label: "Price prediction?", message: "What do you think about the price of $SNAIL?" },
+  { label: "📊 Price check", message: "What's the current price and how's the market looking?" },
+  { label: "🔥 Is it pumping?", message: "Is $SNAIL pumping right now? What's the momentum?" },
+  { label: "💰 How to buy?", message: "How do I buy $SNAIL tokens?" },
+  { label: "🐢 Who's Franklin?", message: "Tell me about Franklin the Turtle and your friendship!" },
 ];
 
 export const SnailChatbot = () => {
@@ -32,11 +32,22 @@ export const SnailChatbot = () => {
   }, [messages]);
 
   const streamChat = async (userMessages: Message[]) => {
-    // Prepare market data context
+    // Prepare comprehensive market data context
     const tokenData = {
       priceUsd: marketData.priceUsd,
+      priceNative: marketData.priceNative,
       marketCap: marketData.marketCap ? formatMarketCap(marketData.marketCap) : null,
-      priceChange24h: marketData.priceChange24h,
+      priceChange: marketData.priceChange,
+      volume: {
+        m5: marketData.volume.m5 ? formatVolume(marketData.volume.m5) : null,
+        h1: marketData.volume.h1 ? formatVolume(marketData.volume.h1) : null,
+        h6: marketData.volume.h6 ? formatVolume(marketData.volume.h6) : null,
+        h24: marketData.volume.h24 ? formatVolume(marketData.volume.h24) : null,
+      },
+      liquidityUsd: marketData.liquidityUsd ? formatVolume(marketData.liquidityUsd) : null,
+      txns24h: marketData.txns24h,
+      txns1h: marketData.txns1h,
+      tokenAge: marketData.pairCreatedAt ? formatAge(marketData.pairCreatedAt) : null,
     };
 
     const resp = await fetch(CHAT_URL, {
