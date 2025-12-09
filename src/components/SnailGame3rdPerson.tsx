@@ -64,111 +64,135 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail with realistic spiral shell
+// 3D Snail with orange spiral shell like Turbo
 function Snail({ position, rotation }: { position: [number, number]; rotation: number }) {
   return (
-    <group position={[position[0], 0.25, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Realistic spiral shell - main dome */}
-      <mesh position={[0, 0.45, -0.15]} rotation={[0.2, 0, 0]}>
-        <sphereGeometry args={[0.55, 24, 24]} />
-        <meshStandardMaterial color="#c9a66b" roughness={0.4} metalness={0.1} />
+    <group position={[position[0], 0.2, position[1]]} rotation={[0, rotation, 0]}>
+      {/* Orange spiral shell - main dome */}
+      <mesh position={[0, 0.5, -0.2]} rotation={[0.15, 0, 0]} scale={[1, 0.85, 1]}>
+        <sphereGeometry args={[0.65, 32, 32]} />
+        <meshStandardMaterial color="#e07020" roughness={0.3} metalness={0.1} />
       </mesh>
       
-      {/* Shell spiral pattern - multiple layers creating spiral effect */}
-      <mesh position={[0.15, 0.55, -0.2]} rotation={[0.3, 0.5, 0.2]}>
-        <torusGeometry args={[0.35, 0.06, 12, 24]} />
-        <meshStandardMaterial color="#a67c4a" roughness={0.5} />
+      {/* Shell spiral ridges - darker orange bands wrapping around */}
+      <mesh position={[0, 0.5, -0.2]} rotation={[0.15, 0.3, 0]} scale={[1.02, 0.87, 1.02]}>
+        <torusGeometry args={[0.5, 0.04, 12, 32]} />
+        <meshStandardMaterial color="#c05010" roughness={0.4} />
       </mesh>
-      <mesh position={[0.08, 0.5, -0.15]} rotation={[0.2, 0.3, 0.1]}>
-        <torusGeometry args={[0.25, 0.05, 12, 20]} />
-        <meshStandardMaterial color="#8b6239" roughness={0.5} />
+      <mesh position={[0.1, 0.55, -0.25]} rotation={[0.2, 0.6, 0.1]} scale={[0.9, 0.9, 0.9]}>
+        <torusGeometry args={[0.4, 0.035, 12, 28]} />
+        <meshStandardMaterial color="#b04000" roughness={0.4} />
       </mesh>
-      <mesh position={[0.05, 0.48, -0.1]} rotation={[0.1, 0.2, 0]}>
-        <torusGeometry args={[0.15, 0.04, 10, 16]} />
-        <meshStandardMaterial color="#6b4423" roughness={0.5} />
+      <mesh position={[0.15, 0.55, -0.3]} rotation={[0.25, 0.9, 0.15]} scale={[0.75, 0.75, 0.75]}>
+        <torusGeometry args={[0.3, 0.03, 12, 24]} />
+        <meshStandardMaterial color="#a03500" roughness={0.4} />
       </mesh>
-      {/* Shell center spiral */}
-      <mesh position={[0.02, 0.5, -0.05]} rotation={[0, 0.1, 0]}>
+      <mesh position={[0.18, 0.53, -0.32]} rotation={[0.3, 1.2, 0.2]} scale={[0.55, 0.55, 0.55]}>
+        <torusGeometry args={[0.2, 0.025, 10, 20]} />
+        <meshStandardMaterial color="#903000" roughness={0.4} />
+      </mesh>
+      
+      {/* Shell center - spiral endpoint */}
+      <mesh position={[0.22, 0.52, -0.35]} rotation={[0.3, 1.5, 0.2]}>
         <sphereGeometry args={[0.08, 12, 12]} />
-        <meshStandardMaterial color="#5a3a1a" roughness={0.6} />
+        <meshStandardMaterial color="#802800" roughness={0.5} />
       </mesh>
       
-      {/* Shell bands/stripes for realism */}
-      <mesh position={[-0.2, 0.4, -0.2]} rotation={[0.4, -0.3, 0]}>
-        <torusGeometry args={[0.4, 0.02, 8, 24]} />
-        <meshStandardMaterial color="#8b6239" roughness={0.5} />
-      </mesh>
-      <mesh position={[-0.1, 0.35, -0.25]} rotation={[0.5, -0.2, 0]}>
-        <torusGeometry args={[0.45, 0.02, 8, 24]} />
-        <meshStandardMaterial color="#a67c4a" roughness={0.5} />
+      {/* Shell highlight/shine */}
+      <mesh position={[-0.15, 0.65, -0.1]} rotation={[0.1, -0.2, 0]} scale={[0.4, 0.25, 0.3]}>
+        <sphereGeometry args={[0.2, 12, 12]} />
+        <meshStandardMaterial color="#f09050" roughness={0.2} metalness={0.2} />
       </mesh>
       
-      {/* Snail body - soft, slug-like */}
-      <mesh position={[0, 0.12, 0.35]}>
-        <capsuleGeometry args={[0.18, 0.5, 12, 16]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} metalness={0} />
+      {/* Shell bottom rim - reddish orange */}
+      <mesh position={[0, 0.25, -0.15]} rotation={[-0.3, 0, 0]} scale={[1.1, 0.3, 1.1]}>
+        <torusGeometry args={[0.55, 0.08, 12, 32]} />
+        <meshStandardMaterial color="#c04020" roughness={0.4} />
       </mesh>
       
-      {/* Body texture bumps */}
-      <mesh position={[0.08, 0.15, 0.25]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="#c9b898" roughness={0.8} />
-      </mesh>
-      <mesh position={[-0.08, 0.14, 0.3]}>
-        <sphereGeometry args={[0.04, 8, 8]} />
-        <meshStandardMaterial color="#c9b898" roughness={0.8} />
+      {/* Snail body - soft cream/beige colored */}
+      <mesh position={[0, 0.15, 0.3]} scale={[1, 0.8, 1]}>
+        <capsuleGeometry args={[0.22, 0.5, 16, 20]} />
+        <meshStandardMaterial color="#e8ddd0" roughness={0.6} metalness={0} />
       </mesh>
       
-      {/* Head */}
-      <mesh position={[0, 0.18, 0.6]}>
-        <sphereGeometry args={[0.14, 12, 12]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      {/* Body/foot - wavy base like the image */}
+      <mesh position={[0, 0.05, 0.15]} rotation={[0, 0, 0]} scale={[1.3, 0.15, 1.4]}>
+        <sphereGeometry args={[0.35, 16, 12]} />
+        <meshStandardMaterial color="#d8cdc0" roughness={0.7} />
+      </mesh>
+      {/* Foot ruffled edges */}
+      <mesh position={[-0.25, 0.04, 0.1]} scale={[0.3, 0.12, 0.5]}>
+        <sphereGeometry args={[0.3, 10, 8]} />
+        <meshStandardMaterial color="#d0c5b8" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.25, 0.04, 0.1]} scale={[0.3, 0.12, 0.5]}>
+        <sphereGeometry args={[0.3, 10, 8]} />
+        <meshStandardMaterial color="#d0c5b8" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.04, 0.5]} scale={[0.4, 0.12, 0.3]}>
+        <sphereGeometry args={[0.3, 10, 8]} />
+        <meshStandardMaterial color="#d0c5b8" roughness={0.7} />
       </mesh>
       
-      {/* Eye stalks - realistic tentacles */}
-      <mesh position={[-0.08, 0.28, 0.65]} rotation={[-0.4, 0, -0.15]}>
-        <capsuleGeometry args={[0.025, 0.22, 8, 10]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
-      </mesh>
-      <mesh position={[0.08, 0.28, 0.65]} rotation={[-0.4, 0, 0.15]}>
-        <capsuleGeometry args={[0.025, 0.22, 8, 10]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      {/* Head - round and friendly */}
+      <mesh position={[0, 0.28, 0.65]}>
+        <sphereGeometry args={[0.18, 16, 16]} />
+        <meshStandardMaterial color="#e8ddd0" roughness={0.5} />
       </mesh>
       
-      {/* Eyes on stalks */}
-      <mesh position={[-0.1, 0.42, 0.72]}>
+      {/* Smile/mouth area */}
+      <mesh position={[0, 0.2, 0.78]} scale={[0.8, 0.5, 0.3]}>
+        <sphereGeometry args={[0.08, 10, 8]} />
+        <meshStandardMaterial color="#d8cdc0" roughness={0.6} />
+      </mesh>
+      
+      {/* Eye stalks - thick and cute */}
+      <mesh position={[-0.1, 0.42, 0.6]} rotation={[-0.3, 0, -0.2]}>
+        <capsuleGeometry args={[0.04, 0.2, 10, 12]} />
+        <meshStandardMaterial color="#e8ddd0" roughness={0.5} />
+      </mesh>
+      <mesh position={[0.1, 0.42, 0.6]} rotation={[-0.3, 0, 0.2]}>
+        <capsuleGeometry args={[0.04, 0.2, 10, 12]} />
+        <meshStandardMaterial color="#e8ddd0" roughness={0.5} />
+      </mesh>
+      
+      {/* Eyes - big and googly like the image */}
+      <mesh position={[-0.12, 0.58, 0.68]}>
+        <sphereGeometry args={[0.08, 14, 14]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.3} />
+      </mesh>
+      <mesh position={[0.12, 0.58, 0.68]}>
+        <sphereGeometry args={[0.08, 14, 14]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.3} />
+      </mesh>
+      {/* Pupils */}
+      <mesh position={[-0.12, 0.58, 0.76]}>
         <sphereGeometry args={[0.04, 10, 10]} />
-        <meshStandardMaterial color="#2a2a2a" />
+        <meshStandardMaterial color="#1a1a1a" />
       </mesh>
-      <mesh position={[0.1, 0.42, 0.72]}>
+      <mesh position={[0.12, 0.58, 0.76]}>
         <sphereGeometry args={[0.04, 10, 10]} />
-        <meshStandardMaterial color="#2a2a2a" />
+        <meshStandardMaterial color="#1a1a1a" />
       </mesh>
-      
-      {/* Lower tentacles (feelers) */}
-      <mesh position={[-0.05, 0.12, 0.7]} rotation={[-0.2, 0, -0.1]}>
-        <capsuleGeometry args={[0.015, 0.1, 6, 8]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      {/* Eye shine */}
+      <mesh position={[-0.14, 0.6, 0.75]}>
+        <sphereGeometry args={[0.015, 8, 8]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
       </mesh>
-      <mesh position={[0.05, 0.12, 0.7]} rotation={[-0.2, 0, 0.1]}>
-        <capsuleGeometry args={[0.015, 0.1, 6, 8]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
-      </mesh>
-      
-      {/* Foot/base of snail */}
-      <mesh position={[0, 0.02, 0.2]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.25, 0.04, 0.8]} />
-        <meshStandardMaterial color="#c9b898" roughness={0.8} />
+      <mesh position={[0.1, 0.6, 0.75]}>
+        <sphereGeometry args={[0.015, 8, 8]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
       </mesh>
       
       {/* Gun mount on shell */}
-      <mesh position={[0.45, 0.55, -0.1]} rotation={[0, 0, 0.3]}>
+      <mesh position={[0.5, 0.55, -0.15]} rotation={[0, 0, 0.3]}>
         <boxGeometry args={[0.35, 0.05, 0.06]} />
         <meshStandardMaterial color="#4a3a2a" roughness={0.8} />
       </mesh>
       
       {/* Machine gun */}
-      <group position={[0.55, 0.6, 0.25]} rotation={[0, 0, 0]}>
+      <group position={[0.6, 0.6, 0.2]} rotation={[0, 0, 0]}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.06, 0.08, 0.7, 12]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.1} />
