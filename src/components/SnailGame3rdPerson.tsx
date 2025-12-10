@@ -1904,16 +1904,24 @@ export const SnailGame3rdPerson = () => {
               
               {/* Wallet status indicator */}
               {connected && (
-                <div className="flex items-center gap-2 mb-3 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
-                  <Wallet className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 text-sm font-display">
-                    {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
-                  </span>
-                  {rewardsEnabled ? (
-                    <span className="text-xs text-green-300">✓ Rewards Active</span>
-                  ) : (
-                    <span className="text-xs text-yellow-400">⚠ Rewards Paused</span>
-                  )}
+                <div className="flex flex-col items-center gap-1 mb-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <Wallet className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 text-sm font-display">
+                      {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                    </span>
+                    {rewardsEnabled ? (
+                      <span className="text-xs text-green-300">✓ Rewards Active</span>
+                    ) : (
+                      <span className="text-xs text-yellow-400">⚠ Rewards Paused</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => disconnect()}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    Disconnect wallet
+                  </button>
                 </div>
               )}
               
