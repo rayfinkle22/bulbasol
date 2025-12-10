@@ -1991,9 +1991,37 @@ export const SnailGame3rdPerson = () => {
                 )}
                 
                 <div className="flex flex-col items-center gap-3">
-                  <div className="wallet-prompt-red">
-                    <WalletMultiButton />
-                  </div>
+                  {connected ? (
+                    <>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-lg">
+                        <Wallet className="w-5 h-5 text-white" />
+                        <span className="text-white font-display">
+                          {publicKey?.toBase58().slice(0, 4)}..{publicKey?.toBase58().slice(-4)}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button"
+                        onClick={() => {
+                          setShowWalletPrompt(false);
+                          startGame();
+                        }}
+                        size="lg"
+                        className="font-display bg-green-600 hover:bg-green-500 text-white px-8 text-lg"
+                      >
+                        🎮 Play & Earn Rewards!
+                      </Button>
+                      <button
+                        onClick={() => disconnect()}
+                        className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        Disconnect wallet
+                      </button>
+                    </>
+                  ) : (
+                    <div className="wallet-prompt-red">
+                      <WalletMultiButton />
+                    </div>
+                  )}
                   <Button 
                     type="button"
                     variant="secondary"
