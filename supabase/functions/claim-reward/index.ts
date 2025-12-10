@@ -266,6 +266,7 @@ Deno.serve(async (req) => {
 
     if (!eligibility.eligible) {
       console.log('Claim rejected:', eligibility)
+      // Return 200 with success: false so client can parse the response body
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -273,7 +274,7 @@ Deno.serve(async (req) => {
           reason: eligibility.reason,
           hours_remaining: eligibility.hours_remaining
         }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
