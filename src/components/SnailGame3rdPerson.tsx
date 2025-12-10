@@ -1351,7 +1351,7 @@ export const SnailGame3rdPerson = () => {
   const sounds = useGameSounds();
   
   // Wallet connection
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, disconnect } = useWallet();
   const walletAddress = publicKey?.toBase58() || null;
   const { rewardsEnabled, rewardWalletStatus, isCheckingWallet, claimReward, isClaiming, calculateEstimatedReward, canClaim } = useTokenRewards(walletAddress);
   const [lastGameSessionId, setLastGameSessionId] = useState<string | null>(null);
@@ -2069,16 +2069,30 @@ export const SnailGame3rdPerson = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     ⏱️ Limit: 5 claims per 24 hours
                   </p>
+                  <button
+                    onClick={() => { disconnect(); setShowClaimUI(false); }}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors mt-1"
+                  >
+                    Skip rewards & disconnect
+                  </button>
                 </div>
               )}
               
               {connected && !showClaimUI && (
-                <div className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
-                  <Wallet className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 text-sm font-display">
-                    {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
-                  </span>
-                  <span className="text-xs text-green-300">✓ Connected</span>
+                <div className="mb-4 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <Wallet className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 text-sm font-display">
+                      {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                    </span>
+                    <span className="text-xs text-green-300">✓ Connected</span>
+                  </div>
+                  <button
+                    onClick={() => disconnect()}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    Disconnect wallet
+                  </button>
                 </div>
               )}
               
