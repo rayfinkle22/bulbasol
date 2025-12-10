@@ -1,1 +1,7 @@
 project_id = "ucfbxsketkxbaqrypcln"
+
+[functions.snail-chat]
+verify_jwt = false
+
+[functions.claim-reward]
+verify_jwt = false
