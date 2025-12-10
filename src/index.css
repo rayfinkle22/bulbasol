@@ -276,17 +276,19 @@
   }
 }
 
-/* Wallet prompt button in game */
-.wallet-prompt-button .wallet-adapter-button {
-  background: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-  padding: 0.75rem 2rem !important;
-  font-size: 1rem !important;
+/* Wallet prompt button in game - red style */
+.wallet-prompt-red .wallet-adapter-button {
+  background: #dc2626 !important;
+  color: white !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.875rem !important;
   border-radius: 0.5rem !important;
+  height: auto !important;
+  min-height: 0 !important;
 }
 
-.wallet-prompt-button .wallet-adapter-button:hover {
-  background: hsl(var(--primary) / 0.9) !important;
+.wallet-prompt-red .wallet-adapter-button:hover {
+  background: #b91c1c !important;
 }
 
 /* Compact wallet button for game UI */

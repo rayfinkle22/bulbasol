@@ -1890,37 +1890,38 @@ export const SnailGame3rdPerson = () => {
 
           {/* Wallet connection prompt */}
           {showWalletPrompt && (
-            <div className="absolute inset-0 bg-background/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-50">
-              <button 
-                onClick={() => setShowWalletPrompt(false)}
-                className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <Wallet className="w-12 h-12 text-primary mb-3" />
-              <h3 className="font-display text-xl text-primary mb-2">Earn $SNAIL Tokens!</h3>
-              <p className="font-body text-sm text-muted-foreground text-center mb-4 max-w-xs">
-                Connect your wallet to earn $SNAIL token rewards based on your score. This is completely optional!
-              </p>
-              
-              {rewardsEnabled ? (
-                <p className="text-xs text-green-400 mb-4">✓ Rewards are currently active</p>
-              ) : (
-                <p className="text-xs text-yellow-400 mb-4">⚠ Rewards temporarily paused</p>
-              )}
-              
-              <div className="flex flex-col gap-3">
-                <div className="wallet-prompt-button">
-                  <WalletMultiButton />
-                </div>
-                <Button 
-                  variant="ghost" 
-                  onClick={startGame}
-                  className="font-display text-muted-foreground"
+            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="flex flex-col items-center text-center">
+                <button 
+                  onClick={() => setShowWalletPrompt(false)}
+                  className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground"
                 >
-                  Skip & Play Without Rewards
-                </Button>
+                  <X className="w-5 h-5" />
+                </button>
+                
+                <Wallet className="w-10 h-10 text-primary mb-2" />
+                <h3 className="font-display text-xl text-primary mb-1">Earn $SNAIL Tokens!</h3>
+                <p className="font-body text-sm text-muted-foreground mb-3 max-w-xs">
+                  Connect your wallet to earn rewards. Totally optional!
+                </p>
+                
+                {rewardsEnabled ? (
+                  <p className="text-xs text-green-400 mb-4">✓ Rewards active</p>
+                ) : (
+                  <p className="text-xs text-yellow-400 mb-4">⚠ Rewards paused</p>
+                )}
+                
+                <div className="flex flex-col items-center gap-3">
+                  <div className="wallet-prompt-red">
+                    <WalletMultiButton />
+                  </div>
+                  <Button 
+                    onClick={startGame}
+                    className="font-display bg-yellow-500 hover:bg-yellow-400 text-black px-6"
+                  >
+                    Skip & Play Without Rewards
+                  </Button>
+                </div>
               </div>
             </div>
           )}
