@@ -158,10 +158,6 @@ export const useTokenRewards = (walletAddress: string | null) => {
       return { success: false, error: 'Rewards are currently disabled' };
     }
 
-    if (!captchaToken) {
-      return { success: false, error: 'Please complete the captcha verification' };
-    }
-
     setIsClaiming(true);
 
     try {
@@ -170,7 +166,7 @@ export const useTokenRewards = (walletAddress: string | null) => {
           wallet_address: walletAddress,
           score,
           game_session_id: gameSessionId,
-          captcha_token: captchaToken
+          captcha_token: captchaToken || 'disabled'
         }
       });
 

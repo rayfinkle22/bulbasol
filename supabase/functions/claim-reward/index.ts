@@ -12,12 +12,18 @@ interface ClaimRequest {
   captcha_token?: string
 }
 
-// Verify hCaptcha token
+// Verify hCaptcha token - TEMPORARILY DISABLED
 async function verifyCaptcha(token: string): Promise<boolean> {
+  // Captcha temporarily disabled - always return true
+  if (token === 'disabled') {
+    console.log('Captcha verification disabled')
+    return true
+  }
+  
   const secret = Deno.env.get('HCAPTCHA_SECRET_KEY')
   if (!secret) {
-    console.error('HCAPTCHA_SECRET_KEY not configured')
-    return false
+    console.log('HCAPTCHA_SECRET_KEY not configured, skipping verification')
+    return true
   }
 
   try {
@@ -32,7 +38,7 @@ async function verifyCaptcha(token: string): Promise<boolean> {
     return data.success === true
   } catch (error) {
     console.error('hCaptcha verification error:', error)
-    return false
+    return true // Allow claim on captcha error
   }
 }
 
