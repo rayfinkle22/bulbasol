@@ -1891,7 +1891,7 @@ export const SnailGame3rdPerson = () => {
           {/* Wallet connection prompt */}
           {showWalletPrompt && (
             <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="flex flex-col items-center text-center">
+              <div className="relative flex flex-col items-center text-center">
                 <button 
                   onClick={() => setShowWalletPrompt(false)}
                   className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground"
@@ -1916,7 +1916,12 @@ export const SnailGame3rdPerson = () => {
                     <WalletMultiButton />
                   </div>
                   <Button 
-                    onClick={startGame}
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      console.log('Skip button clicked');
+                      startGame();
+                    }}
                     className="font-display bg-yellow-500 hover:bg-yellow-400 text-black px-6"
                   >
                     Skip & Play Without Rewards
