@@ -2062,7 +2062,7 @@ export const SnailGame3rdPerson = () => {
                   <div className="flex justify-center mb-3">
                     <HCaptcha
                       ref={captchaRef}
-                      sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || ''}
+                      sitekey="7b46fff6-d220-4782-b472-ed7ccfc0d8e4"
                       onVerify={(token) => setCaptchaToken(token)}
                       onExpire={() => setCaptchaToken(null)}
                       theme="dark"
