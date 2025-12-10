@@ -149,7 +149,7 @@ export const useTokenRewards = (walletAddress: string | null) => {
   }, [walletAddress]);
 
   // Claim reward
-  const claimReward = async (score: number, gameSessionId?: string, captchaToken?: string): Promise<ClaimResult> => {
+  const claimReward = async (score: number, gameSessionId?: string, captchaToken?: string): Promise<ClaimResult & { reason?: string; hours_remaining?: number }> => {
     if (!walletAddress) {
       return { success: false, error: 'Wallet not connected' };
     }
@@ -170,30 +170,53 @@ export const useTokenRewards = (walletAddress: string | null) => {
         }
       });
 
-      // Handle edge function errors - parse the error context for cooldown info
+      // Handle edge function errors - the response body might be in error.context or we need to parse it
       if (error) {
         console.error('Claim error:', error);
-        // Try to extract cooldown info from error context
-        const errorContext = (error as any)?.context;
-        if (errorContext) {
-          try {
-            const errorData = typeof errorContext === 'string' ? JSON.parse(errorContext) : errorContext;
-            if (errorData.error === 'cooldown_active' && errorData.next_claim_at) {
+        
+        // For FunctionsHttpError, try to get the response body
+        try {
+          // The error context might contain the parsed response
+          const context = (error as any)?.context;
+          
+          // If the edge function returned a JSON error response, it might be here
+          if (context && typeof context === 'object') {
+            if (context.reason === 'wallet_cooldown' || context.reason === 'ip_limit') {
               return { 
                 success: false, 
-                error: 'cooldown_active', 
-                next_claim_at: errorData.next_claim_at 
+                error: context.error || 'Cooldown active',
+                reason: context.reason,
+                hours_remaining: context.hours_remaining
               };
             }
-            return { success: false, error: errorData.error || error.message };
-          } catch {
-            // Fall through to default error handling
           }
+        } catch {
+          // Continue with default error handling
         }
+        
+        // Check if error message contains cooldown info
+        if (error.message?.includes('cooldown') || error.message?.includes('429')) {
+          return { 
+            success: false, 
+            error: 'Please wait before claiming again. You can claim once every 24 hours.',
+            reason: 'wallet_cooldown'
+          };
+        }
+        
         return { success: false, error: error.message };
       }
 
-      if (data.success) {
+      // Check if data indicates failure (edge function might return 200 with success: false)
+      if (data && !data.success) {
+        return {
+          success: false,
+          error: data.error || 'Claim failed',
+          reason: data.reason,
+          hours_remaining: data.hours_remaining
+        };
+      }
+
+      if (data?.success) {
         // Refresh rewards list
         const { data: newRewards } = await supabase
           .from('token_rewards')

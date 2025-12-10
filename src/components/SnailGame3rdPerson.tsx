@@ -1575,8 +1575,19 @@ export const SnailGame3rdPerson = () => {
       setShowClaimUI(false);
       setCaptchaToken(null);
       captchaRef.current?.resetCaptcha();
-    } else if (result.error === 'cooldown_active' || result.error === 'ip_limit') {
-      toast.error('Can only claim 5x per 24 hour period!');
+    } else if (result.reason === 'wallet_cooldown') {
+      const hoursRemaining = (result as any).hours_remaining;
+      if (hoursRemaining) {
+        toast.error(`Wallet cooldown active. Try again in ${hoursRemaining.toFixed(1)} hours.`);
+      } else {
+        toast.error('You can claim once every 24 hours. Please try again later.');
+      }
+      setShowClaimUI(false);
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
+    } else if (result.reason === 'ip_limit') {
+      toast.error('Daily limit reached (5 claims per day). Try again tomorrow.');
+      setShowClaimUI(false);
       setCaptchaToken(null);
       captchaRef.current?.resetCaptcha();
     } else {
