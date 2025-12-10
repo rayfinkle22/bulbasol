@@ -275,3 +275,26 @@
     font-size: 0.75rem !important;
   }
 }
+
+/* Wallet prompt button in game */
+.wallet-prompt-button .wallet-adapter-button {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  padding: 0.75rem 2rem !important;
+  font-size: 1rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.wallet-prompt-button .wallet-adapter-button:hover {
+  background: hsl(var(--primary) / 0.9) !important;
+}
+
+/* Compact wallet button for game UI */
+.game-wallet-compact .wallet-adapter-button {
+  background: hsl(var(--background) / 0.7) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+}

@@ -9,8 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Wallet, X } from "lucide-react";
 import { useGameSounds } from "@/hooks/useGameSounds";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useTokenRewards } from "@/hooks/useTokenRewards";
 
 interface Bug {
   id: number;
@@ -1333,6 +1336,7 @@ export const SnailGame3rdPerson = () => {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const gameStartTime = useRef<number>(0);
   
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -1343,6 +1347,11 @@ export const SnailGame3rdPerson = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const sounds = useGameSounds();
+  
+  // Wallet connection
+  const { connected, publicKey } = useWallet();
+  const walletAddress = publicKey?.toBase58() || null;
+  const { rewardsEnabled, rewardWalletStatus, isCheckingWallet } = useTokenRewards(walletAddress);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1466,6 +1475,7 @@ export const SnailGame3rdPerson = () => {
   }, []);
 
   const startGame = useCallback(async () => {
+    setShowWalletPrompt(false);
     setScoreSubmitted(false);
     gameStartTime.current = Date.now();
     
@@ -1501,6 +1511,15 @@ export const SnailGame3rdPerson = () => {
       specialWeaponUntil: 0
     });
   }, [getSessionHash]);
+
+  // Handle start button click - show wallet prompt first
+  const handleStartClick = useCallback(() => {
+    if (!connected) {
+      setShowWalletPrompt(true);
+    } else {
+      startGame();
+    }
+  }, [connected, startGame]);
 
   useEffect(() => {
     if (gameState.status === 'gameover' && gameState.health === 0 && !scoreSubmitted) {
@@ -1822,10 +1841,25 @@ export const SnailGame3rdPerson = () => {
           )}
           
           {/* Overlays */}
-          {gameState.status === 'idle' && (
+          {gameState.status === 'idle' && !showWalletPrompt && (
             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-4">
               <img src={snailTexture} alt="Snail" className="w-20 h-20 object-contain mb-2" />
               <h3 className="font-display text-2xl text-primary mb-4">3rd Person Mode</h3>
+              
+              {/* Wallet status indicator */}
+              {connected && (
+                <div className="flex items-center gap-2 mb-3 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                  <Wallet className="w-4 h-4 text-green-400" />
+                  <span className="text-green-400 text-sm font-display">
+                    {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                  </span>
+                  {rewardsEnabled ? (
+                    <span className="text-xs text-green-300">✓ Rewards Active</span>
+                  ) : (
+                    <span className="text-xs text-yellow-400">⚠ Rewards Paused</span>
+                  )}
+                </div>
+              )}
               
               <p className="font-body text-sm text-muted-foreground mb-2">Select Difficulty:</p>
               <div className="flex gap-2 mb-4">
@@ -1848,9 +1882,46 @@ export const SnailGame3rdPerson = () => {
                 ))}
               </div>
               
-              <Button onClick={startGame} size="lg" className="font-display text-lg px-8">
+              <Button onClick={handleStartClick} size="lg" className="font-display text-lg px-8">
                 🎮 START GAME
               </Button>
+            </div>
+          )}
+
+          {/* Wallet connection prompt */}
+          {showWalletPrompt && (
+            <div className="absolute inset-0 bg-background/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-50">
+              <button 
+                onClick={() => setShowWalletPrompt(false)}
+                className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <Wallet className="w-12 h-12 text-primary mb-3" />
+              <h3 className="font-display text-xl text-primary mb-2">Earn $SNAIL Tokens!</h3>
+              <p className="font-body text-sm text-muted-foreground text-center mb-4 max-w-xs">
+                Connect your wallet to earn $SNAIL token rewards based on your score. This is completely optional!
+              </p>
+              
+              {rewardsEnabled ? (
+                <p className="text-xs text-green-400 mb-4">✓ Rewards are currently active</p>
+              ) : (
+                <p className="text-xs text-yellow-400 mb-4">⚠ Rewards temporarily paused</p>
+              )}
+              
+              <div className="flex flex-col gap-3">
+                <div className="wallet-prompt-button">
+                  <WalletMultiButton />
+                </div>
+                <Button 
+                  variant="ghost" 
+                  onClick={startGame}
+                  className="font-display text-muted-foreground"
+                >
+                  Skip & Play Without Rewards
+                </Button>
+              </div>
             </div>
           )}
 
