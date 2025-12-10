@@ -330,9 +330,10 @@ Deno.serve(async (req) => {
     }
 
     if (!data.success) {
+      // Return 200 for cooldown errors so client can properly parse the response
       return new Response(
         JSON.stringify(data),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
