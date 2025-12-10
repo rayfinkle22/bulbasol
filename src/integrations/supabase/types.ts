@@ -111,6 +111,8 @@ export type Database = {
           claim_cooldown_hours: number
           id: string
           max_reward_amount: number
+          max_reward_usd: number
+          max_score_cap: number
           min_reward_amount: number
           points_per_token: number
           updated_at: string
@@ -121,6 +123,8 @@ export type Database = {
           claim_cooldown_hours?: number
           id?: string
           max_reward_amount?: number
+          max_reward_usd?: number
+          max_score_cap?: number
           min_reward_amount?: number
           points_per_token?: number
           updated_at?: string
@@ -131,6 +135,8 @@ export type Database = {
           claim_cooldown_hours?: number
           id?: string
           max_reward_amount?: number
+          max_reward_usd?: number
+          max_score_cap?: number
           min_reward_amount?: number
           points_per_token?: number
           updated_at?: string
@@ -186,19 +192,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_token_reward: {
-        Args: { p_market_cap: number; p_score: number }
-        Returns: number
-      }
-      claim_reward: {
-        Args: {
-          p_game_session_id?: string
-          p_market_cap: number
-          p_score: number
-          p_wallet_address: string
-        }
-        Returns: Json
-      }
+      calculate_token_reward:
+        | { Args: { p_market_cap: number; p_score: number }; Returns: number }
+        | {
+            Args: {
+              p_market_cap: number
+              p_price_usd?: number
+              p_score: number
+            }
+            Returns: number
+          }
+      claim_reward:
+        | {
+            Args: {
+              p_game_session_id?: string
+              p_market_cap: number
+              p_score: number
+              p_wallet_address: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_game_session_id?: string
+              p_market_cap: number
+              p_price_usd?: number
+              p_score: number
+              p_wallet_address: string
+            }
+            Returns: Json
+          }
       cleanup_old_increment_logs: { Args: never; Returns: undefined }
       increment_games_played:
         | { Args: never; Returns: number }
