@@ -1977,6 +1977,7 @@ export const SnailGame3rdPerson = () => {
                   <div className="wallet-prompt-red">
                     <WalletMultiButton />
                   </div>
+                  <p className="text-xs text-white/70 mt-2">(playing without rewards)</p>
                 </div>
               )}
               
@@ -1990,14 +1991,9 @@ export const SnailGame3rdPerson = () => {
                 </div>
               )}
               
-              <div className="flex flex-col items-center">
-                <Button onClick={startGame} size="lg" className="font-display">
-                  🔄 Play Again
-                </Button>
-                {!connected && (
-                  <span className="text-xs text-white/70 mt-1">(without rewards)</span>
-                )}
-              </div>
+              <Button onClick={startGame} size="lg" className="font-display">
+                🔄 Play Again
+              </Button>
             </div>
           )}
         </div>
