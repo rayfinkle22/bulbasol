@@ -276,19 +276,21 @@
   }
 }
 
-/* Wallet prompt button in game - red style */
+/* Wallet prompt button in game - blue style */
 .wallet-prompt-red .wallet-adapter-button {
-  background: #dc2626 !important;
+  background: #2563eb !important;
   color: white !important;
-  padding: 0.5rem 1.5rem !important;
+  padding: 0.5rem 1rem !important;
   font-size: 0.875rem !important;
   border-radius: 0.5rem !important;
   height: auto !important;
   min-height: 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
 }
 
 .wallet-prompt-red .wallet-adapter-button:hover {
-  background: #b91c1c !important;
+  background: #1d4ed8 !important;
 }
 
 /* Compact wallet button for game UI */
