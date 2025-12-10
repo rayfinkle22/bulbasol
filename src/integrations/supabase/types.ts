@@ -104,11 +104,101 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_config: {
+        Row: {
+          base_market_cap: number
+          base_reward_amount: number
+          claim_cooldown_hours: number
+          id: string
+          max_reward_amount: number
+          min_reward_amount: number
+          points_per_token: number
+          updated_at: string
+        }
+        Insert: {
+          base_market_cap?: number
+          base_reward_amount?: number
+          claim_cooldown_hours?: number
+          id?: string
+          max_reward_amount?: number
+          min_reward_amount?: number
+          points_per_token?: number
+          updated_at?: string
+        }
+        Update: {
+          base_market_cap?: number
+          base_reward_amount?: number
+          claim_cooldown_hours?: number
+          id?: string
+          max_reward_amount?: number
+          min_reward_amount?: number
+          points_per_token?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      token_rewards: {
+        Row: {
+          claimed_at: string
+          game_session_id: string | null
+          id: string
+          market_cap_at_claim: number
+          score: number
+          status: string
+          tokens_earned: number
+          tx_signature: string | null
+          wallet_address: string
+        }
+        Insert: {
+          claimed_at?: string
+          game_session_id?: string | null
+          id?: string
+          market_cap_at_claim: number
+          score: number
+          status?: string
+          tokens_earned: number
+          tx_signature?: string | null
+          wallet_address: string
+        }
+        Update: {
+          claimed_at?: string
+          game_session_id?: string | null
+          id?: string
+          market_cap_at_claim?: number
+          score?: number
+          status?: string
+          tokens_earned?: number
+          tx_signature?: string | null
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_rewards_game_session_id_fkey"
+            columns: ["game_session_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_3d"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_token_reward: {
+        Args: { p_market_cap: number; p_score: number }
+        Returns: number
+      }
+      claim_reward: {
+        Args: {
+          p_game_session_id?: string
+          p_market_cap: number
+          p_score: number
+          p_wallet_address: string
+        }
+        Returns: Json
+      }
       cleanup_old_increment_logs: { Args: never; Returns: undefined }
       increment_games_played:
         | { Args: never; Returns: number }
