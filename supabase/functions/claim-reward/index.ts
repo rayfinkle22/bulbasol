@@ -1,6 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Connection, Keypair, PublicKey, Transaction } from 'https://esm.sh/@solana/web3.js@1.98.0'
-import { createTransferInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, getAccount } from 'https://esm.sh/@solana/spl-token@0.4.9'
+import { 
+  createTransferInstruction, 
+  getAssociatedTokenAddress, 
+  createAssociatedTokenAccountInstruction, 
+  getAccount,
+  TOKEN_2022_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID
+} from 'https://esm.sh/@solana/spl-token@0.4.9'
 import base58 from 'https://esm.sh/bs58@5.0.0'
 
 const corsHeaders = {
@@ -15,12 +22,12 @@ interface ClaimRequest {
   captcha_token?: string
 }
 
-// Token configuration
+// Token configuration - This is a Token-2022 (pump.fun) token
 const TOKEN_MINT = '5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump'
 const TOKEN_DECIMALS = 6
 const SOLANA_RPC = 'https://api.mainnet-beta.solana.com'
 
-// Transfer SPL tokens to recipient
+// Transfer SPL Token-2022 tokens to recipient
 async function transferTokens(
   recipientAddress: string,
   amount: number
@@ -57,10 +64,23 @@ async function transferTokens(
     console.log('Sender wallet:', senderPublicKey.toBase58())
     console.log('Recipient wallet:', recipientAddress)
     console.log('Amount to transfer:', amount, 'tokens')
+    console.log('Using Token-2022 program:', TOKEN_2022_PROGRAM_ID.toBase58())
     
-    // Get associated token accounts
-    const senderATA = await getAssociatedTokenAddress(mintPublicKey, senderPublicKey)
-    const recipientATA = await getAssociatedTokenAddress(mintPublicKey, recipientPublicKey)
+    // Get associated token accounts for Token-2022
+    const senderATA = await getAssociatedTokenAddress(
+      mintPublicKey, 
+      senderPublicKey,
+      false, // allowOwnerOffCurve
+      TOKEN_2022_PROGRAM_ID, // Token-2022 program
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    )
+    const recipientATA = await getAssociatedTokenAddress(
+      mintPublicKey, 
+      recipientPublicKey,
+      false, // allowOwnerOffCurve
+      TOKEN_2022_PROGRAM_ID, // Token-2022 program
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    )
     
     console.log('Sender ATA:', senderATA.toBase58())
     console.log('Recipient ATA:', recipientATA.toBase58())
@@ -69,16 +89,18 @@ async function transferTokens(
     const transaction = new Transaction()
     
     try {
-      await getAccount(connection, recipientATA)
+      await getAccount(connection, recipientATA, 'confirmed', TOKEN_2022_PROGRAM_ID)
       console.log('Recipient ATA exists')
     } catch {
-      console.log('Creating recipient ATA...')
+      console.log('Creating recipient ATA for Token-2022...')
       transaction.add(
         createAssociatedTokenAccountInstruction(
-          senderPublicKey, // payer
-          recipientATA,    // ata
+          senderPublicKey,    // payer
+          recipientATA,       // ata
           recipientPublicKey, // owner
-          mintPublicKey    // mint
+          mintPublicKey,      // mint
+          TOKEN_2022_PROGRAM_ID, // Token-2022 program
+          ASSOCIATED_TOKEN_PROGRAM_ID
         )
       )
     }
@@ -86,13 +108,17 @@ async function transferTokens(
     // Convert amount to token units (with decimals)
     const tokenAmount = Math.floor(amount * Math.pow(10, TOKEN_DECIMALS))
     
-    // Add transfer instruction
+    console.log('Token amount (raw):', tokenAmount)
+    
+    // Add transfer instruction for Token-2022
     transaction.add(
       createTransferInstruction(
-        senderATA,        // source
-        recipientATA,     // destination
-        senderPublicKey,  // owner
-        tokenAmount       // amount in smallest units
+        senderATA,           // source
+        recipientATA,        // destination
+        senderPublicKey,     // owner
+        tokenAmount,         // amount in smallest units
+        [],                  // multiSigners (empty for single signer)
+        TOKEN_2022_PROGRAM_ID // Token-2022 program
       )
     )
     
