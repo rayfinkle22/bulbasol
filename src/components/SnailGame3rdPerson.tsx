@@ -69,6 +69,7 @@ interface LeaderboardEntry {
   name: string;
   score: number;
   created_at?: string;
+  tokens_earned?: number | null;
 }
 
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -1378,6 +1379,7 @@ export const SnailGame3rdPerson = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch leaderboard with token rewards
         const { data: leaderboardData, error: leaderboardError } = await supabase
           .from('leaderboard_3d')
           .select('*')
@@ -1386,7 +1388,22 @@ export const SnailGame3rdPerson = () => {
         
         if (leaderboardError) throw leaderboardError;
         
-        setLeaderboard(leaderboardData || []);
+        // Fetch token rewards to match with leaderboard entries
+        const { data: rewardsData } = await supabase
+          .from('token_rewards')
+          .select('game_session_id, tokens_earned')
+          .eq('status', 'completed');
+        
+        // Map rewards to leaderboard entries
+        const leaderboardWithTokens = (leaderboardData || []).map(entry => {
+          const reward = rewardsData?.find(r => r.game_session_id === entry.id);
+          return {
+            ...entry,
+            tokens_earned: reward?.tokens_earned || null
+          };
+        });
+        
+        setLeaderboard(leaderboardWithTokens);
         if (leaderboardData && leaderboardData.length > 0) {
           setHighScore(leaderboardData[0].score);
         }
@@ -2049,6 +2066,12 @@ export const SnailGame3rdPerson = () => {
             <p className="text-center text-muted-foreground">No scores yet. Be the first!</p>
           ) : (
             <div className="space-y-2">
+              {/* Header */}
+              <div className="flex justify-between items-center px-3 py-1 text-xs text-muted-foreground border-b border-border/50">
+                <span className="flex-1">Player</span>
+                <span className="w-20 text-right">Points</span>
+                <span className="w-24 text-right">Tokens</span>
+              </div>
               {leaderboard.slice(0, 5).map((entry, index) => (
                 <div 
                   key={entry.id} 
@@ -2058,11 +2081,14 @@ export const SnailGame3rdPerson = () => {
                     index === 2 ? 'bg-orange-600/20' : 'bg-muted/30'
                   }`}
                 >
-                  <span className="font-display text-lg">
+                  <span className="font-display text-sm flex-1 truncate">
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                     {' '}{entry.name}
                   </span>
-                  <span className="font-display text-accent">{entry.score}</span>
+                  <span className="font-display text-accent w-20 text-right">{entry.score}</span>
+                  <span className={`font-display w-24 text-right ${entry.tokens_earned ? 'text-green-400' : 'text-muted-foreground'}`}>
+                    {entry.tokens_earned ? `${Math.floor(entry.tokens_earned)} 🐌` : 'N/A'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -2072,3 +2098,5 @@ export const SnailGame3rdPerson = () => {
     </section>
   );
 };
+
+export default SnailGame3rdPerson;
