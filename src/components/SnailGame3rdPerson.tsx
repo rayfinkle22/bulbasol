@@ -2037,6 +2037,10 @@ export const SnailGame3rdPerson = () => {
                   >
                     {isClaiming ? 'Claiming...' : '🎁 Claim $SNAIL'}
                   </Button>
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ⏱️ Limit: 2 claims per 24 hours
+                  </p>
                 </div>
               )}
               
