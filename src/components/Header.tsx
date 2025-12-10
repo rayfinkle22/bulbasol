@@ -36,6 +36,16 @@ export const Header = () => {
               >
                 🎮 Legacy Game
               </Link>
+              <Link 
+                to="/security" 
+                className={`font-display text-sm px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                  location.pathname === '/security' 
+                    ? 'bg-primary/20 text-primary' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                }`}
+              >
+                🔒 Security
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
@@ -49,6 +59,16 @@ export const Header = () => {
               }`}
             >
               🎮
+            </Link>
+            <Link 
+              to="/security" 
+              className={`sm:hidden font-display text-xs px-2 py-1 rounded-lg ${
+                location.pathname === '/security' 
+                  ? 'bg-primary/20 text-primary' 
+                  : 'text-muted-foreground/70'
+              }`}
+            >
+              🔒
             </Link>
             <div className="flex items-center gap-2">
               <span className="font-body text-xs sm:text-sm text-muted-foreground">MCap:</span>

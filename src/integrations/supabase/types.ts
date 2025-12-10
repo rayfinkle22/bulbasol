@@ -148,6 +148,7 @@ export type Database = {
           claimed_at: string
           game_session_id: string | null
           id: string
+          ip_address: string | null
           market_cap_at_claim: number
           score: number
           status: string
@@ -159,6 +160,7 @@ export type Database = {
           claimed_at?: string
           game_session_id?: string | null
           id?: string
+          ip_address?: string | null
           market_cap_at_claim: number
           score: number
           status?: string
@@ -170,6 +172,7 @@ export type Database = {
           claimed_at?: string
           game_session_id?: string | null
           id?: string
+          ip_address?: string | null
           market_cap_at_claim?: number
           score?: number
           status?: string
@@ -202,6 +205,10 @@ export type Database = {
             }
             Returns: number
           }
+      check_claim_eligibility: {
+        Args: { p_ip_address: string; p_wallet_address: string }
+        Returns: Json
+      }
       claim_reward:
         | {
             Args: {
