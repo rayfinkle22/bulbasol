@@ -1903,7 +1903,7 @@ export const SnailGame3rdPerson = () => {
               <h3 className="font-display text-2xl text-primary mb-4">3rd Person Mode</h3>
               
               {/* Wallet status indicator */}
-              {connected && (
+              {connected ? (
                 <div className="flex flex-col items-center gap-1 mb-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
                     <Wallet className="w-4 h-4 text-green-400" />
@@ -1922,6 +1922,10 @@ export const SnailGame3rdPerson = () => {
                   >
                     Disconnect wallet
                   </button>
+                </div>
+              ) : (
+                <div className="mb-3 wallet-start-screen">
+                  <WalletMultiButton />
                 </div>
               )}
               
