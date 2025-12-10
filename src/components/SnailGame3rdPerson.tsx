@@ -1968,6 +1968,28 @@ export const SnailGame3rdPerson = () => {
               <h3 className="font-display text-3xl text-destructive mb-2">GAME OVER</h3>
               <p className="font-display text-xl text-primary mb-1">Score: {Math.floor(gameState.score)}</p>
               <p className="font-body text-muted-foreground mb-4">Bugs Killed: {gameState.bugsKilled}</p>
+              
+              {!connected && (
+                <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
+                  <p className="text-green-400 font-display text-sm mb-2">
+                    🎁 Connect wallet to earn $SNAIL rewards!
+                  </p>
+                  <div className="wallet-prompt-red">
+                    <WalletMultiButton />
+                  </div>
+                </div>
+              )}
+              
+              {connected && (
+                <div className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                  <Wallet className="w-4 h-4 text-green-400" />
+                  <span className="text-green-400 text-sm font-display">
+                    {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
+                  </span>
+                  <span className="text-xs text-green-300">✓ Rewards Active</span>
+                </div>
+              )}
+              
               <Button onClick={startGame} size="lg" className="font-display">
                 🔄 Play Again
               </Button>
