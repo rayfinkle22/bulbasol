@@ -5,6 +5,11 @@ import { Shield, Lock, Eye, Clock, Server, AlertTriangle } from "lucide-react";
 const Security = () => {
   const securityFeatures = [
     {
+      icon: Shield,
+      title: "hCaptcha Verification",
+      description: "Every reward claim requires completing an hCaptcha challenge, preventing automated bot attacks and ensuring human interaction."
+    },
+    {
       icon: Clock,
       title: "24-Hour Wallet Cooldown",
       description: "Each wallet address can only claim rewards once every 24 hours, preventing rapid farming attempts."
@@ -12,7 +17,7 @@ const Security = () => {
     {
       icon: Server,
       title: "IP-Based Rate Limiting",
-      description: "Maximum of 2 reward claims per IP address per day. This limits abuse even when using multiple wallets."
+      description: "Maximum of 5 reward claims per IP address per day. This limits abuse even when using multiple wallets or VPNs."
     },
     {
       icon: Eye,
@@ -22,7 +27,7 @@ const Security = () => {
     {
       icon: Shield,
       title: "Anti-Cheat Score Validation",
-      description: "Scores are validated against gameplay metrics (bugs killed, game duration) to detect impossibly high scores."
+      description: "Scores are validated against gameplay metrics (bugs killed, game duration) to detect impossibly high scores. Maximum score cap of 6,000 points."
     },
     {
       icon: Lock,
@@ -33,6 +38,11 @@ const Security = () => {
       icon: Server,
       title: "Database-Level Protection",
       description: "Row-Level Security (RLS) policies ensure data integrity at the database level, providing an additional layer of protection."
+    },
+    {
+      icon: Lock,
+      title: "Dynamic Reward Limits",
+      description: "Rewards are capped at $5 USD maximum per claim, with token amounts dynamically calculated based on current market price."
     }
   ];
 
@@ -76,9 +86,10 @@ const Security = () => {
               Known Limitations
             </h2>
             <ul className="font-body text-muted-foreground space-y-2">
-              <li>• <strong>VPN Usage:</strong> Users with VPNs can potentially bypass IP-based rate limiting. However, wallet-based cooldowns still apply.</li>
-              <li>• <strong>Multiple Wallets:</strong> Users can create multiple wallets, but IP limits restrict claims to 2 per day regardless of wallet count.</li>
-              <li>• <strong>Bot Automation:</strong> While we have measures in place, sophisticated bots may still attempt to game the system.</li>
+              <li>• <strong>VPN Usage:</strong> Users with VPNs can potentially bypass IP-based rate limiting. However, wallet-based cooldowns and hCaptcha still apply.</li>
+              <li>• <strong>Multiple Wallets:</strong> Users can create multiple wallets, but IP limits restrict claims to 5 per day regardless of wallet count.</li>
+              <li>• <strong>Captcha Solving Services:</strong> While hCaptcha significantly reduces bot activity, determined attackers using captcha-solving services may still attempt abuse.</li>
+              <li>• <strong>Browser Automation:</strong> Advanced automation tools may bypass some frontend protections, but server-side validation remains enforced.</li>
             </ul>
           </div>
 
