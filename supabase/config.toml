@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.claim-reward]
 verify_jwt = false
+
+[functions.check-reward-wallet]
+verify_jwt = false

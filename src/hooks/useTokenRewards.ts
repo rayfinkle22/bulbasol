@@ -31,13 +31,54 @@ interface ClaimResult {
   next_claim_at?: string;
 }
 
+interface RewardWalletStatus {
+  rewards_enabled: boolean;
+  sol_balance?: number;
+  token_balance?: number;
+  reason?: string | null;
+}
+
 export const useTokenRewards = (walletAddress: string | null) => {
   const [config, setConfig] = useState<RewardConfig | null>(null);
   const [rewards, setRewards] = useState<TokenReward[]>([]);
   const [totalEarned, setTotalEarned] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [rewardsEnabled, setRewardsEnabled] = useState(true);
+  const [rewardWalletStatus, setRewardWalletStatus] = useState<RewardWalletStatus | null>(null);
+  const [isCheckingWallet, setIsCheckingWallet] = useState(false);
   const { marketCap, priceUsd } = useMarketData();
+
+  // Check reward wallet balance
+  const checkRewardWallet = useCallback(async () => {
+    setIsCheckingWallet(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-reward-wallet');
+      
+      if (error) {
+        console.error('Error checking reward wallet:', error);
+        setRewardsEnabled(false);
+        setRewardWalletStatus({ rewards_enabled: false, reason: 'Failed to check wallet' });
+        return;
+      }
+
+      setRewardsEnabled(data.rewards_enabled);
+      setRewardWalletStatus(data);
+      console.log('Reward wallet status:', data);
+    } catch (err) {
+      console.error('Failed to check reward wallet:', err);
+      setRewardsEnabled(false);
+    } finally {
+      setIsCheckingWallet(false);
+    }
+  }, []);
+
+  // Check reward wallet when user connects
+  useEffect(() => {
+    if (walletAddress) {
+      checkRewardWallet();
+    }
+  }, [walletAddress, checkRewardWallet]);
 
   // Calculate estimated reward for a given score (with $5 USD cap and 6000 score cap)
   const calculateEstimatedReward = useCallback((score: number): { tokens: number; usdValue: number } => {
@@ -113,6 +154,10 @@ export const useTokenRewards = (walletAddress: string | null) => {
       return { success: false, error: 'Wallet not connected' };
     }
 
+    if (!rewardsEnabled) {
+      return { success: false, error: 'Rewards are currently disabled' };
+    }
+
     setIsClaiming(true);
 
     try {
@@ -141,6 +186,9 @@ export const useTokenRewards = (walletAddress: string | null) => {
           setRewards(newRewards as TokenReward[]);
           setTotalEarned(newRewards.reduce((sum, r) => sum + Number(r.tokens_earned), 0));
         }
+
+        // Recheck wallet balance after claim
+        checkRewardWallet();
       }
 
       return data as ClaimResult;
@@ -175,8 +223,12 @@ export const useTokenRewards = (walletAddress: string | null) => {
     totalEarned,
     isLoading,
     isClaiming,
+    rewardsEnabled,
+    rewardWalletStatus,
+    isCheckingWallet,
     calculateEstimatedReward,
     claimReward,
-    canClaim
+    canClaim,
+    checkRewardWallet
   };
 };
