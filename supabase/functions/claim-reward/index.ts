@@ -158,17 +158,12 @@ async function transferTokens(
   }
 }
 
-// Verify hCaptcha token - TEMPORARILY DISABLED
+// Verify hCaptcha token
 async function verifyCaptcha(token: string): Promise<boolean> {
-  if (token === 'disabled') {
-    console.log('Captcha verification disabled')
-    return true
-  }
-  
   const secret = Deno.env.get('HCAPTCHA_SECRET_KEY')
   if (!secret) {
-    console.log('HCAPTCHA_SECRET_KEY not configured, skipping verification')
-    return true
+    console.error('HCAPTCHA_SECRET_KEY not configured')
+    return false
   }
 
   try {
@@ -183,7 +178,7 @@ async function verifyCaptcha(token: string): Promise<boolean> {
     return data.success === true
   } catch (error) {
     console.error('hCaptcha verification error:', error)
-    return true
+    return false
   }
 }
 
