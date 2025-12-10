@@ -1564,6 +1564,8 @@ export const SnailGame3rdPerson = () => {
     if (result.success) {
       toast.success(`Claimed ${result.tokens_earned} $SNAIL tokens!`);
       setShowClaimUI(false);
+    } else if (result.error === 'cooldown_active' || result.error === 'ip_limit') {
+      toast.error('Can only claim 2x per 24 hour period!');
     } else {
       toast.error(result.error || 'Failed to claim reward');
     }
