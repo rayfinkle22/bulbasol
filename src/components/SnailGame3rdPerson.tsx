@@ -1990,9 +1990,14 @@ export const SnailGame3rdPerson = () => {
                 </div>
               )}
               
-              <Button onClick={startGame} size="lg" className="font-display">
-                🔄 Play Again
-              </Button>
+              <div className="flex flex-col items-center">
+                <Button onClick={startGame} size="lg" className="font-display">
+                  🔄 Play Again
+                </Button>
+                {!connected && (
+                  <span className="text-xs text-white/70 mt-1">(without rewards)</span>
+                )}
+              </div>
             </div>
           )}
         </div>
