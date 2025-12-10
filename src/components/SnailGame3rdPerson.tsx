@@ -9,11 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RealisticForestGround } from "./game/RealisticForest";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
-import { Volume2, VolumeX, Wallet, X } from "lucide-react";
+import { Volume2, VolumeX, Wallet, X, Gift } from "lucide-react";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useTokenRewards } from "@/hooks/useTokenRewards";
+import HCaptcha from '@hcaptcha/react-hcaptcha';
+
+// hCaptcha site key - replace with your actual site key
+const HCAPTCHA_SITE_KEY = '10000000-ffff-ffff-ffff-000000000001'; // Test key - replace with real one
 
 interface Bug {
   id: number;
@@ -1351,7 +1355,11 @@ export const SnailGame3rdPerson = () => {
   // Wallet connection
   const { connected, publicKey } = useWallet();
   const walletAddress = publicKey?.toBase58() || null;
-  const { rewardsEnabled, rewardWalletStatus, isCheckingWallet } = useTokenRewards(walletAddress);
+  const { rewardsEnabled, rewardWalletStatus, isCheckingWallet, claimReward, isClaiming, calculateEstimatedReward, canClaim } = useTokenRewards(walletAddress);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [lastGameSessionId, setLastGameSessionId] = useState<string | null>(null);
+  const [showClaimUI, setShowClaimUI] = useState(false);
+  const captchaRef = useRef<HCaptcha>(null);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1492,6 +1500,11 @@ export const SnailGame3rdPerson = () => {
       console.error('Error incrementing games counter:', error);
     }
     
+    // Reset claim UI state
+    setShowClaimUI(false);
+    setCaptchaToken(null);
+    captchaRef.current?.resetCaptcha();
+    
     setGameState({
       status: 'playing',
       score: 0,
@@ -1527,8 +1540,33 @@ export const SnailGame3rdPerson = () => {
       if (finalScore > 0 && isHighScore(finalScore)) {
         setGameState(prev => ({ ...prev, status: 'entering_name' }));
       }
+      // Show claim UI if connected and has score
+      if (connected && finalScore > 0) {
+        setShowClaimUI(true);
+      }
     }
-  }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
+  }, [gameState.status, gameState.health, gameState.score, scoreSubmitted, connected]);
+
+  // Handle reward claim
+  const handleClaimReward = async () => {
+    if (!captchaToken) {
+      toast.error('Please complete the captcha first');
+      return;
+    }
+    
+    const result = await claimReward(Math.floor(gameState.score), lastGameSessionId || undefined, captchaToken);
+    
+    if (result.success) {
+      toast.success(`Claimed ${result.tokens_earned} $SNAIL tokens!`);
+      setShowClaimUI(false);
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
+    } else {
+      toast.error(result.error || 'Failed to claim reward');
+      setCaptchaToken(null);
+      captchaRef.current?.resetCaptcha();
+    }
+  };
 
 
   return (
@@ -1981,13 +2019,44 @@ export const SnailGame3rdPerson = () => {
                 </div>
               )}
               
-              {connected && (
+              {connected && showClaimUI && rewardsEnabled && gameState.score > 0 && (
+                <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-center max-w-sm">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Gift className="w-5 h-5 text-green-400" />
+                    <span className="text-green-400 font-display text-lg">Claim Rewards!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Estimated: ~{calculateEstimatedReward(Math.floor(gameState.score)).tokens.toFixed(0)} $SNAIL
+                  </p>
+                  
+                  <div className="flex justify-center mb-3">
+                    <HCaptcha
+                      ref={captchaRef}
+                      sitekey={HCAPTCHA_SITE_KEY}
+                      onVerify={(token) => setCaptchaToken(token)}
+                      onExpire={() => setCaptchaToken(null)}
+                      theme="dark"
+                      size="compact"
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={handleClaimReward}
+                    disabled={!captchaToken || isClaiming}
+                    className="w-full font-display bg-green-600 hover:bg-green-500"
+                  >
+                    {isClaiming ? 'Claiming...' : '🎁 Claim $SNAIL'}
+                  </Button>
+                </div>
+              )}
+              
+              {connected && !showClaimUI && (
                 <div className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
                   <Wallet className="w-4 h-4 text-green-400" />
                   <span className="text-green-400 text-sm font-display">
                     {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
                   </span>
-                  <span className="text-xs text-green-300">✓ Rewards Active</span>
+                  <span className="text-xs text-green-300">✓ Connected</span>
                 </div>
               )}
               

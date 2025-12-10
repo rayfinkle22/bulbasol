@@ -9,6 +9,31 @@ interface ClaimRequest {
   wallet_address: string
   score: number
   game_session_id?: string
+  captcha_token?: string
+}
+
+// Verify hCaptcha token
+async function verifyCaptcha(token: string): Promise<boolean> {
+  const secret = Deno.env.get('HCAPTCHA_SECRET_KEY')
+  if (!secret) {
+    console.error('HCAPTCHA_SECRET_KEY not configured')
+    return false
+  }
+
+  try {
+    const response = await fetch('https://api.hcaptcha.com/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`
+    })
+    
+    const data = await response.json()
+    console.log('hCaptcha verification result:', data.success)
+    return data.success === true
+  } catch (error) {
+    console.error('hCaptcha verification error:', error)
+    return false
+  }
 }
 
 // Get client IP from request headers
@@ -46,10 +71,29 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { wallet_address, score, game_session_id }: ClaimRequest = await req.json()
+    const { wallet_address, score, game_session_id, captcha_token }: ClaimRequest = await req.json()
     const clientIP = getClientIP(req)
 
     console.log('Claim attempt from IP:', clientIP)
+
+    // Verify captcha first
+    if (!captcha_token) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Captcha verification required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const captchaValid = await verifyCaptcha(captcha_token)
+    if (!captchaValid) {
+      console.log('Captcha verification failed')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Captcha verification failed' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Captcha verified successfully')
 
     // Validate inputs
     if (!wallet_address || typeof wallet_address !== 'string' || wallet_address.length < 32) {

@@ -149,13 +149,17 @@ export const useTokenRewards = (walletAddress: string | null) => {
   }, [walletAddress]);
 
   // Claim reward
-  const claimReward = async (score: number, gameSessionId?: string): Promise<ClaimResult> => {
+  const claimReward = async (score: number, gameSessionId?: string, captchaToken?: string): Promise<ClaimResult> => {
     if (!walletAddress) {
       return { success: false, error: 'Wallet not connected' };
     }
 
     if (!rewardsEnabled) {
       return { success: false, error: 'Rewards are currently disabled' };
+    }
+
+    if (!captchaToken) {
+      return { success: false, error: 'Please complete the captcha verification' };
     }
 
     setIsClaiming(true);
@@ -165,7 +169,8 @@ export const useTokenRewards = (walletAddress: string | null) => {
         body: {
           wallet_address: walletAddress,
           score,
-          game_session_id: gameSessionId
+          game_session_id: gameSessionId,
+          captcha_token: captchaToken
         }
       });
 
