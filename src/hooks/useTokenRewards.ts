@@ -9,6 +9,8 @@ interface RewardConfig {
   max_reward_amount: number;
   claim_cooldown_hours: number;
   points_per_token: number;
+  max_reward_usd: number;
+  max_score_cap: number;
 }
 
 interface TokenReward {
@@ -35,17 +37,31 @@ export const useTokenRewards = (walletAddress: string | null) => {
   const [totalEarned, setTotalEarned] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isClaiming, setIsClaiming] = useState(false);
-  const { marketCap } = useMarketData();
+  const { marketCap, priceUsd } = useMarketData();
 
-  // Calculate estimated reward for a given score
-  const calculateEstimatedReward = useCallback((score: number): number => {
-    if (!config || !marketCap) return 0;
+  // Calculate estimated reward for a given score (with $5 USD cap and 6000 score cap)
+  const calculateEstimatedReward = useCallback((score: number): { tokens: number; usdValue: number } => {
+    if (!config || !marketCap) return { tokens: 0, usdValue: 0 };
+    
+    // Cap score at 6000
+    const cappedScore = Math.min(score, config.max_score_cap);
     
     const mcMultiplier = config.base_market_cap / Math.max(marketCap, config.base_market_cap);
-    const reward = (score / config.points_per_token) * config.base_reward_amount * mcMultiplier;
+    let reward = (cappedScore / config.points_per_token) * config.base_reward_amount * mcMultiplier;
     
-    return Math.max(config.min_reward_amount, Math.min(reward, config.max_reward_amount));
-  }, [config, marketCap]);
+    // Apply USD cap ($5 max)
+    const currentPrice = priceUsd ? parseFloat(priceUsd) : 0.00001;
+    const maxTokensFromUsd = config.max_reward_usd / currentPrice;
+    reward = Math.min(reward, maxTokensFromUsd);
+    
+    // Clamp to min/max
+    reward = Math.max(config.min_reward_amount, Math.min(reward, config.max_reward_amount));
+    
+    return { 
+      tokens: Math.round(reward * 100) / 100,
+      usdValue: Math.round(reward * currentPrice * 10000) / 10000
+    };
+  }, [config, marketCap, priceUsd]);
 
   // Fetch reward config
   useEffect(() => {

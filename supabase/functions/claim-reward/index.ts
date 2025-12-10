@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (game_session_id) {
       const { data: session, error: sessionError } = await supabase
         .from('leaderboard_3d')
-        .select('id, score')
+        .select('id, score, bugs_killed, game_duration_seconds')
         .eq('id', game_session_id)
         .maybeSingle()
 
@@ -65,6 +65,22 @@ Deno.serve(async (req) => {
         )
       }
 
+      // Anti-cheat: Verify score is plausible based on game metrics
+      const maxPointsPerBug = 100 // Max points per bug in game
+      const maxPointsPerSecond = 50 // Max reasonable points per second
+      const maxPossibleScore = Math.max(
+        (session.bugs_killed || 0) * maxPointsPerBug * 2, // Allow some variance
+        (session.game_duration_seconds || 0) * maxPointsPerSecond
+      )
+
+      if (score > maxPossibleScore && maxPossibleScore > 0) {
+        console.error('Suspicious score detected:', { score, maxPossible: maxPossibleScore, session })
+        return new Response(
+          JSON.stringify({ success: false, error: 'Score validation failed' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       // Check if this session was already claimed
       const { data: existingClaim } = await supabase
         .from('token_rewards')
@@ -80,9 +96,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch current market cap from DexScreener
+    // Fetch current market cap and price from DexScreener
     const TOKEN_ADDRESS = '5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump'
     let marketCap = 50000 // Default fallback
+    let priceUsd = 0.00001 // Default fallback
 
     try {
       const dexResponse = await fetch(
@@ -93,18 +110,20 @@ Deno.serve(async (req) => {
       if (dexData.pairs && dexData.pairs.length > 0) {
         const pair = dexData.pairs.find((p: any) => p.dexId === 'pumpswap') || dexData.pairs[0]
         marketCap = pair.marketCap || pair.fdv || 50000
+        priceUsd = parseFloat(pair.priceUsd) || 0.00001
       }
     } catch (dexError) {
-      console.error('Failed to fetch market cap, using default:', dexError)
+      console.error('Failed to fetch market data, using defaults:', dexError)
     }
 
-    console.log('Claiming reward:', { wallet_address, score, marketCap, game_session_id })
+    console.log('Claiming reward:', { wallet_address, score, marketCap, priceUsd, game_session_id })
 
-    // Call the claim_reward function
+    // Call the claim_reward function with price for USD cap calculation
     const { data, error } = await supabase.rpc('claim_reward', {
       p_wallet_address: wallet_address,
       p_score: score,
       p_market_cap: marketCap,
+      p_price_usd: priceUsd,
       p_game_session_id: game_session_id || null
     })
 
