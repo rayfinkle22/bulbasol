@@ -14,10 +14,7 @@ import { useGameSounds } from "@/hooks/useGameSounds";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useTokenRewards } from "@/hooks/useTokenRewards";
-import HCaptcha from '@hcaptcha/react-hcaptcha';
-
-// hCaptcha site key - replace with your actual site key
-const HCAPTCHA_SITE_KEY = '10000000-ffff-ffff-ffff-000000000001'; // Test key - replace with real one
+// import HCaptcha from '@hcaptcha/react-hcaptcha'; // Temporarily disabled
 
 interface Bug {
   id: number;
@@ -1356,10 +1353,8 @@ export const SnailGame3rdPerson = () => {
   const { connected, publicKey } = useWallet();
   const walletAddress = publicKey?.toBase58() || null;
   const { rewardsEnabled, rewardWalletStatus, isCheckingWallet, claimReward, isClaiming, calculateEstimatedReward, canClaim } = useTokenRewards(walletAddress);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [lastGameSessionId, setLastGameSessionId] = useState<string | null>(null);
   const [showClaimUI, setShowClaimUI] = useState(false);
-  const captchaRef = useRef<HCaptcha>(null);
   
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
@@ -1502,8 +1497,6 @@ export const SnailGame3rdPerson = () => {
     
     // Reset claim UI state
     setShowClaimUI(false);
-    setCaptchaToken(null);
-    captchaRef.current?.resetCaptcha();
     
     setGameState({
       status: 'playing',
@@ -1549,22 +1542,13 @@ export const SnailGame3rdPerson = () => {
 
   // Handle reward claim
   const handleClaimReward = async () => {
-    if (!captchaToken) {
-      toast.error('Please complete the captcha first');
-      return;
-    }
-    
-    const result = await claimReward(Math.floor(gameState.score), lastGameSessionId || undefined, captchaToken);
+    const result = await claimReward(Math.floor(gameState.score), lastGameSessionId || undefined);
     
     if (result.success) {
       toast.success(`Claimed ${result.tokens_earned} $SNAIL tokens!`);
       setShowClaimUI(false);
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
     } else {
       toast.error(result.error || 'Failed to claim reward');
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
     }
   };
 
@@ -2029,20 +2013,9 @@ export const SnailGame3rdPerson = () => {
                     Estimated: ~{calculateEstimatedReward(Math.floor(gameState.score)).tokens.toFixed(0)} $SNAIL
                   </p>
                   
-                  <div className="flex justify-center mb-3">
-                    <HCaptcha
-                      ref={captchaRef}
-                      sitekey={HCAPTCHA_SITE_KEY}
-                      onVerify={(token) => setCaptchaToken(token)}
-                      onExpire={() => setCaptchaToken(null)}
-                      theme="dark"
-                      size="compact"
-                    />
-                  </div>
-                  
                   <Button 
                     onClick={handleClaimReward}
-                    disabled={!captchaToken || isClaiming}
+                    disabled={isClaiming}
                     className="w-full font-display bg-green-600 hover:bg-green-500"
                   >
                     {isClaiming ? 'Claiming...' : '🎁 Claim $SNAIL'}
