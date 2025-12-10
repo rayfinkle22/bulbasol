@@ -170,8 +170,26 @@ export const useTokenRewards = (walletAddress: string | null) => {
         }
       });
 
+      // Handle edge function errors - parse the error context for cooldown info
       if (error) {
         console.error('Claim error:', error);
+        // Try to extract cooldown info from error context
+        const errorContext = (error as any)?.context;
+        if (errorContext) {
+          try {
+            const errorData = typeof errorContext === 'string' ? JSON.parse(errorContext) : errorContext;
+            if (errorData.error === 'cooldown_active' && errorData.next_claim_at) {
+              return { 
+                success: false, 
+                error: 'cooldown_active', 
+                next_claim_at: errorData.next_claim_at 
+              };
+            }
+            return { success: false, error: errorData.error || error.message };
+          } catch {
+            // Fall through to default error handling
+          }
+        }
         return { success: false, error: error.message };
       }
 
