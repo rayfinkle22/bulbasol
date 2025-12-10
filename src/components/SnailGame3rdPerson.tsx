@@ -1901,7 +1901,7 @@ export const SnailGame3rdPerson = () => {
                 
                 <Wallet className="w-10 h-10 text-primary mb-2" />
                 <h3 className="font-display text-xl text-primary mb-1">Earn $SNAIL Tokens!</h3>
-                <p className="font-body text-sm text-muted-foreground mb-3 max-w-xs">
+                <p className="font-display text-lg text-primary mb-3 max-w-xs animate-pulse drop-shadow-[0_0_10px_hsl(var(--primary))]">
                   Connect your wallet to earn rewards. Totally optional!
                 </p>
                 
