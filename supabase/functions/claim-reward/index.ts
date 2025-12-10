@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Connection, Keypair, PublicKey, Transaction } from 'https://esm.sh/@solana/web3.js@1.98.0'
+import { createTransferInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, getAccount } from 'https://esm.sh/@solana/spl-token@0.4.9'
+import base58 from 'https://esm.sh/bs58@5.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,9 +15,125 @@ interface ClaimRequest {
   captcha_token?: string
 }
 
+// Token configuration
+const TOKEN_MINT = '5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump'
+const TOKEN_DECIMALS = 6
+const SOLANA_RPC = 'https://api.mainnet-beta.solana.com'
+
+// Transfer SPL tokens to recipient
+async function transferTokens(
+  recipientAddress: string,
+  amount: number
+): Promise<{ success: boolean; signature?: string; error?: string }> {
+  const privateKeyStr = Deno.env.get('REWARD_WALLET_PRIVATE_KEY')
+  if (!privateKeyStr) {
+    console.error('REWARD_WALLET_PRIVATE_KEY not configured')
+    return { success: false, error: 'Reward wallet not configured' }
+  }
+
+  try {
+    const connection = new Connection(SOLANA_RPC, 'confirmed')
+    
+    // Decode private key (supports both base58 and array format)
+    let secretKey: Uint8Array
+    try {
+      // Try base58 first
+      secretKey = base58.decode(privateKeyStr)
+    } catch {
+      // Try JSON array format
+      try {
+        const keyArray = JSON.parse(privateKeyStr)
+        secretKey = new Uint8Array(keyArray)
+      } catch {
+        return { success: false, error: 'Invalid private key format' }
+      }
+    }
+    
+    const senderKeypair = Keypair.fromSecretKey(secretKey)
+    const senderPublicKey = senderKeypair.publicKey
+    const recipientPublicKey = new PublicKey(recipientAddress)
+    const mintPublicKey = new PublicKey(TOKEN_MINT)
+    
+    console.log('Sender wallet:', senderPublicKey.toBase58())
+    console.log('Recipient wallet:', recipientAddress)
+    console.log('Amount to transfer:', amount, 'tokens')
+    
+    // Get associated token accounts
+    const senderATA = await getAssociatedTokenAddress(mintPublicKey, senderPublicKey)
+    const recipientATA = await getAssociatedTokenAddress(mintPublicKey, recipientPublicKey)
+    
+    console.log('Sender ATA:', senderATA.toBase58())
+    console.log('Recipient ATA:', recipientATA.toBase58())
+    
+    // Check if recipient has an ATA, create if not
+    const transaction = new Transaction()
+    
+    try {
+      await getAccount(connection, recipientATA)
+      console.log('Recipient ATA exists')
+    } catch {
+      console.log('Creating recipient ATA...')
+      transaction.add(
+        createAssociatedTokenAccountInstruction(
+          senderPublicKey, // payer
+          recipientATA,    // ata
+          recipientPublicKey, // owner
+          mintPublicKey    // mint
+        )
+      )
+    }
+    
+    // Convert amount to token units (with decimals)
+    const tokenAmount = Math.floor(amount * Math.pow(10, TOKEN_DECIMALS))
+    
+    // Add transfer instruction
+    transaction.add(
+      createTransferInstruction(
+        senderATA,        // source
+        recipientATA,     // destination
+        senderPublicKey,  // owner
+        tokenAmount       // amount in smallest units
+      )
+    )
+    
+    // Get recent blockhash
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed')
+    transaction.recentBlockhash = blockhash
+    transaction.feePayer = senderPublicKey
+    
+    // Sign and send transaction
+    transaction.sign(senderKeypair)
+    
+    const signature = await connection.sendRawTransaction(transaction.serialize(), {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed'
+    })
+    
+    console.log('Transaction sent:', signature)
+    
+    // Wait for confirmation
+    const confirmation = await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    }, 'confirmed')
+    
+    if (confirmation.value.err) {
+      console.error('Transaction failed:', confirmation.value.err)
+      return { success: false, error: 'Transaction failed on-chain' }
+    }
+    
+    console.log('Transaction confirmed!')
+    return { success: true, signature }
+    
+  } catch (error) {
+    console.error('Token transfer error:', error)
+    return { success: false, error: (error as Error).message || 'Token transfer failed' }
+  }
+}
+
 // Verify hCaptcha token - TEMPORARILY DISABLED
 async function verifyCaptcha(token: string): Promise<boolean> {
-  // Captcha temporarily disabled - always return true
   if (token === 'disabled') {
     console.log('Captcha verification disabled')
     return true
@@ -38,16 +157,14 @@ async function verifyCaptcha(token: string): Promise<boolean> {
     return data.success === true
   } catch (error) {
     console.error('hCaptcha verification error:', error)
-    return true // Allow claim on captcha error
+    return true
   }
 }
 
 // Get client IP from request headers
 function getClientIP(req: Request): string {
-  // Try various headers that might contain the real IP
   const forwardedFor = req.headers.get('x-forwarded-for')
   if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
     return forwardedFor.split(',')[0].trim()
   }
   
@@ -61,12 +178,10 @@ function getClientIP(req: Request): string {
     return cfConnectingIP.trim()
   }
   
-  // Fallback - this won't be the real client IP but better than nothing
   return 'unknown'
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -82,7 +197,7 @@ Deno.serve(async (req) => {
 
     console.log('Claim attempt from IP:', clientIP)
 
-    // Verify captcha first
+    // Verify captcha
     if (!captcha_token) {
       return new Response(
         JSON.stringify({ success: false, error: 'Captcha verification required' }),
@@ -99,8 +214,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Captcha verified successfully')
-
     // Validate inputs
     if (!wallet_address || typeof wallet_address !== 'string' || wallet_address.length < 32) {
       return new Response(
@@ -116,7 +229,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check claim eligibility (IP limits + wallet cooldown)
+    // Check claim eligibility
     const { data: eligibility, error: eligibilityError } = await supabase.rpc('check_claim_eligibility', {
       p_wallet_address: wallet_address,
       p_ip_address: clientIP
@@ -143,7 +256,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verify game session exists if provided
+    // Verify game session if provided
     if (game_session_id) {
       const { data: session, error: sessionError } = await supabase
         .from('leaderboard_3d')
@@ -152,39 +265,19 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (sessionError || !session) {
-        console.error('Game session verification failed:', sessionError)
         return new Response(
           JSON.stringify({ success: false, error: 'Invalid game session' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      // Verify score matches
       if (session.score !== score) {
-        console.error('Score mismatch:', { claimed: score, actual: session.score })
         return new Response(
           JSON.stringify({ success: false, error: 'Score verification failed' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      // Anti-cheat: Verify score is plausible based on game metrics
-      const maxPointsPerBug = 100 // Max points per bug in game
-      const maxPointsPerSecond = 50 // Max reasonable points per second
-      const maxPossibleScore = Math.max(
-        (session.bugs_killed || 0) * maxPointsPerBug * 2, // Allow some variance
-        (session.game_duration_seconds || 0) * maxPointsPerSecond
-      )
-
-      if (score > maxPossibleScore && maxPossibleScore > 0) {
-        console.error('Suspicious score detected:', { score, maxPossible: maxPossibleScore, session })
-        return new Response(
-          JSON.stringify({ success: false, error: 'Score validation failed' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Check if this session was already claimed
       const { data: existingClaim } = await supabase
         .from('token_rewards')
         .select('id')
@@ -199,15 +292,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch current market cap and price from DexScreener
+    // Fetch market data
     const TOKEN_ADDRESS = '5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump'
-    let marketCap = 50000 // Default fallback
-    let priceUsd = 0.00001 // Default fallback
+    let marketCap = 50000
+    let priceUsd = 0.00001
 
     try {
-      const dexResponse = await fetch(
-        `https://api.dexscreener.com/latest/dex/tokens/${TOKEN_ADDRESS}`
-      )
+      const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_ADDRESS}`)
       const dexData = await dexResponse.json()
       
       if (dexData.pairs && dexData.pairs.length > 0) {
@@ -216,12 +307,12 @@ Deno.serve(async (req) => {
         priceUsd = parseFloat(pair.priceUsd) || 0.00001
       }
     } catch (dexError) {
-      console.error('Failed to fetch market data, using defaults:', dexError)
+      console.error('Failed to fetch market data:', dexError)
     }
 
-    console.log('Claiming reward:', { wallet_address, score, marketCap, priceUsd, game_session_id, clientIP })
+    console.log('Recording claim:', { wallet_address, score, marketCap, priceUsd })
 
-    // Call the claim_reward function with price for USD cap calculation
+    // Record claim in database first
     const { data, error } = await supabase.rpc('claim_reward', {
       p_wallet_address: wallet_address,
       p_score: score,
@@ -238,20 +329,65 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Update the reward record with IP address
-    if (data && data.success && data.reward_id) {
-      await supabase
-        .from('token_rewards')
-        .update({ ip_address: clientIP })
-        .eq('id', data.reward_id)
+    if (!data.success) {
+      return new Response(
+        JSON.stringify(data),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    console.log('Claim result:', data)
+    const tokensEarned = data.tokens_earned
+    const rewardId = data.reward_id
 
-    return new Response(
-      JSON.stringify(data),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.log('Claim recorded, tokens to transfer:', tokensEarned)
+
+    // Now transfer the actual tokens
+    const transferResult = await transferTokens(wallet_address, tokensEarned)
+
+    if (transferResult.success && transferResult.signature) {
+      // Update record with transaction signature and completed status
+      await supabase
+        .from('token_rewards')
+        .update({ 
+          ip_address: clientIP,
+          tx_signature: transferResult.signature,
+          status: 'completed'
+        })
+        .eq('id', rewardId)
+
+      console.log('Tokens transferred successfully:', transferResult.signature)
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          reward_id: rewardId,
+          tokens_earned: tokensEarned,
+          tx_signature: transferResult.signature,
+          market_cap: marketCap
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    } else {
+      // Transfer failed - update status to failed
+      await supabase
+        .from('token_rewards')
+        .update({ 
+          ip_address: clientIP,
+          status: 'failed'
+        })
+        .eq('id', rewardId)
+
+      console.error('Token transfer failed:', transferResult.error)
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Token transfer failed: ${transferResult.error}`,
+          reward_id: rewardId
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
   } catch (error) {
     console.error('Unexpected error:', error)
