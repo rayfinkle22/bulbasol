@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 const TOKEN_MINT = '5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump'
-const REWARD_WALLET_ADDRESS = 'GzNt7XkAcyScDvqe5Dw1xwbJJWRG9KLMAmvHNHPRG2nM' // Replace with actual reward wallet public key
+const REWARD_WALLET_ADDRESS = 'FNVReQXv25KgzyEkUU7wCWmxUnexzxaNgZmzCyM4CGyC'
 const MIN_SOL_BALANCE = 0.01 // Minimum SOL for transaction fees
 const MIN_TOKEN_BALANCE = 100 // Minimum tokens to enable rewards
 

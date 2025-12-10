@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import snailImage from "@/assets/snail.png";
 import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
-import { WalletButton } from "./WalletButton";
 
 export const Header = () => {
   const { marketCap, isLoading } = useMarketData();
@@ -51,7 +50,7 @@ export const Header = () => {
             >
               🎮
             </Link>
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <span className="font-body text-xs sm:text-sm text-muted-foreground">MCap:</span>
               <span className="font-display text-sm sm:text-lg text-accent">
                 {isLoading ? (
@@ -63,7 +62,6 @@ export const Header = () => {
                 )}
               </span>
             </div>
-            <WalletButton />
           </div>
         </div>
       </div>
