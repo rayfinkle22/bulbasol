@@ -1634,8 +1634,8 @@ export const SnailGame3rdPerson = () => {
           className="relative overflow-hidden bg-black w-full rounded-xl sm:rounded-2xl retro-border"
           style={{ 
             aspectRatio: '16 / 9',
-            minHeight: '150px',
-            maxHeight: 'min(calc(100dvh - 180px), 500px)'
+            minHeight: '200px',
+            maxHeight: 'min(calc(100dvh - 120px), 500px)'
           }}
         >
 
@@ -1839,7 +1839,7 @@ export const SnailGame3rdPerson = () => {
             <>
               <div
                 ref={joystickRef}
-                className="absolute bottom-4 left-4 w-28 h-28 sm:hidden touch-none"
+                className="absolute bottom-2 left-2 w-20 h-20 sm:hidden touch-none"
                 onTouchStart={(e) => {
                   const touch = e.touches[0];
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -1864,19 +1864,16 @@ export const SnailGame3rdPerson = () => {
                   touchMove.current = { dx: 0, dy: 0 };
                 }}
               >
-                <div className="w-full h-full rounded-full bg-black/40 border-2 border-white/30 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-white/50 border-2 border-white/70" />
-                </div>
-                <div className="absolute -bottom-6 left-0 right-0 text-center text-white/70 text-xs font-display">
-                  MOVE
+                <div className="w-full h-full rounded-full bg-black/50 border-2 border-white/40 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-white/60 border-2 border-white/80" />
                 </div>
               </div>
               
               {/* Right side buttons - Jump and Fire next to each other */}
-              <div className="absolute bottom-4 right-4 flex gap-3 sm:hidden">
+              <div className="absolute bottom-2 right-2 flex gap-2 sm:hidden">
                 {/* Jump button */}
                 <div
-                  className="w-20 h-20 touch-none"
+                  className="w-14 h-14 touch-none"
                   onTouchStart={() => {
                     touchJumping.current = true;
                   }}
@@ -1884,14 +1881,14 @@ export const SnailGame3rdPerson = () => {
                     touchJumping.current = false;
                   }}
                 >
-                  <div className="w-full h-full rounded-full bg-blue-600/80 border-4 border-blue-400 flex items-center justify-center active:bg-blue-500 active:scale-95 transition-transform">
-                    <span className="text-white font-display text-sm">JUMP</span>
+                  <div className="w-full h-full rounded-full bg-blue-600/80 border-2 border-blue-400 flex items-center justify-center active:bg-blue-500 active:scale-95 transition-transform">
+                    <span className="text-white font-display text-[10px]">JUMP</span>
                   </div>
                 </div>
                 
                 {/* Fire button */}
                 <div
-                  className="w-20 h-20 touch-none"
+                  className="w-14 h-14 touch-none"
                   onTouchStart={() => {
                     touchShooting.current = true;
                   }}
@@ -1899,8 +1896,8 @@ export const SnailGame3rdPerson = () => {
                     touchShooting.current = false;
                   }}
                 >
-                  <div className="w-full h-full rounded-full bg-red-600/80 border-4 border-red-400 flex items-center justify-center active:bg-red-500 active:scale-95 transition-transform">
-                    <span className="text-white font-display text-sm">FIRE</span>
+                  <div className="w-full h-full rounded-full bg-red-600/80 border-2 border-red-400 flex items-center justify-center active:bg-red-500 active:scale-95 transition-transform">
+                    <span className="text-white font-display text-[10px]">FIRE</span>
                   </div>
                 </div>
               </div>
