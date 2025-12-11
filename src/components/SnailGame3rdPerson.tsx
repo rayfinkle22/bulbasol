@@ -1508,6 +1508,14 @@ function GameScene({
       const angle = gameState.snailRotation;
       const activeWeapon = gameState.specialWeaponUntil > now ? gameState.specialWeapon : null;
       
+      // Calculate gun tip position in world space
+      // Gun is at local [0.7, 0.5, 0.8] - 0.7 right, 0.5 up, 0.8 forward (including barrel)
+      const gunRightOffset = 0.7;
+      const gunForwardOffset = 0.8;
+      const gunTipX = gameState.snailPosition[0] + gunRightOffset * Math.cos(angle) + gunForwardOffset * Math.sin(angle);
+      const gunTipZ = gameState.snailPosition[1] - gunRightOffset * Math.sin(angle) + gunForwardOffset * Math.cos(angle);
+      const gunTipY = 0.5 + gameState.snailHeight;
+      
       if (activeWeapon === 'flamethrower') {
         sounds.playFlamethrower();
         // Flamethrower shoots multiple short-range flames
@@ -1518,11 +1526,7 @@ function GameScene({
         ];
         const newBullet = {
           id: Date.now() + Math.random(),
-          position: [
-            gameState.snailPosition[0] + Math.sin(angle) * 1.2,
-            0.5 + gameState.snailHeight,
-            gameState.snailPosition[1] + Math.cos(angle) * 1.2
-          ] as [number, number, number],
+          position: [gunTipX, gunTipY, gunTipZ] as [number, number, number],
           velocity,
           weaponType: 'flamethrower' as SpecialWeapon
         };
@@ -1539,11 +1543,7 @@ function GameScene({
         ];
         const newBullet = {
           id: Date.now() + Math.random(),
-          position: [
-            gameState.snailPosition[0] + Math.sin(angle) * 1.2,
-            0.5 + gameState.snailHeight,
-            gameState.snailPosition[1] + Math.cos(angle) * 1.2
-          ] as [number, number, number],
+          position: [gunTipX, gunTipY, gunTipZ] as [number, number, number],
           velocity,
           weaponType: 'rocketLauncher' as SpecialWeapon
         };
@@ -1563,11 +1563,7 @@ function GameScene({
           ];
           newBullets.push({
             id: Date.now() + Math.random() + i,
-            position: [
-              gameState.snailPosition[0] + Math.sin(angle) * 1,
-              0.5 + gameState.snailHeight,
-              gameState.snailPosition[1] + Math.cos(angle) * 1
-            ],
+            position: [gunTipX, gunTipY, gunTipZ],
             velocity,
             weaponType: 'shotgun' as SpecialWeapon
           });
@@ -1585,11 +1581,7 @@ function GameScene({
         ];
         const newBullet = {
           id: Date.now() + Math.random(),
-          position: [
-            gameState.snailPosition[0] + Math.sin(angle) * 1.2,
-            0.5 + gameState.snailHeight,
-            gameState.snailPosition[1] + Math.cos(angle) * 1.2
-          ] as [number, number, number],
+          position: [gunTipX, gunTipY, gunTipZ] as [number, number, number],
           velocity,
           weaponType: 'laserBeam' as SpecialWeapon
         };
@@ -1607,11 +1599,7 @@ function GameScene({
         ];
         const newBullet: Bullet = {
           id: Date.now() + Math.random(),
-          position: [
-            gameState.snailPosition[0] + Math.sin(angle) * 1,
-            0.5 + gameState.snailHeight,
-            gameState.snailPosition[1] + Math.cos(angle) * 1
-          ],
+          position: [gunTipX, gunTipY, gunTipZ],
           velocity
         };
         setGameState(prev => ({
@@ -2038,7 +2026,8 @@ function GameScene({
         position={gameState.snailPosition} 
         rotation={gameState.snailRotation} 
         height={gameState.snailHeight}
-        specialWeapon={gameState.specialWeapon}
+        specialWeapon={performance.now() < gameState.specialWeaponUntil ? gameState.specialWeapon : null}
+        isTurbo={performance.now() < gameState.turboSpeedUntil}
       />
       
       {gameState.bugs.map(bug => (
