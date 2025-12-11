@@ -72,6 +72,113 @@ interface LeaderboardEntry {
   tokens_earned?: number | null;
 }
 
+// Obstacle for collision detection
+interface Obstacle {
+  x: number;
+  z: number;
+  radius: number; // collision radius
+  height: number; // height for jumping on top
+  type: 'rock' | 'boulder' | 'log' | 'tree';
+}
+
+// Seeded random for consistent obstacle generation
+const seededRandomObstacle = (seed: number) => {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+// Generate obstacles once - shared between rendering and collision
+const generateObstacles = (): Obstacle[] => {
+  const obstacles: Obstacle[] = [];
+  
+  // Rocks - scattered around play area
+  for (let i = 0; i < 25; i++) {
+    const seed = i * 3.14159;
+    const x = (seededRandomObstacle(seed) - 0.5) * 30;
+    const z = (seededRandomObstacle(seed + 1) - 0.5) * 30;
+    const scale = 0.4 + seededRandomObstacle(seed + 2) * 0.6;
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    
+    // Don't place rocks too close to center spawn
+    if (distFromCenter > 3) {
+      obstacles.push({
+        x, z,
+        radius: scale * 0.8,
+        height: scale * 0.6,
+        type: 'rock'
+      });
+    }
+  }
+  
+  // Boulders - larger obstacles
+  for (let i = 0; i < 12; i++) {
+    const seed = i * 5.67 + 100;
+    const x = (seededRandomObstacle(seed) - 0.5) * 28;
+    const z = (seededRandomObstacle(seed + 1) - 0.5) * 28;
+    const scale = 0.8 + seededRandomObstacle(seed + 2) * 0.7;
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    
+    if (distFromCenter > 5) {
+      obstacles.push({
+        x, z,
+        radius: scale * 1.2,
+        height: scale * 0.9,
+        type: 'boulder'
+      });
+    }
+  }
+  
+  // Fallen logs
+  for (let i = 0; i < 6; i++) {
+    const seed = i * 4.567 + 200;
+    const x = (seededRandomObstacle(seed) - 0.5) * 26;
+    const z = (seededRandomObstacle(seed + 1) - 0.5) * 26;
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    
+    if (distFromCenter > 6) {
+      obstacles.push({
+        x, z,
+        radius: 1.2,
+        height: 0.3,
+        type: 'log'
+      });
+    }
+  }
+  
+  return obstacles;
+};
+
+// Static obstacles list
+const GAME_OBSTACLES = generateObstacles();
+
+// Check collision with obstacles
+const checkObstacleCollision = (
+  newX: number, 
+  newZ: number, 
+  currentHeight: number,
+  obstacles: Obstacle[]
+): { blocked: boolean; groundHeight: number } => {
+  let groundHeight = 0;
+  let blocked = false;
+  
+  for (const obs of obstacles) {
+    const dx = newX - obs.x;
+    const dz = newZ - obs.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    
+    // Check if we're above the obstacle (can walk on top)
+    if (dist < obs.radius * 0.8 && currentHeight >= obs.height - 0.1) {
+      groundHeight = Math.max(groundHeight, obs.height);
+    }
+    // Check if we're colliding with the side
+    else if (dist < obs.radius && currentHeight < obs.height - 0.1) {
+      blocked = true;
+    }
+  }
+  
+  return { blocked, groundHeight };
+};
+
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const SPEED_MULTIPLIERS: Record<Difficulty, number> = {
@@ -672,7 +779,89 @@ function GrassTuft({ position, seed }: { position: [number, number, number]; see
   );
 }
 
-// Forest ground with trees and grass - using useMemo to prevent re-renders
+// Rock with collision - uses shared obstacle data
+function CollisionRock({ obstacle, variant }: { obstacle: Obstacle; variant: number }) {
+  const isMossy = variant % 3 === 0;
+  const rockColors = ['#5a5550', '#6a6560', '#7a7570', '#4a4540'];
+  const baseColor = rockColors[variant % 4];
+  
+  return (
+    <group position={[obstacle.x, obstacle.height * 0.5, obstacle.z]}>
+      {/* Main rock body */}
+      <mesh castShadow receiveShadow rotation={[variant * 0.3, variant * 1.2, variant * 0.2]}>
+        <icosahedronGeometry args={[obstacle.radius * 0.9, 1]} />
+        <meshStandardMaterial color={baseColor} roughness={0.85} flatShading />
+      </mesh>
+      {/* Secondary rock */}
+      <mesh position={[obstacle.radius * 0.4, -obstacle.height * 0.2, obstacle.radius * 0.3]} castShadow>
+        <dodecahedronGeometry args={[obstacle.radius * 0.4, 0]} />
+        <meshStandardMaterial color={rockColors[(variant + 1) % 4]} roughness={0.9} flatShading />
+      </mesh>
+      {/* Moss on top */}
+      {isMossy && (
+        <mesh position={[0, obstacle.height * 0.4, 0]}>
+          <sphereGeometry args={[obstacle.radius * 0.5, 6, 4]} />
+          <meshStandardMaterial color="#4a7a40" roughness={1} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Boulder with collision
+function CollisionBoulder({ obstacle, variant }: { obstacle: Obstacle; variant: number }) {
+  return (
+    <group position={[obstacle.x, obstacle.height * 0.4, obstacle.z]}>
+      {/* Main boulder */}
+      <mesh castShadow receiveShadow rotation={[variant * 0.2, variant * 0.8, 0]}>
+        <icosahedronGeometry args={[obstacle.radius * 0.85, 1]} />
+        <meshStandardMaterial color="#7a7570" roughness={0.8} metalness={0.1} flatShading />
+      </mesh>
+      {/* Detail rocks */}
+      <mesh position={[obstacle.radius * 0.5, obstacle.height * 0.2, obstacle.radius * 0.3]} castShadow>
+        <octahedronGeometry args={[obstacle.radius * 0.35, 0]} />
+        <meshStandardMaterial color="#8a8580" roughness={0.85} flatShading />
+      </mesh>
+      <mesh position={[-obstacle.radius * 0.4, -obstacle.height * 0.2, -obstacle.radius * 0.2]} castShadow>
+        <icosahedronGeometry args={[obstacle.radius * 0.3, 0]} />
+        <meshStandardMaterial color="#6a6560" roughness={0.9} flatShading />
+      </mesh>
+      {/* Crack line */}
+      <mesh position={[0, obstacle.height * 0.3, 0]} rotation={[0.2, 0.5, 0.1]}>
+        <boxGeometry args={[obstacle.radius * 0.8, 0.02, 0.02]} />
+        <meshStandardMaterial color="#3a3530" />
+      </mesh>
+    </group>
+  );
+}
+
+// Fallen log with collision
+function CollisionLog({ obstacle, variant }: { obstacle: Obstacle; variant: number }) {
+  const rotation = seededRandomObstacle(variant + 100) * Math.PI;
+  const length = 2 + seededRandomObstacle(variant + 101) * 1.5;
+  
+  return (
+    <group position={[obstacle.x, obstacle.height, obstacle.z]} rotation={[0, rotation, 0]}>
+      {/* Main log */}
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.2, 0.25, length, 12]} />
+        <meshStandardMaterial color="#4a3820" roughness={0.95} />
+      </mesh>
+      {/* Bark texture rings */}
+      <mesh position={[length * 0.4, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.05, 8]} />
+        <meshStandardMaterial color="#3a2810" roughness={1} />
+      </mesh>
+      {/* Moss */}
+      <mesh position={[0, 0.18, 0]} scale={[length * 0.3, 0.1, 0.25]}>
+        <sphereGeometry args={[0.5, 6, 4]} />
+        <meshStandardMaterial color="#5a8a4a" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+// Forest ground with trees, grass, and collidable obstacles
 function ForestGround() {
   // Pre-computed deterministic positions using seeded pseudo-random
   const seededRandom = (seed: number) => {
@@ -704,44 +893,53 @@ function ForestGround() {
   
   // Generate grass positions with seeds
   const grass = [];
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 250; i++) {
     const seed = i * 1.618;
-    const x = (seededRandom(seed) - 0.5) * 45;
-    const z = (seededRandom(seed + 0.5) - 0.5) * 45;
+    const x = (seededRandom(seed) - 0.5) * 40;
+    const z = (seededRandom(seed + 0.5) - 0.5) * 40;
     grass.push({ x, z, key: i, seed });
   }
-
-  // Generate rock positions deterministically
-  const rocks = [];
-  for (let i = 0; i < 20; i++) {
-    const seed = i * 3.14159;
+  
+  // Flowers for color
+  const flowers = [];
+  for (let i = 0; i < 30; i++) {
+    const seed = i * 2.345;
     const x = (seededRandom(seed) - 0.5) * 35;
     const z = (seededRandom(seed + 1) - 0.5) * 35;
-    const scale = 0.2 + seededRandom(seed + 2) * 0.4;
-    const rotX = seededRandom(seed + 3) * Math.PI;
-    const rotY = seededRandom(seed + 4) * Math.PI;
-    const rotZ = seededRandom(seed + 5) * Math.PI;
-    rocks.push({ x, z, scale, rotX, rotY, rotZ, key: i });
+    const color = ['#ff6b6b', '#ffd93d', '#6bcbff', '#ff9ff3', '#ffffff'][i % 5];
+    flowers.push({ x, z, color, key: i });
   }
 
   return (
     <>
-      {/* Main ground - forest floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      {/* Main ground - forest floor with gradient */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#4a6a3a" roughness={0.9} />
+        <meshStandardMaterial color="#3a4a2a" roughness={0.95} />
       </mesh>
       
-      {/* Grass patches layer */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <circleGeometry args={[18, 32]} />
+      {/* Outer ring - darker forest floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <ringGeometry args={[15, 40, 32]} />
+        <meshStandardMaterial color="#2a3a1a" roughness={0.95} />
+      </mesh>
+      
+      {/* Middle grass area */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+        <circleGeometry args={[15, 32]} />
         <meshStandardMaterial color="#5a7a45" roughness={0.85} />
       </mesh>
       
-      {/* Dirt path in center */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <circleGeometry args={[8, 24]} />
-        <meshStandardMaterial color="#6a5a45" roughness={0.95} />
+      {/* Inner lighter grass */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+        <circleGeometry args={[10, 24]} />
+        <meshStandardMaterial color="#6a8a52" roughness={0.85} />
+      </mesh>
+      
+      {/* Center spawn area - soft dirt */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} receiveShadow>
+        <circleGeometry args={[4, 16]} />
+        <meshStandardMaterial color="#7a6a55" roughness={0.95} />
       </mesh>
       
       {/* Trees */}
@@ -754,13 +952,47 @@ function ForestGround() {
         <GrassTuft key={g.key} position={[g.x, 0, g.z]} seed={g.seed} />
       ))}
       
-      {/* Rocks scattered around */}
-      {rocks.map((rock) => (
-        <mesh key={`rock-${rock.key}`} position={[rock.x, rock.scale * 0.3, rock.z]} rotation={[rock.rotX, rock.rotY, rock.rotZ]}>
-          <dodecahedronGeometry args={[rock.scale, 0]} />
-          <meshStandardMaterial color="#6a6a6a" roughness={0.9} />
-        </mesh>
+      {/* Flowers */}
+      {flowers.map((f) => (
+        <group key={f.key} position={[f.x, 0, f.z]}>
+          <mesh position={[0, 0.1, 0]}>
+            <cylinderGeometry args={[0.01, 0.015, 0.2, 4]} />
+            <meshStandardMaterial color="#3a5a2a" />
+          </mesh>
+          <mesh position={[0, 0.22, 0]}>
+            <sphereGeometry args={[0.04, 6, 4]} />
+            <meshStandardMaterial color={f.color} />
+          </mesh>
+        </group>
       ))}
+      
+      {/* Render collidable obstacles from GAME_OBSTACLES */}
+      {GAME_OBSTACLES.map((obs, i) => {
+        if (obs.type === 'rock') {
+          return <CollisionRock key={`rock-${i}`} obstacle={obs} variant={i} />;
+        } else if (obs.type === 'boulder') {
+          return <CollisionBoulder key={`boulder-${i}`} obstacle={obs} variant={i} />;
+        } else if (obs.type === 'log') {
+          return <CollisionLog key={`log-${i}`} obstacle={obs} variant={i} />;
+        }
+        return null;
+      })}
+      
+      {/* Fog particles for atmosphere */}
+      {[...Array(8)].map((_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = 12 + (i % 3) * 4;
+        return (
+          <mesh 
+            key={`fog-${i}`} 
+            position={[Math.sin(angle) * dist, 0.5, Math.cos(angle) * dist]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[6, 6]} />
+            <meshBasicMaterial color="#8a9a7a" transparent opacity={0.15} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
     </>
   );
 }
@@ -1096,35 +1328,70 @@ function GameScene({
       // Update rotation
       let newRotation = prev.snailRotation + turn;
       
-      // Update position based on rotation
-      let newX = prev.snailPosition[0] + Math.sin(newRotation) * forward;
-      let newZ = prev.snailPosition[1] + Math.cos(newRotation) * forward;
+      // Calculate proposed new position
+      let proposedX = prev.snailPosition[0] + Math.sin(newRotation) * forward;
+      let proposedZ = prev.snailPosition[1] + Math.cos(newRotation) * forward;
       
       // Keep snail within bounds
-      newX = Math.max(-20, Math.min(20, newX));
-      newZ = Math.max(-20, Math.min(20, newZ));
+      proposedX = Math.max(-20, Math.min(20, proposedX));
+      proposedZ = Math.max(-20, Math.min(20, proposedZ));
       
-      // Jump physics
+      // Check obstacle collision
+      const collision = checkObstacleCollision(proposedX, proposedZ, prev.snailHeight, GAME_OBSTACLES);
+      
+      // If blocked by obstacle, try sliding along it
+      let newX = proposedX;
+      let newZ = proposedZ;
+      
+      if (collision.blocked) {
+        // Try moving only in X direction
+        const xOnlyCollision = checkObstacleCollision(proposedX, prev.snailPosition[1], prev.snailHeight, GAME_OBSTACLES);
+        // Try moving only in Z direction
+        const zOnlyCollision = checkObstacleCollision(prev.snailPosition[0], proposedZ, prev.snailHeight, GAME_OBSTACLES);
+        
+        if (!xOnlyCollision.blocked) {
+          newX = proposedX;
+          newZ = prev.snailPosition[1];
+        } else if (!zOnlyCollision.blocked) {
+          newX = prev.snailPosition[0];
+          newZ = proposedZ;
+        } else {
+          // Completely blocked - stay in place
+          newX = prev.snailPosition[0];
+          newZ = prev.snailPosition[1];
+        }
+      }
+      
+      // Get ground height at final position
+      const finalCollision = checkObstacleCollision(newX, newZ, prev.snailHeight, GAME_OBSTACLES);
+      const groundLevel = finalCollision.groundHeight;
+      
+      // Jump physics with variable ground height
       let newHeight = prev.snailHeight;
       let newVelocityY = prev.snailVelocityY;
       let newIsJumping = prev.isJumping;
       
-      // Initiate jump
-      if ((jumpPressed.current || touchJumping.current) && !prev.isJumping && prev.snailHeight === 0) {
+      // Initiate jump (can jump from ground or from on top of obstacle)
+      const canJump = !prev.isJumping && (prev.snailHeight <= groundLevel + 0.1);
+      if ((jumpPressed.current || touchJumping.current) && canJump) {
         newVelocityY = 8;
         newIsJumping = true;
       }
       
       // Apply gravity and update height
-      if (newIsJumping || newHeight > 0) {
+      if (newIsJumping || newHeight > groundLevel) {
         newVelocityY -= 20 * clampedDelta; // gravity
         newHeight += newVelocityY * clampedDelta;
         
-        if (newHeight <= 0) {
-          newHeight = 0;
+        // Land on ground or obstacle
+        if (newHeight <= groundLevel) {
+          newHeight = groundLevel;
           newVelocityY = 0;
           newIsJumping = false;
         }
+      } else {
+        // Snap to ground level when walking onto/off obstacles
+        newHeight = groundLevel;
       }
       
       // Check weapon pickup collisions
