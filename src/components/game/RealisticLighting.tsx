@@ -23,48 +23,48 @@ export function RealisticLighting() {
 
   return (
     <>
-      {/* Bright midday sun - strong and warm */}
+      {/* Main sun - warm afternoon light filtering through trees */}
       <directionalLight
         ref={sunRef}
-        position={[25, 50, 20]}
-        intensity={2.5}
-        color="#fffef5"
+        position={[20, 40, 15]}
+        intensity={2.2}
+        color="#fff5e0"
         castShadow
       />
       
-      {/* Sky ambient - bright blue daylight fill */}
-      <ambientLight intensity={0.6} color="#a8c8ff" />
+      {/* Ambient fill - cooler for forest shade */}
+      <ambientLight intensity={0.4} color="#8ab4d8" />
       
-      {/* Hemisphere light for bright sunny sky/ground */}
+      {/* Hemisphere light - sky blue above, forest green below */}
       <hemisphereLight
-        args={['#87ceeb', '#90b060', 0.8]}
+        args={['#87ceeb', '#4a6a3a', 0.7]}
         position={[0, 50, 0]}
       />
       
-      {/* Secondary sun for rim highlights */}
+      {/* Secondary light for depth */}
       <directionalLight
-        position={[-20, 40, -15]}
-        intensity={0.8}
-        color="#fff8e0"
+        position={[-25, 30, -20]}
+        intensity={0.4}
+        color="#ffd8a0"
       />
       
-      {/* Bright fill light */}
+      {/* Rim/back light */}
       <directionalLight
-        position={[-15, 20, 25]}
-        intensity={0.5}
-        color="#e0f0ff"
+        position={[-10, 25, 20]}
+        intensity={0.35}
+        color="#c0d8ff"
       />
       
-      {/* Ground bounce - green tint from grass */}
+      {/* Ground bounce - green from grass */}
       <pointLight
-        position={[0, 1, 0]}
-        intensity={0.3}
-        color="#80a060"
-        distance={30}
+        position={[0, 0.5, 0]}
+        intensity={0.25}
+        color="#6a9a4a"
+        distance={25}
       />
       
-      {/* Light fog for depth - very subtle for sunny day */}
-      <fog attach="fog" args={['#c8e0f0', 40, 100]} />
+      {/* Atmospheric forest fog */}
+      <fog attach="fog" args={['#9ab8a0', 25, 70]} />
     </>
   );
 }
@@ -72,7 +72,7 @@ export function RealisticLighting() {
 export function ForestSkybox() {
   return (
     <>
-      {/* Bright blue sky dome */}
+      {/* Sky dome - gradient from deep blue to lighter horizon */}
       <mesh position={[0, 0, 0]} scale={[-1, 1, 1]}>
         <sphereGeometry args={[90, 64, 64]} />
         <meshBasicMaterial 
@@ -81,30 +81,44 @@ export function ForestSkybox() {
         />
       </mesh>
       
-      {/* Gradient overlay - lighter at horizon */}
-      <mesh position={[0, -20, 0]} scale={[-1, 1, 1]}>
+      {/* Horizon glow */}
+      <mesh position={[0, -25, 0]} scale={[-1, 1, 1]}>
         <sphereGeometry args={[89, 32, 32]} />
         <meshBasicMaterial 
-          color="#a8d4f5" 
+          color="#b8e0f5" 
           side={THREE.BackSide}
           transparent
-          opacity={0.6}
+          opacity={0.7}
         />
       </mesh>
       
-      {/* Fluffy white clouds */}
+      {/* Distant forest silhouette */}
+      {[...Array(24)].map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        const dist = 75;
+        const height = 8 + Math.sin(i * 3.7) * 4;
+        return (
+          <mesh 
+            key={`tree-sil-${i}`} 
+            position={[Math.sin(angle) * dist, height / 2, Math.cos(angle) * dist]}
+          >
+            <coneGeometry args={[3 + Math.sin(i) * 1.5, height, 6]} />
+            <meshBasicMaterial color="#2a4a3a" transparent opacity={0.6} />
+          </mesh>
+        );
+      })}
+      
+      {/* Fluffy clouds */}
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => {
         const angle = (i / 12) * Math.PI * 2;
         const radius = 55 + Math.sin(i * 2.5) * 12;
         const y = 40 + Math.sin(i * 1.7) * 10;
         return (
           <group key={i} position={[Math.sin(angle) * radius, y, Math.cos(angle) * radius]}>
-            {/* Main cloud body */}
             <mesh scale={[14 + Math.sin(i) * 5, 3.5, 8 + Math.cos(i) * 3]}>
               <sphereGeometry args={[1, 12, 8]} />
               <meshBasicMaterial color="#ffffff" />
             </mesh>
-            {/* Cloud puffs */}
             <mesh position={[6, 1, 2]} scale={[6, 3, 5]}>
               <sphereGeometry args={[1, 10, 8]} />
               <meshBasicMaterial color="#ffffff" />
@@ -113,31 +127,46 @@ export function ForestSkybox() {
               <sphereGeometry args={[1, 10, 8]} />
               <meshBasicMaterial color="#ffffff" />
             </mesh>
-            <mesh position={[3, 1.5, -3]} scale={[4, 2, 3]}>
-              <sphereGeometry args={[1, 8, 6]} />
-              <meshBasicMaterial color="#ffffff" />
-            </mesh>
           </group>
         );
       })}
       
-      {/* Bright sun disc */}
-      <mesh position={[25, 50, 20]}>
-        <circleGeometry args={[5, 32]} />
+      {/* Sun */}
+      <mesh position={[20, 40, 15]}>
+        <circleGeometry args={[4, 32]} />
         <meshBasicMaterial color="#ffffd0" />
       </mesh>
       
-      {/* Sun glow */}
-      <mesh position={[25, 50, 19.8]}>
-        <circleGeometry args={[12, 32]} />
-        <meshBasicMaterial color="#ffffc0" transparent opacity={0.25} />
+      {/* Sun glow layers */}
+      <mesh position={[20, 40, 14.9]}>
+        <circleGeometry args={[10, 32]} />
+        <meshBasicMaterial color="#ffffc0" transparent opacity={0.2} />
+      </mesh>
+      <mesh position={[20, 40, 14.8]}>
+        <circleGeometry args={[18, 32]} />
+        <meshBasicMaterial color="#ffffe8" transparent opacity={0.08} />
       </mesh>
       
-      {/* Sun rays effect */}
-      <mesh position={[25, 50, 19.5]}>
-        <circleGeometry args={[20, 32]} />
-        <meshBasicMaterial color="#ffffe0" transparent opacity={0.1} />
-      </mesh>
+      {/* Light rays/god rays effect */}
+      {[...Array(6)].map((_, i) => {
+        const angle = (i / 6) * Math.PI * 0.5 + 0.3;
+        return (
+          <mesh 
+            key={`ray-${i}`}
+            position={[20 + Math.sin(angle) * 25, 20, 15 + Math.cos(angle) * 25]}
+            rotation={[Math.PI / 2, 0, angle]}
+          >
+            <planeGeometry args={[2, 40]} />
+            <meshBasicMaterial 
+              color="#ffffd0" 
+              transparent 
+              opacity={0.04} 
+              side={THREE.DoubleSide}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        );
+      })}
     </>
   );
 }
