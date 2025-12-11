@@ -1868,6 +1868,7 @@ function GameScene({
       let newBugsKilled = prev.bugsKilled;
       const bugsToRemove = new Set<number>();
       const bulletsToRemove = new Set<number>();
+      let snailProtectedByExplosion = false; // Track if snail is in a blast zone
       
       // First pass: check direct hits and create explosions for rockets
       for (let i = 0; i < updatedBullets.length; i++) {
@@ -1896,6 +1897,17 @@ function GameScene({
               
               // Area damage - kill all bugs within blast radius
               const blastRadius = 4;
+              
+              // IMPORTANT: Self-damage protection - check if snail is in blast radius
+              const snailToExplosionDist = Math.sqrt(
+                Math.pow(newX - b.position[0], 2) + Math.pow(newZ - b.position[2], 2)
+              );
+              
+              // If snail is in blast radius, protect them from bug attacks this frame
+              if (snailToExplosionDist < blastRadius) {
+                snailProtectedByExplosion = true;
+              }
+              
               for (const targetBug of updatedBugs) {
                 const bdx = targetBug.position[0] - b.position[0];
                 const bdz = targetBug.position[2] - b.position[2];
@@ -1945,6 +1957,7 @@ function GameScene({
       });
 
       // Check bug-snail collisions - bugs attack when close, then get pushed back
+      // Skip bug attacks if snail is protected by a nearby explosion (prevents self-damage from rockets)
       updatedBugs = updatedBugs.map(bug => {
         const dx = bug.position[0] - newX;
         const dz = bug.position[2] - newZ;
@@ -1955,8 +1968,8 @@ function GameScene({
           const bugAttackCooldown = 600; // ms between attacks
           const lastAttackTime = (bug as any).lastAttackTime || 0;
           
-          // Deal damage if within attack range
-          if (dist < 1.2 && now - lastAttackTime > bugAttackCooldown) {
+          // Deal damage if within attack range AND snail is NOT protected by explosion
+          if (dist < 1.2 && now - lastAttackTime > bugAttackCooldown && !snailProtectedByExplosion) {
             newHealth -= 15;
             // Push bug back after dealing damage
             const pushStrength = 2.0;
