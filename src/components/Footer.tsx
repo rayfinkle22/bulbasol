@@ -36,9 +36,12 @@ export const Footer = () => {
         </div>
         
         <p className="font-body text-xs text-muted-foreground/60">
-          © {currentYear} $SNAIL. This is a meme token for entertainment purposes.
-          <br />
-          Not affiliated with Franklin the Turtle or its creators.
+          © {currentYear} $SNAIL. This is a meme token for entertainment purposes only.
+        </p>
+        <p className="font-body text-[10px] text-muted-foreground/40 mt-2 max-w-md mx-auto">
+          Disclaimer: $SNAIL is not affiliated with, endorsed by, or connected to Nelvana Limited, 
+          Franklin Productions, or any owners of the Franklin™ franchise. All Franklin™ characters 
+          and related intellectual property belong to their respective owners.
         </p>
       </div>
     </footer>
