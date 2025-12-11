@@ -97,8 +97,13 @@
     @apply border-border;
   }
 
+  html, body {
+    @apply overflow-x-hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
-    @apply bg-background text-foreground font-body font-semibold;
+    @apply bg-background text-foreground font-body font-semibold min-h-screen;
   }
 
   h1, h2, h3, h4, h5, h6 {
