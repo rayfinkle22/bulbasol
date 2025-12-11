@@ -271,8 +271,15 @@
 /* Mobile adjustments */
 @media (max-width: 640px) {
   .wallet-adapter-button {
-    padding: 0.4rem 0.75rem !important;
-    font-size: 0.75rem !important;
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+  
+  .wallet-adapter-button-trigger {
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.65rem !important;
   }
 }
 
@@ -280,8 +287,8 @@
 .wallet-prompt-red .wallet-adapter-button {
   background: #2563eb !important;
   color: white !important;
-  padding: 0.5rem 1rem !important;
-  font-size: 0.875rem !important;
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.75rem !important;
   border-radius: 0.5rem !important;
   height: auto !important;
   min-height: 0 !important;
@@ -289,8 +296,30 @@
   width: auto !important;
 }
 
+@media (max-width: 640px) {
+  .wallet-prompt-red .wallet-adapter-button {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.65rem !important;
+  }
+}
+
 .wallet-prompt-red .wallet-adapter-button:hover {
   background: #1d4ed8 !important;
+}
+
+/* Start screen wallet button */
+.wallet-start-screen .wallet-adapter-button {
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .wallet-start-screen .wallet-adapter-button {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.6rem !important;
+  }
 }
 
 /* Compact wallet button for game UI */
