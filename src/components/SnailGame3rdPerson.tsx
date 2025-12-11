@@ -1944,37 +1944,30 @@ function GameScene({
         return true;
       });
 
-      // Check bug-snail collisions - bugs attack continuously and get pushed back
+      // Check bug-snail collisions - bugs attack when close, then get pushed back
       updatedBugs = updatedBugs.map(bug => {
         const dx = bug.position[0] - newX;
         const dz = bug.position[2] - newZ;
         const dist = Math.sqrt(dx * dx + dz * dz);
         
-        // Always push bugs away if they're too close
-        if (dist < 1.2) {
-          const pushStrength = dist < 0.6 ? 1.5 : 0.8;
-          const pushX = dist > 0.01 ? (dx / dist) * pushStrength : (Math.random() - 0.5) * pushStrength;
-          const pushZ = dist > 0.01 ? (dz / dist) * pushStrength : (Math.random() - 0.5) * pushStrength;
+        // Bug is close enough to attack - deal damage first, then push
+        if (dist < 1.5) {
+          const bugAttackCooldown = 600; // ms between attacks
+          const lastAttackTime = (bug as any).lastAttackTime || 0;
           
-          // Bug is attacking - deal damage (with cooldown)
-          if (dist < 0.9) {
-            const bugAttackCooldown = 500; // ms between attacks
-            const lastAttackTime = (bug as any).lastAttackTime || 0;
-            if (now - lastAttackTime > bugAttackCooldown) {
-              newHealth -= 15;
-              return {
-                ...bug,
-                position: [bug.position[0] + pushX, bug.position[1], bug.position[2] + pushZ] as [number, number, number],
-                lastAttackTime: now
-              } as Bug & { lastAttackTime: number };
-            }
+          // Deal damage if within attack range
+          if (dist < 1.2 && now - lastAttackTime > bugAttackCooldown) {
+            newHealth -= 15;
+            // Push bug back after dealing damage
+            const pushStrength = 2.0;
+            const pushX = dist > 0.01 ? (dx / dist) * pushStrength : (Math.random() - 0.5) * pushStrength;
+            const pushZ = dist > 0.01 ? (dz / dist) * pushStrength : (Math.random() - 0.5) * pushStrength;
+            return {
+              ...bug,
+              position: [bug.position[0] + pushX, bug.position[1], bug.position[2] + pushZ] as [number, number, number],
+              lastAttackTime: now
+            } as Bug & { lastAttackTime: number };
           }
-          
-          // Just push away without damage
-          return {
-            ...bug,
-            position: [bug.position[0] + pushX * 0.5, bug.position[1], bug.position[2] + pushZ * 0.5] as [number, number, number]
-          };
         }
         return bug;
       });
