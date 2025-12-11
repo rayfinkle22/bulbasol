@@ -91,55 +91,55 @@ const seededRandomObstacle = (seed: number) => {
 const generateObstacles = (): Obstacle[] => {
   const obstacles: Obstacle[] = [];
   
-  // Rocks - scattered around play area
-  for (let i = 0; i < 25; i++) {
+  // Rocks - scattered around play area (fewer, larger collision radii)
+  for (let i = 0; i < 15; i++) {
     const seed = i * 3.14159;
     const x = (seededRandomObstacle(seed) - 0.5) * 30;
     const z = (seededRandomObstacle(seed + 1) - 0.5) * 30;
-    const scale = 0.4 + seededRandomObstacle(seed + 2) * 0.6;
+    const scale = 0.6 + seededRandomObstacle(seed + 2) * 0.5;
     const distFromCenter = Math.sqrt(x * x + z * z);
     
     // Don't place rocks too close to center spawn
-    if (distFromCenter > 3) {
+    if (distFromCenter > 4) {
       obstacles.push({
         x, z,
-        radius: scale * 0.8,
-        height: scale * 0.6,
+        radius: scale * 1.5, // Larger collision radius
+        height: scale * 0.8,
         type: 'rock'
       });
     }
   }
   
   // Boulders - larger obstacles
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 8; i++) {
     const seed = i * 5.67 + 100;
     const x = (seededRandomObstacle(seed) - 0.5) * 28;
     const z = (seededRandomObstacle(seed + 1) - 0.5) * 28;
-    const scale = 0.8 + seededRandomObstacle(seed + 2) * 0.7;
+    const scale = 1.0 + seededRandomObstacle(seed + 2) * 0.6;
     const distFromCenter = Math.sqrt(x * x + z * z);
     
-    if (distFromCenter > 5) {
+    if (distFromCenter > 6) {
       obstacles.push({
         x, z,
-        radius: scale * 1.2,
-        height: scale * 0.9,
+        radius: scale * 2.0, // Much larger collision radius
+        height: scale * 1.2,
         type: 'boulder'
       });
     }
   }
   
   // Fallen logs
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     const seed = i * 4.567 + 200;
     const x = (seededRandomObstacle(seed) - 0.5) * 26;
     const z = (seededRandomObstacle(seed + 1) - 0.5) * 26;
     const distFromCenter = Math.sqrt(x * x + z * z);
     
-    if (distFromCenter > 6) {
+    if (distFromCenter > 7) {
       obstacles.push({
         x, z,
-        radius: 1.2,
-        height: 0.3,
+        radius: 2.0, // Larger for logs
+        height: 0.4,
         type: 'log'
       });
     }
@@ -161,18 +161,26 @@ const checkObstacleCollision = (
   let groundHeight = 0;
   let blocked = false;
   
+  const SNAIL_RADIUS = 0.5; // Snail's collision radius
+  
   for (const obs of obstacles) {
     const dx = newX - obs.x;
     const dz = newZ - obs.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
+    const combinedRadius = obs.radius + SNAIL_RADIUS;
     
-    // Check if we're above the obstacle (can walk on top)
-    if (dist < obs.radius * 0.8 && currentHeight >= obs.height - 0.1) {
-      groundHeight = Math.max(groundHeight, obs.height);
-    }
-    // Check if we're colliding with the side
-    else if (dist < obs.radius && currentHeight < obs.height - 0.1) {
-      blocked = true;
+    // Check if within horizontal collision range
+    if (dist < combinedRadius) {
+      // If jumping/falling and above the obstacle top, can land on it
+      if (currentHeight >= obs.height - 0.05) {
+        // Can walk on top - only if close to center
+        if (dist < obs.radius * 0.7) {
+          groundHeight = Math.max(groundHeight, obs.height);
+        }
+      } else {
+        // Colliding with side - block movement
+        blocked = true;
+      }
     }
   }
   
