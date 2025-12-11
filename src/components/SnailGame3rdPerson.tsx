@@ -29,6 +29,14 @@ interface Bullet {
   id: number;
   position: [number, number, number];
   velocity: [number, number];
+  weaponType?: SpecialWeapon;
+}
+
+interface Explosion {
+  id: number;
+  position: [number, number, number];
+  createdAt: number;
+  scale: number;
 }
 
 interface PowerUp {
@@ -58,6 +66,7 @@ interface GameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   weaponPickups: WeaponPickup[];
+  explosions: Explosion[];
   health: number;
   doubleDamageUntil: number;
   specialWeapon: SpecialWeapon;
@@ -141,6 +150,24 @@ const generateObstacles = (): Obstacle[] => {
         radius: 2.0, // Larger for logs
         height: 0.4,
         type: 'log'
+      });
+    }
+  }
+  
+  // Trees - these have trunk collision
+  for (let i = 0; i < 20; i++) {
+    const seed = i * 7.891 + 300;
+    const x = (seededRandomObstacle(seed) - 0.5) * 35;
+    const z = (seededRandomObstacle(seed + 1) - 0.5) * 35;
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    
+    // Trees at edges and scattered around, not too close to center
+    if (distFromCenter > 5) {
+      obstacles.push({
+        x, z,
+        radius: 0.8, // Tree trunk collision radius
+        height: 0.3, // Can't climb trees
+        type: 'tree'
       });
     }
   }
@@ -620,13 +647,24 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
   if (bullet.weaponType === 'rocketLauncher') {
     return (
       <group position={bullet.position}>
+        {/* Rocket body */}
         <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
-          <capsuleGeometry args={[0.12, 0.5, 4, 8]} />
-          <meshBasicMaterial color="#4a4a4a" />
+          <capsuleGeometry args={[0.15, 0.6, 4, 8]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.8} />
         </mesh>
-        <mesh position={[0, 0, -0.3]}>
-          <coneGeometry args={[0.15, 0.2, 6]} />
-          <meshBasicMaterial color="#ff2200" />
+        {/* Rocket nose cone */}
+        <mesh position={[bullet.velocity[0] * 0.5, 0, bullet.velocity[1] * 0.5]} rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
+          <coneGeometry args={[0.15, 0.3, 8]} />
+          <meshStandardMaterial color="#aa2200" metalness={0.6} />
+        </mesh>
+        {/* Rocket trail/flame */}
+        <mesh position={[-bullet.velocity[0] * 0.4, 0, -bullet.velocity[1] * 0.4]}>
+          <sphereGeometry args={[0.2, 8, 8]} />
+          <meshBasicMaterial color="#ff4400" transparent opacity={0.8} />
+        </mesh>
+        <mesh position={[-bullet.velocity[0] * 0.6, 0, -bullet.velocity[1] * 0.6]}>
+          <sphereGeometry args={[0.15, 8, 8]} />
+          <meshBasicMaterial color="#ffaa00" transparent opacity={0.6} />
         </mesh>
       </group>
     );
@@ -642,6 +680,114 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
         <sphereGeometry args={[0.2, 6, 6]} />
         <meshBasicMaterial color="#ff3300" />
       </mesh>
+    </group>
+  );
+}
+
+// Explosion effect component
+function ExplosionEffect({ explosion }: { explosion: Explosion }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [progress, setProgress] = useState(0);
+  
+  useFrame((_, delta) => {
+    setProgress(prev => Math.min(prev + delta * 3, 1));
+  });
+  
+  const scale = explosion.scale * (0.5 + progress * 1.5);
+  const opacity = 1 - progress;
+  
+  return (
+    <group ref={groupRef} position={explosion.position}>
+      {/* Main fireball */}
+      <mesh scale={[scale, scale, scale]}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshBasicMaterial color="#ff4400" transparent opacity={opacity * 0.8} />
+      </mesh>
+      {/* Inner hot core */}
+      <mesh scale={[scale * 0.6, scale * 0.6, scale * 0.6]}>
+        <sphereGeometry args={[1, 12, 12]} />
+        <meshBasicMaterial color="#ffff00" transparent opacity={opacity} />
+      </mesh>
+      {/* Outer shockwave */}
+      <mesh scale={[scale * 1.5, scale * 0.3, scale * 1.5]} position={[0, 0.1, 0]}>
+        <torusGeometry args={[1, 0.3, 8, 24]} />
+        <meshBasicMaterial color="#ff6600" transparent opacity={opacity * 0.5} />
+      </mesh>
+      {/* Debris particles */}
+      {[...Array(8)].map((_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = scale * (0.5 + progress);
+        return (
+          <mesh 
+            key={i} 
+            position={[
+              Math.sin(angle) * dist, 
+              0.2 + progress * 2 - (progress * progress * 3), 
+              Math.cos(angle) * dist
+            ]}
+          >
+            <boxGeometry args={[0.1, 0.1, 0.1]} />
+            <meshBasicMaterial color="#331100" transparent opacity={opacity * 0.7} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+// Bug death explosion (smaller, gorier)
+function BugExplosion({ position }: { position: [number, number, number] }) {
+  const [progress, setProgress] = useState(0);
+  
+  useFrame((_, delta) => {
+    setProgress(prev => Math.min(prev + delta * 4, 1));
+  });
+  
+  if (progress >= 1) return null;
+  
+  const opacity = 1 - progress;
+  
+  return (
+    <group position={position}>
+      {/* Green goo splatter */}
+      {[...Array(12)].map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2 + i * 0.3;
+        const dist = progress * (1 + Math.random() * 0.5);
+        const yPos = progress * 1.5 - progress * progress * 2;
+        return (
+          <mesh 
+            key={i} 
+            position={[
+              Math.sin(angle) * dist, 
+              0.2 + yPos, 
+              Math.cos(angle) * dist
+            ]}
+            scale={[0.15 - progress * 0.1, 0.15 - progress * 0.1, 0.15 - progress * 0.1]}
+          >
+            <sphereGeometry args={[1, 6, 6]} />
+            <meshBasicMaterial color={i % 2 === 0 ? "#4a8a2a" : "#2a5a1a"} transparent opacity={opacity} />
+          </mesh>
+        );
+      })}
+      {/* Body parts flying */}
+      {[...Array(6)].map((_, i) => {
+        const angle = (i / 6) * Math.PI * 2;
+        const dist = progress * 0.8;
+        return (
+          <mesh 
+            key={`part-${i}`} 
+            position={[
+              Math.sin(angle) * dist, 
+              0.3 + progress * 0.5 - progress * progress, 
+              Math.cos(angle) * dist
+            ]}
+            rotation={[progress * 5, progress * 3, 0]}
+          >
+            <boxGeometry args={[0.08, 0.04, 0.08]} />
+            <meshBasicMaterial color="#1a1a0a" transparent opacity={opacity} />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
@@ -1073,6 +1219,7 @@ function GameScene({
   const prevPowerUps = useRef(0);
   const prevWeaponPickups = useRef(0);
   const wasJumping = useRef(false);
+  const prevExplosionsCount = useRef(0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1138,11 +1285,17 @@ function GameScene({
     }
     wasJumping.current = gameState.isJumping;
     
+    // Explosion sound
+    if (gameState.explosions.length > prevExplosionsCount.current) {
+      sounds.playExplosion();
+    }
+    prevExplosionsCount.current = gameState.explosions.length;
+    
     // Game over sound
     if (gameState.status === 'gameover' && gameState.health === 0) {
       sounds.playGameOver();
     }
-  }, [gameState.bugsKilled, gameState.health, gameState.powerUps.length, gameState.weaponPickups.length, gameState.isJumping, gameState.status, sounds]);
+  }, [gameState.bugsKilled, gameState.health, gameState.powerUps.length, gameState.weaponPickups.length, gameState.isJumping, gameState.status, gameState.explosions.length, sounds]);
 
   useFrame((_, delta) => {
     if (gameState.status !== 'playing') return;
@@ -1480,26 +1633,71 @@ function GameScene({
       const isDoubleDamage = performance.now() < prev.doubleDamageUntil;
       const damageMultiplier = isDoubleDamage ? 2 : 1;
 
-      // Check bullet-bug collisions
+      // Track new explosions
+      let newExplosions: Explosion[] = [...prev.explosions];
+      
+      // Remove old explosions (older than 500ms)
+      const now = performance.now();
+      newExplosions = newExplosions.filter(exp => now - exp.createdAt < 500);
+
+      // Check bullet-bug collisions with rocket explosions
       let newScore = prev.score;
       let newBugsKilled = prev.bugsKilled;
+      const bugsToRemove = new Set<number>();
+      const bulletsToRemove = new Set<number>();
       
-      updatedBugs = updatedBugs.filter(bug => {
-        for (let i = updatedBullets.length - 1; i >= 0; i--) {
-          const b = updatedBullets[i];
+      // First pass: check direct hits and create explosions for rockets
+      for (let i = 0; i < updatedBullets.length; i++) {
+        const b = updatedBullets[i];
+        
+        for (const bug of updatedBugs) {
+          if (bugsToRemove.has(bug.id)) continue;
+          
           const dx = bug.position[0] - b.position[0];
           const dz = bug.position[2] - b.position[2];
           const dist = Math.sqrt(dx * dx + dz * dz);
           
-          if (dist < 0.5) {
-            updatedBullets.splice(i, 1);
-            newScore += 10 * damageMultiplier;
-            newBugsKilled += 1;
-            return false;
+          const hitRadius = b.weaponType === 'rocketLauncher' ? 0.8 : 0.5;
+          
+          if (dist < hitRadius) {
+            bulletsToRemove.add(b.id);
+            
+            if (b.weaponType === 'rocketLauncher') {
+              // Create explosion at impact point
+              newExplosions.push({
+                id: Date.now() + Math.random(),
+                position: [b.position[0], 0.5, b.position[2]],
+                createdAt: now,
+                scale: 2.5
+              });
+              
+              // Area damage - kill all bugs within blast radius
+              const blastRadius = 4;
+              for (const targetBug of updatedBugs) {
+                const bdx = targetBug.position[0] - b.position[0];
+                const bdz = targetBug.position[2] - b.position[2];
+                const blastDist = Math.sqrt(bdx * bdx + bdz * bdz);
+                
+                if (blastDist < blastRadius && !bugsToRemove.has(targetBug.id)) {
+                  bugsToRemove.add(targetBug.id);
+                  newScore += 25 * damageMultiplier; // More points for rocket kills
+                  newBugsKilled += 1;
+                }
+              }
+            } else {
+              // Normal bullet or flamethrower - single target
+              bugsToRemove.add(bug.id);
+              newScore += 10 * damageMultiplier;
+              newBugsKilled += 1;
+            }
+            break;
           }
         }
-        return true;
-      });
+      }
+      
+      // Remove hit bullets and killed bugs
+      updatedBullets = updatedBullets.filter(b => !bulletsToRemove.has(b.id));
+      updatedBugs = updatedBugs.filter(bug => !bugsToRemove.has(bug.id));
 
       // Check power-up collisions
       let newHealth = prev.health;
@@ -1520,17 +1718,29 @@ function GameScene({
         return true;
       });
 
-      // Check bug-snail collisions
-      updatedBugs = updatedBugs.filter(bug => {
+      // Check bug-snail collisions - bugs attack continuously and push back
+      updatedBugs = updatedBugs.map(bug => {
         const dx = bug.position[0] - newX;
         const dz = bug.position[2] - newZ;
         const dist = Math.sqrt(dx * dx + dz * dz);
         
-        if (dist < 0.7) {
-          newHealth -= 20;
-          return false;
+        if (dist < 0.9) {
+          // Bug is attacking - deal damage (with cooldown based on bug ID)
+          const bugAttackCooldown = 500; // ms between attacks
+          const lastAttackTime = (bug as any).lastAttackTime || 0;
+          if (now - lastAttackTime > bugAttackCooldown) {
+            newHealth -= 15; // Continuous attacks do less damage each
+            // Push bug back slightly after attack
+            const pushX = (dx / dist) * 0.5;
+            const pushZ = (dz / dist) * 0.5;
+            return {
+              ...bug,
+              position: [bug.position[0] + pushX, bug.position[1], bug.position[2] + pushZ] as [number, number, number],
+              lastAttackTime: now
+            } as Bug & { lastAttackTime: number };
+          }
         }
-        return true;
+        return bug;
       });
 
       // Check game over
@@ -1540,7 +1750,8 @@ function GameScene({
           status: 'gameover',
           health: 0,
           score: newScore,
-          bugsKilled: newBugsKilled
+          bugsKilled: newBugsKilled,
+          explosions: newExplosions
         };
       }
 
@@ -1557,6 +1768,7 @@ function GameScene({
         bugs: updatedBugs,
         powerUps: updatedPowerUps,
         weaponPickups: updatedWeaponPickups,
+        explosions: newExplosions,
         score: newScore,
         bugsKilled: newBugsKilled,
         health: newHealth,
@@ -1600,6 +1812,11 @@ function GameScene({
       
       {gameState.weaponPickups.map(pickup => (
         <WeaponPickupMesh key={pickup.id} pickup={pickup} />
+      ))}
+      
+      {/* Explosions */}
+      {gameState.explosions.map(explosion => (
+        <ExplosionEffect key={explosion.id} explosion={explosion} />
       ))}
     </>
   );
@@ -1647,6 +1864,7 @@ export const SnailGame3rdPerson = () => {
     bullets: [],
     powerUps: [],
     weaponPickups: [],
+    explosions: [],
     health: 100,
     doubleDamageUntil: 0,
     specialWeapon: null,
@@ -1807,6 +2025,7 @@ export const SnailGame3rdPerson = () => {
       bullets: [],
       powerUps: [],
       weaponPickups: [],
+      explosions: [],
       health: 100,
       doubleDamageUntil: 0,
       specialWeapon: null,
