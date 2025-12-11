@@ -1599,14 +1599,14 @@ export const SnailGame3rdPerson = () => {
 
 
   return (
-    <section className="py-8 sm:py-12 px-4">
+    <section className="py-4 sm:py-12 px-3 sm:px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <img src={snailTexture} alt="Snail" className="w-12 h-12 object-contain" />
-          <h2 className="font-display text-3xl sm:text-4xl text-center text-primary">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+          <img src={snailTexture} alt="Snail" className="w-8 h-8 sm:w-12 sm:h-12 object-contain" />
+          <h2 className="font-display text-xl sm:text-4xl text-center text-primary">
             Snail Shooter 3D!
           </h2>
-          <span className="text-3xl">🎮</span>
+          <span className="text-xl sm:text-3xl">🎮</span>
         </div>
         <div className="hidden sm:block text-center mb-2">
           <p className="font-body text-base text-muted-foreground">
@@ -1620,11 +1620,11 @@ export const SnailGame3rdPerson = () => {
             Pick up 🔥 Flamethrower or 🚀 Rocket Launcher for special weapons (30 sec)!
           </p>
         </div>
-        <p className="sm:hidden font-body text-sm text-center text-muted-foreground mb-2">
-          Use joystick to move • FIRE to shoot • JUMP to jump
+        <p className="sm:hidden font-body text-[10px] text-center text-muted-foreground mb-1">
+          Joystick to move • FIRE to shoot • JUMP to jump
         </p>
-        <p className="font-display text-sm text-center text-accent mb-4">
-          🎮 {gamesPlayed.toLocaleString()} games played worldwide!
+        <p className="font-display text-[10px] sm:text-sm text-center text-accent mb-2 sm:mb-4">
+          🎮 {gamesPlayed.toLocaleString()} games played!
         </p>
 
 
@@ -1634,8 +1634,8 @@ export const SnailGame3rdPerson = () => {
           className="relative overflow-hidden bg-black w-full rounded-xl sm:rounded-2xl retro-border"
           style={{ 
             aspectRatio: '16 / 9',
-            minHeight: '200px',
-            maxHeight: 'calc(100dvh - 200px)'
+            minHeight: '150px',
+            maxHeight: 'min(calc(100dvh - 180px), 500px)'
           }}
         >
 
@@ -1909,46 +1909,46 @@ export const SnailGame3rdPerson = () => {
           
           {/* Overlays */}
           {gameState.status === 'idle' && !showWalletPrompt && (
-            <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-2 sm:p-4">
-              <img src={snailTexture} alt="Snail" className="w-12 h-12 sm:w-20 sm:h-20 object-contain mb-1 sm:mb-2" />
-              <h3 className="font-display text-lg sm:text-2xl text-primary mb-2 sm:mb-4">3rd Person Mode</h3>
+            <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-1 sm:p-4 overflow-y-auto">
+              <img src={snailTexture} alt="Snail" className="w-8 h-8 sm:w-20 sm:h-20 object-contain mb-0.5 sm:mb-2" />
+              <h3 className="font-display text-base sm:text-2xl text-primary mb-1 sm:mb-4">3rd Person Mode</h3>
               
               {/* Wallet status indicator */}
               {connected ? (
-                <div className="flex flex-col items-center gap-1 mb-2 sm:mb-3">
-                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
-                    <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                    <span className="text-green-400 text-xs sm:text-sm font-display">
+                <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-1 sm:mb-3">
+                  <div className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <Wallet className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-green-400" />
+                    <span className="text-green-400 text-[10px] sm:text-sm font-display">
                       {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
                     </span>
                     {rewardsEnabled ? (
-                      <span className="text-[10px] sm:text-xs text-green-300">✓ Rewards</span>
+                      <span className="text-[8px] sm:text-xs text-green-300">✓</span>
                     ) : (
-                      <span className="text-[10px] sm:text-xs text-yellow-400">⚠ Paused</span>
+                      <span className="text-[8px] sm:text-xs text-yellow-400">⚠</span>
                     )}
                   </div>
                   <button
                     onClick={() => disconnect()}
-                    className="text-[10px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    className="text-[8px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
                   >
-                    Disconnect wallet
+                    Disconnect
                   </button>
                 </div>
               ) : (
-                <div className="mb-2 sm:mb-3 wallet-start-screen">
+                <div className="mb-1 sm:mb-3 wallet-start-screen">
                   <WalletMultiButton />
                 </div>
               )}
               
-              <p className="font-body text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Select Difficulty:</p>
-              <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+              <p className="font-body text-[10px] sm:text-sm text-muted-foreground mb-0.5 sm:mb-2">Difficulty:</p>
+              <div className="flex gap-1 sm:gap-2 mb-1 sm:mb-4">
                 {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                   <Button
                     key={d}
                     variant={difficulty === d ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setDifficulty(d)}
-                    className={`font-display text-xs sm:text-sm px-2 sm:px-3 py-1 h-auto ${
+                    className={`font-display text-[10px] sm:text-sm px-1.5 sm:px-3 py-0.5 sm:py-1 h-6 sm:h-auto ${
                       difficulty === d 
                         ? d === 'easy' ? 'bg-green-600 hover:bg-green-700' 
                           : d === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700'
@@ -1961,7 +1961,7 @@ export const SnailGame3rdPerson = () => {
                 ))}
               </div>
               
-              <Button onClick={handleStartClick} size="default" className="font-display text-sm sm:text-lg px-4 sm:px-8">
+              <Button onClick={handleStartClick} size="sm" className="font-display text-xs sm:text-lg px-3 sm:px-8 h-8 sm:h-11">
                 🎮 START GAME
               </Button>
             </div>
@@ -1969,33 +1969,33 @@ export const SnailGame3rdPerson = () => {
 
           {/* Wallet connection prompt */}
           {showWalletPrompt && (
-            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-              <div className="relative flex flex-col items-center text-center max-w-[90%] sm:max-w-md">
+            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-1 sm:p-4 z-50 overflow-y-auto">
+              <div className="relative flex flex-col items-center text-center max-w-[95%] sm:max-w-md py-2">
                 <button 
                   onClick={() => setShowWalletPrompt(false)}
-                  className="absolute -top-1 -right-1 sm:top-2 sm:right-2 p-1.5 sm:p-2 text-muted-foreground hover:text-foreground"
+                  className="absolute -top-0 -right-0 sm:top-2 sm:right-2 p-1 sm:p-2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 
-                <Wallet className="w-8 h-8 sm:w-10 sm:h-10 text-primary mb-1 sm:mb-2" />
-                <h3 className="font-display text-base sm:text-xl text-green-400 mb-1 drop-shadow-[0_0_12px_rgba(74,222,128,0.8)]">Earn $SNAIL Tokens!</h3>
-                <p className="font-display text-sm sm:text-lg text-white mb-2 sm:mb-3 max-w-xs drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
-                  Connect your wallet to earn rewards. Totally optional!
+                <Wallet className="w-6 h-6 sm:w-10 sm:h-10 text-primary mb-0.5 sm:mb-2" />
+                <h3 className="font-display text-sm sm:text-xl text-green-400 mb-0.5 drop-shadow-[0_0_12px_rgba(74,222,128,0.8)]">Earn $SNAIL Tokens!</h3>
+                <p className="font-display text-xs sm:text-lg text-white mb-1 sm:mb-3 max-w-xs drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
+                  Connect wallet to earn rewards. Optional!
                 </p>
                 
                 {rewardsEnabled ? (
-                  <p className="text-xs text-green-400 mb-2 sm:mb-4">✓ Rewards active</p>
+                  <p className="text-[10px] sm:text-xs text-green-400 mb-1 sm:mb-4">✓ Rewards active</p>
                 ) : (
-                  <p className="text-xs text-yellow-400 mb-2 sm:mb-4">⚠ Rewards paused</p>
+                  <p className="text-[10px] sm:text-xs text-yellow-400 mb-1 sm:mb-4">⚠ Rewards paused</p>
                 )}
                 
-                <div className="flex flex-col items-center gap-2 sm:gap-3">
+                <div className="flex flex-col items-center gap-1.5 sm:gap-3">
                   {connected ? (
                     <>
-                      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 rounded-lg">
-                        <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                        <span className="text-white font-display text-xs sm:text-sm">
+                      <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-blue-600 rounded-lg">
+                        <Wallet className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
+                        <span className="text-white font-display text-[10px] sm:text-sm">
                           {publicKey?.toBase58().slice(0, 4)}..{publicKey?.toBase58().slice(-4)}
                         </span>
                       </div>
@@ -2005,16 +2005,16 @@ export const SnailGame3rdPerson = () => {
                           setShowWalletPrompt(false);
                           startGame();
                         }}
-                        size="default"
-                        className="font-display bg-green-600 hover:bg-green-500 text-white px-4 sm:px-8 text-xs sm:text-base"
+                        size="sm"
+                        className="font-display bg-green-600 hover:bg-green-500 text-white px-3 sm:px-8 text-[10px] sm:text-base h-8 sm:h-10"
                       >
-                        🎮 Play & Earn Rewards!
+                        🎮 Play & Earn!
                       </Button>
                       <button
                         onClick={() => disconnect()}
-                        className="text-[10px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        className="text-[9px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
                       >
-                        Disconnect wallet
+                        Disconnect
                       </button>
                     </>
                   ) : (
@@ -2025,11 +2025,12 @@ export const SnailGame3rdPerson = () => {
                   <Button 
                     type="button"
                     variant="secondary"
+                    size="sm"
                     onClick={() => {
                       console.log('Skip button clicked');
                       startGame();
                     }}
-                    className="font-display bg-yellow-500 hover:bg-yellow-400 text-black px-3 sm:px-6 text-xs sm:text-sm"
+                    className="font-display bg-yellow-500 hover:bg-yellow-400 text-black px-2 sm:px-6 text-[10px] sm:text-sm h-7 sm:h-9"
                   >
                     Skip & Play Without Rewards
                   </Button>
