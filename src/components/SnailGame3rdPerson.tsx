@@ -7,8 +7,9 @@ import snailTexture from "@/assets/snail-game.png";
 import snail3DImage from "@/assets/snail-3d.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RealisticForestGround } from "./game/RealisticForest";
+import { ProceduralTerrain } from "./game/ProceduralTerrain";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Volume2, VolumeX, Wallet, X, Gift } from "lucide-react";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -1346,7 +1347,8 @@ function GameScene({
   touchMove,
   touchShooting,
   touchJumping,
-  sounds
+  sounds,
+  isMobile
 }: { 
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -1357,6 +1359,7 @@ function GameScene({
   touchShooting: React.MutableRefObject<boolean>;
   touchJumping: React.MutableRefObject<boolean>;
   sounds: ReturnType<typeof useGameSounds>;
+  isMobile: boolean;
 }) {
   const keysPressed = useRef<Set<string>>(new Set());
   const lastSpawn = useRef(0);
@@ -2019,8 +2022,8 @@ function GameScene({
       <RealisticLighting />
       <ForestSkybox />
       
-      {/* Realistic forest terrain */}
-      <RealisticForestGround />
+      {/* Optimized procedural terrain */}
+      <ProceduralTerrain isMobile={isMobile} />
       
       <Snail 
         position={gameState.snailPosition} 
@@ -2055,6 +2058,7 @@ function GameScene({
 }
 
 export const SnailGame3rdPerson = () => {
+  const isMobile = useIsMobile();
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [highScore, setHighScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -2188,16 +2192,43 @@ export const SnailGame3rdPerson = () => {
         return;
       }
       
-      const { data } = await supabase
+      // Fetch the newly created leaderboard entry to get its ID for token claim linking
+      const { data: newEntry } = await supabase
+        .from('leaderboard_3d')
+        .select('id')
+        .eq('name', name)
+        .eq('score', score)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (newEntry?.id) {
+        setLastGameSessionId(newEntry.id);
+      }
+      
+      // Fetch updated leaderboard with token data
+      const { data: leaderboardData } = await supabase
         .from('leaderboard_3d')
         .select('*')
         .order('score', { ascending: false })
         .limit(10);
       
-      if (data) {
-        setLeaderboard(data);
-        if (data.length > 0) {
-          setHighScore(data[0].score);
+      const { data: rewardsData } = await supabase
+        .from('token_rewards')
+        .select('game_session_id, tokens_earned')
+        .eq('status', 'completed');
+      
+      if (leaderboardData) {
+        const leaderboardWithTokens = leaderboardData.map(entry => {
+          const reward = rewardsData?.find(r => r.game_session_id === entry.id);
+          return {
+            ...entry,
+            tokens_earned: reward?.tokens_earned || null
+          };
+        });
+        setLeaderboard(leaderboardWithTokens);
+        if (leaderboardData.length > 0) {
+          setHighScore(leaderboardData[0].score);
         }
       }
       
@@ -2381,13 +2412,24 @@ export const SnailGame3rdPerson = () => {
           </button>
 
           <Canvas
-            shadows
+            shadows={!isMobile}
+            dpr={isMobile ? [0.75, 1] : [1, 2]}
+            frameloop="demand"
             gl={{ 
-              antialias: true,
+              antialias: !isMobile,
               toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: 1.1
+              toneMappingExposure: 1.1,
+              powerPreference: isMobile ? 'low-power' : 'high-performance'
             }}
             camera={{ fov: 65 }}
+            onCreated={({ invalidate }) => {
+              // Force continuous render loop
+              const animate = () => {
+                invalidate();
+                requestAnimationFrame(animate);
+              };
+              animate();
+            }}
           >
             <GameScene 
               gameState={gameState} 
@@ -2399,6 +2441,7 @@ export const SnailGame3rdPerson = () => {
               touchShooting={touchShooting}
               touchJumping={touchJumping}
               sounds={sounds}
+              isMobile={isMobile}
             />
           </Canvas>
 
