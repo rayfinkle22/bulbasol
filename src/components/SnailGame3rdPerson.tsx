@@ -2414,8 +2414,8 @@ export const SnailGame3rdPerson = () => {
           className="relative overflow-hidden bg-black w-full rounded-xl sm:rounded-2xl retro-border"
           style={{ 
             aspectRatio: '16 / 9',
-            minHeight: '200px',
-            maxHeight: 'min(calc(100dvh - 120px), 500px)'
+            minHeight: '180px',
+            maxHeight: 'min(calc(100dvh - 180px), 500px)'
           }}
         >
 
