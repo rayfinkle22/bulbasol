@@ -205,11 +205,12 @@ function FallenLog({ position, rotation = 0, length = 2 }: {
 // Main terrain component - optimized for mobile
 export function ProceduralTerrain({ isMobile = false }: { isMobile?: boolean }) {
   const elements = useMemo(() => {
-    // Reduce counts for mobile
-    const treeCount = isMobile ? 25 : 45;
-    const rockCount = isMobile ? 10 : 20;
-    const bushCount = isMobile ? 8 : 15;
-    const mushroomCount = isMobile ? 5 : 12;
+    // Drastically reduce counts for mobile
+    const treeCount = isMobile ? 12 : 45;
+    const rockCount = isMobile ? 5 : 20;
+    const bushCount = isMobile ? 4 : 15;
+    const mushroomCount = isMobile ? 0 : 12;
+    const logCount = isMobile ? 1 : 4;
     
     const trees: Array<{ x: number; z: number; y: number; scale: number; variant: number; key: number }> = [];
     const rocks: Array<{ x: number; z: number; y: number; scale: number; variant: number; key: number }> = [];
@@ -304,7 +305,7 @@ export function ProceduralTerrain({ isMobile = false }: { isMobile?: boolean }) 
     }
     
     // Fallen logs
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < logCount; i++) {
       const seed = i * 5.678;
       const x = (seededRandom(seed) - 0.5) * 28;
       const z = (seededRandom(seed + 1) - 0.5) * 28;

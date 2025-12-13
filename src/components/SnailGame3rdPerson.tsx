@@ -245,7 +245,7 @@ const BUG_CONFIGS = {
 };
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
-function Snail({ position, rotation, height, specialWeapon, isTurbo }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean }) {
+function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
   const texture = useLoader(THREE.TextureLoader, snail3DImage);
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
@@ -280,8 +280,8 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo }: { positio
         />
       </sprite>
       
-      {/* Turbo lightning trail */}
-      {isTurbo && (
+      {/* Turbo lightning trail - simplified on mobile */}
+      {isTurbo && !isMobile && (
         <>
           {/* Lightning bolts shooting out behind */}
           {[...Array(6)].map((_, i) => {
@@ -308,6 +308,13 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo }: { positio
           </mesh>
           <pointLight position={[0, 0.9, -0.5]} color="#ffff00" intensity={2} distance={4} />
         </>
+      )}
+      {/* Simple turbo indicator on mobile */}
+      {isTurbo && isMobile && (
+        <mesh position={[0, 0.9, 0]}>
+          <sphereGeometry args={[1.0, 8, 8]} />
+          <meshBasicMaterial color="#ffff00" transparent opacity={0.2} />
+        </mesh>
       )}
       
       {/* Shadow on ground - scales with height, offset to prevent z-fighting */}
@@ -783,8 +790,8 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
   );
 }
 
-// Explosion effect component
-function ExplosionEffect({ explosion }: { explosion: Explosion }) {
+// Explosion effect component - optimized for mobile
+function ExplosionEffect({ explosion, isMobile }: { explosion: Explosion; isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const [progress, setProgress] = useState(0);
   
@@ -799,22 +806,24 @@ function ExplosionEffect({ explosion }: { explosion: Explosion }) {
     <group ref={groupRef} position={explosion.position}>
       {/* Main fireball */}
       <mesh scale={[scale, scale, scale]}>
-        <sphereGeometry args={[1, 16, 16]} />
+        <sphereGeometry args={[1, isMobile ? 6 : 16, isMobile ? 6 : 16]} />
         <meshBasicMaterial color="#ff4400" transparent opacity={opacity * 0.8} />
       </mesh>
       {/* Inner hot core */}
       <mesh scale={[scale * 0.6, scale * 0.6, scale * 0.6]}>
-        <sphereGeometry args={[1, 12, 12]} />
+        <sphereGeometry args={[1, isMobile ? 4 : 12, isMobile ? 4 : 12]} />
         <meshBasicMaterial color="#ffff00" transparent opacity={opacity} />
       </mesh>
-      {/* Outer shockwave */}
-      <mesh scale={[scale * 1.5, scale * 0.3, scale * 1.5]} position={[0, 0.1, 0]}>
-        <torusGeometry args={[1, 0.3, 8, 24]} />
-        <meshBasicMaterial color="#ff6600" transparent opacity={opacity * 0.5} />
-      </mesh>
-      {/* Debris particles */}
-      {[...Array(8)].map((_, i) => {
-        const angle = (i / 8) * Math.PI * 2;
+      {/* Outer shockwave - desktop only */}
+      {!isMobile && (
+        <mesh scale={[scale * 1.5, scale * 0.3, scale * 1.5]} position={[0, 0.1, 0]}>
+          <torusGeometry args={[1, 0.3, 8, 24]} />
+          <meshBasicMaterial color="#ff6600" transparent opacity={opacity * 0.5} />
+        </mesh>
+      )}
+      {/* Debris particles - fewer on mobile */}
+      {[...Array(isMobile ? 3 : 8)].map((_, i) => {
+        const angle = (i / (isMobile ? 3 : 8)) * Math.PI * 2;
         const dist = scale * (0.5 + progress);
         return (
           <mesh 
@@ -834,8 +843,8 @@ function ExplosionEffect({ explosion }: { explosion: Explosion }) {
   );
 }
 
-// Bug death explosion (smaller, gorier)
-function BugExplosion({ position }: { position: [number, number, number] }) {
+// Bug death explosion (smaller, gorier) - optimized for mobile
+function BugExplosion({ position, isMobile }: { position: [number, number, number]; isMobile?: boolean }) {
   const [progress, setProgress] = useState(0);
   
   useFrame((_, delta) => {
@@ -845,12 +854,14 @@ function BugExplosion({ position }: { position: [number, number, number] }) {
   if (progress >= 1) return null;
   
   const opacity = 1 - progress;
+  const gooCount = isMobile ? 4 : 12;
+  const partsCount = isMobile ? 2 : 6;
   
   return (
     <group position={position}>
       {/* Green goo splatter */}
-      {[...Array(12)].map((_, i) => {
-        const angle = (i / 12) * Math.PI * 2 + i * 0.3;
+      {[...Array(gooCount)].map((_, i) => {
+        const angle = (i / gooCount) * Math.PI * 2 + i * 0.3;
         const dist = progress * (1 + Math.random() * 0.5);
         const yPos = progress * 1.5 - progress * progress * 2;
         return (
@@ -863,14 +874,14 @@ function BugExplosion({ position }: { position: [number, number, number] }) {
             ]}
             scale={[0.15 - progress * 0.1, 0.15 - progress * 0.1, 0.15 - progress * 0.1]}
           >
-            <sphereGeometry args={[1, 6, 6]} />
+            <sphereGeometry args={[1, isMobile ? 4 : 6, isMobile ? 4 : 6]} />
             <meshBasicMaterial color={i % 2 === 0 ? "#4a8a2a" : "#2a5a1a"} transparent opacity={opacity} />
           </mesh>
         );
       })}
-      {/* Body parts flying */}
-      {[...Array(6)].map((_, i) => {
-        const angle = (i / 6) * Math.PI * 2;
+      {/* Body parts flying - desktop only */}
+      {!isMobile && [...Array(partsCount)].map((_, i) => {
+        const angle = (i / partsCount) * Math.PI * 2;
         const dist = progress * 0.8;
         return (
           <mesh 
@@ -890,6 +901,7 @@ function BugExplosion({ position }: { position: [number, number, number] }) {
     </group>
   );
 }
+
 
 // Weapon pickup component
 function WeaponPickupMesh({ pickup }: { pickup: WeaponPickup }) {
@@ -1171,15 +1183,23 @@ function CollisionLog({ obstacle, variant }: { obstacle: Obstacle; variant: numb
 
 // Forest ground with trees, grass, and collidable obstacles
 function ForestGround() {
+  const isMobile = useIsMobile();
+  
   // Pre-computed deterministic positions using seeded pseudo-random
   const seededRandom = (seed: number) => {
     const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
     return x - Math.floor(x);
   };
 
+  // Reduce object counts on mobile for better performance
+  const treeCount = isMobile ? 15 : 60;
+  const extraTreeCount = isMobile ? 10 : 40;
+  const grassCount = isMobile ? 40 : 250;
+  const flowerCount = isMobile ? 8 : 30;
+
   // Generate tree positions deterministically
   const trees = [];
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < treeCount; i++) {
     const seed = i * 1.618;
     const angle = seededRandom(seed) * Math.PI * 2;
     const distance = 18 + seededRandom(seed + 1) * 15;
@@ -1189,7 +1209,7 @@ function ForestGround() {
   }
   
   // Add more trees scattered around
-  for (let i = 60; i < 100; i++) {
+  for (let i = treeCount; i < treeCount + extraTreeCount; i++) {
     const seed = i * 2.718;
     const x = (seededRandom(seed) - 0.5) * 50;
     const z = (seededRandom(seed + 1) - 0.5) * 50;
@@ -1201,7 +1221,7 @@ function ForestGround() {
   
   // Generate grass positions with seeds
   const grass = [];
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < grassCount; i++) {
     const seed = i * 1.618;
     const x = (seededRandom(seed) - 0.5) * 40;
     const z = (seededRandom(seed + 0.5) - 0.5) * 40;
@@ -1210,7 +1230,7 @@ function ForestGround() {
   
   // Flowers for color
   const flowers = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < flowerCount; i++) {
     const seed = i * 2.345;
     const x = (seededRandom(seed) - 0.5) * 35;
     const z = (seededRandom(seed + 1) - 0.5) * 35;
@@ -1286,8 +1306,8 @@ function ForestGround() {
         return null;
       })}
       
-      {/* Fog particles for atmosphere */}
-      {[...Array(8)].map((_, i) => {
+      {/* Fog particles for atmosphere - skip on mobile */}
+      {!isMobile && [...Array(8)].map((_, i) => {
         const angle = (i / 8) * Math.PI * 2;
         const dist = 12 + (i % 3) * 4;
         return (
@@ -2031,6 +2051,7 @@ function GameScene({
         height={gameState.snailHeight}
         specialWeapon={performance.now() < gameState.specialWeaponUntil ? gameState.specialWeapon : null}
         isTurbo={performance.now() < gameState.turboSpeedUntil}
+        isMobile={isMobile}
       />
       
       {gameState.bugs.map(bug => (
@@ -2051,7 +2072,7 @@ function GameScene({
       
       {/* Explosions */}
       {gameState.explosions.map(explosion => (
-        <ExplosionEffect key={explosion.id} explosion={explosion} />
+        <ExplosionEffect key={explosion.id} explosion={explosion} isMobile={isMobile} />
       ))}
     </>
   );
@@ -2413,23 +2434,16 @@ export const SnailGame3rdPerson = () => {
 
           <Canvas
             shadows={!isMobile}
-            dpr={isMobile ? [0.75, 1] : [1, 2]}
-            frameloop="demand"
+            dpr={isMobile ? 0.75 : [1, 1.5]}
+            frameloop="always"
             gl={{ 
-              antialias: !isMobile,
+              antialias: false,
               toneMapping: THREE.ACESFilmicToneMapping,
               toneMappingExposure: 1.1,
-              powerPreference: isMobile ? 'low-power' : 'high-performance'
+              powerPreference: isMobile ? 'low-power' : 'high-performance',
+              precision: isMobile ? 'lowp' : 'highp'
             }}
             camera={{ fov: 65 }}
-            onCreated={({ invalidate }) => {
-              // Force continuous render loop
-              const animate = () => {
-                invalidate();
-                requestAnimationFrame(animate);
-              };
-              animate();
-            }}
           >
             <GameScene 
               gameState={gameState} 
