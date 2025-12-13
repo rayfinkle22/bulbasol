@@ -2434,14 +2434,13 @@ export const SnailGame3rdPerson = () => {
 
           <Canvas
             shadows={!isMobile}
-            dpr={isMobile ? 0.75 : [1, 1.5]}
+            dpr={isMobile ? [0.5, 1] : [1, 1.5]}
             frameloop="always"
             gl={{ 
               antialias: false,
               toneMapping: THREE.ACESFilmicToneMapping,
               toneMappingExposure: 1.1,
-              powerPreference: isMobile ? 'low-power' : 'high-performance',
-              precision: isMobile ? 'lowp' : 'highp'
+              powerPreference: isMobile ? 'low-power' : 'high-performance'
             }}
             camera={{ fov: 65 }}
           >
