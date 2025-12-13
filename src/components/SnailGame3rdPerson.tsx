@@ -317,8 +317,8 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
         </mesh>
       )}
       
-      {/* Shadow on ground - scales with height, offset to prevent z-fighting */}
-      <mesh position={[0, -height + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
+      {/* Shadow on ground - scales with height, raised to prevent z-fighting */}
+      <mesh position={[0, -height + 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
         <circleGeometry args={[0.6, 16]} />
         <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.1, 0.25 - height * 0.05)} depthWrite={false} />
       </mesh>
