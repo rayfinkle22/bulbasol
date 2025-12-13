@@ -1241,31 +1241,31 @@ function ForestGround() {
   return (
     <>
       {/* Main ground - forest floor with gradient */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#3a4a2a" roughness={0.95} />
       </mesh>
       
       {/* Outer ring - darker forest floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <ringGeometry args={[15, 40, 32]} />
         <meshStandardMaterial color="#2a3a1a" roughness={0.95} />
       </mesh>
       
       {/* Middle grass area */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
         <circleGeometry args={[15, 32]} />
         <meshStandardMaterial color="#5a7a45" roughness={0.85} />
       </mesh>
       
       {/* Inner lighter grass */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow>
         <circleGeometry args={[10, 24]} />
         <meshStandardMaterial color="#6a8a52" roughness={0.85} />
       </mesh>
       
       {/* Center spawn area - soft dirt */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} receiveShadow>
         <circleGeometry args={[4, 16]} />
         <meshStandardMaterial color="#7a6a55" roughness={0.95} />
       </mesh>

@@ -328,31 +328,31 @@ export function ProceduralTerrain({ isMobile = false }: { isMobile?: boolean }) 
   return (
     <>
       {/* Base terrain - rich earth tones */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#3a4a2a" />
       </mesh>
       
       {/* Outer forest floor - darker */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <ringGeometry args={[15, 40, 24]} />
         <meshStandardMaterial color="#2a3a1a" />
       </mesh>
       
       {/* Main play area - lush grass */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
         <circleGeometry args={[16, 24]} />
         <meshStandardMaterial color="#4a7a3a" />
       </mesh>
       
       {/* Center clearing - lighter grass with gradient */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow>
         <circleGeometry args={[8, 20]} />
         <meshStandardMaterial color="#5a8a4a" />
       </mesh>
       
       {/* Spawn point - soft earth */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} receiveShadow>
         <circleGeometry args={[3, 12]} />
         <meshStandardMaterial color="#7a6a55" />
       </mesh>
