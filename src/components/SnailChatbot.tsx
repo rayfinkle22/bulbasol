@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Send, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
-import snailImage from "@/assets/snail.png";
 import { useMarketData, formatMarketCap, formatVolume, formatAge } from "@/hooks/useMarketData";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -10,26 +9,24 @@ type Message = { role: "user" | "assistant"; content: string };
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/snail-chat`;
 
 const QUICK_REPLIES = [
-  { label: "📊 Market cap?", message: "What's the current market cap for $SNAIL?" },
-  { label: "🔥 Is it pumping?", message: "Is $SNAIL pumping right now? What's the momentum?" },
-  { label: "💰 How to buy?", message: "How do I buy $SNAIL tokens?" },
-  { label: "🐢 Who's Franklin?", message: "Tell me about Franklin the Turtle and your friendship!" },
+  { label: "📊 Market cap?", message: "What's the current market cap for BulbaSol?" },
+  { label: "🔥 Is it pumping?", message: "Is BulbaSol pumping right now? What's the momentum?" },
+  { label: "💰 How to buy?", message: "How do I buy BulbaSol tokens?" },
+  { label: "🌿 Who's Bulbasaur?", message: "Tell me about Bulbasaur the Pokémon!" },
   { label: "🎮 How to play?", message: "How do I play the Snail Shooter game? What are the controls?" },
   { label: "🏆 High scores?", message: "Who has the highest scores on the leaderboard?" },
 ];
 
 export const SnailChatbot = () => {
-  // Only auto-open on desktop (not mobile)
   const [isOpen, setIsOpen] = useState(() => {
-    // Check if we're on mobile (screen width < 640px)
     return typeof window !== 'undefined' && window.innerWidth >= 640;
   });
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Heyyy friend! 🐌 I'm Snagent, your $SNAIL AI buddy. I've been riding on Franklin's shell since day one - slow and steady, you know? What can I help you with today?" }
+    { role: "assistant", content: "Hey trainer! 🌿 I'm Bulba, your BulbaSol AI buddy. I know everything about Bulbasaur and the BulbaSol token. What can I help you with today?" }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [fontSize, setFontSize] = useState(14); // default 14px (text-sm)
+  const [fontSize, setFontSize] = useState(14);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const marketData = useMarketData();
@@ -39,7 +36,6 @@ export const SnailChatbot = () => {
   }, [messages]);
 
   const streamChat = async (userMessages: Message[]) => {
-    // Prepare comprehensive market data context
     const tokenData = {
       priceUsd: marketData.priceUsd,
       priceNative: marketData.priceNative,
@@ -130,17 +126,16 @@ export const SnailChatbot = () => {
     setIsLoading(true);
 
     try {
-      await streamChat(newMessages.slice(1)); // Skip initial greeting
+      await streamChat(newMessages.slice(1));
     } catch (error) {
       console.error("Chat error:", error);
-      toast.error(error instanceof Error ? error.message : "Snagent got lost in his shell!");
+      toast.error(error instanceof Error ? error.message : "Bulba got tangled in vines!");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Prevent event from bubbling up (fixes spacebar issue)
     e.stopPropagation();
     if (e.key === "Enter") {
       sendMessage();
@@ -151,7 +146,6 @@ export const SnailChatbot = () => {
 
   return (
     <>
-      {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center transition-transform hover:scale-110 retro-border"
@@ -159,21 +153,18 @@ export const SnailChatbot = () => {
         {isOpen ? (
           <X className="w-6 h-6 text-primary-foreground" />
         ) : (
-          <img src={snailImage} alt="Chat with Snagent" className="w-10 h-10 object-contain" />
+          <span className="text-2xl">🌿</span>
         )}
       </button>
 
-      {/* Chat Window */}
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[32rem] bg-card rounded-2xl retro-border shadow-2xl flex flex-col overflow-hidden animate-scale-in">
-          {/* Header */}
           <div className="bg-primary p-3 flex items-center gap-2">
-            <img src={snailImage} alt="Snagent" className="w-10 h-10 object-contain" />
+            <span className="text-2xl">🌿</span>
             <div className="flex-1">
-              <h3 className="font-display text-primary-foreground font-bold">Snagent</h3>
-              <p className="text-xs text-primary-foreground/70">Your $SNAIL AI Agent 🐌</p>
+              <h3 className="font-display text-primary-foreground font-bold">Bulba the AI Agent</h3>
+              <p className="text-xs text-primary-foreground/70">Your BulbaSol AI Agent 🌿</p>
             </div>
-            {/* Font size controls - desktop only */}
             <div className="hidden sm:flex items-center gap-1">
               <button
                 onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
@@ -199,8 +190,7 @@ export const SnailChatbot = () => {
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ backgroundColor: 'hsl(140 30% 88%)' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ backgroundColor: 'hsl(220 30% 15%)' }}>
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -214,7 +204,7 @@ export const SnailChatbot = () => {
                   }`}
                   style={{ 
                     fontSize: `${fontSize}px`,
-                    ...(msg.role === "assistant" ? { backgroundColor: 'hsl(140 35% 40%)' } : {})
+                    ...(msg.role === "assistant" ? { backgroundColor: 'hsl(220 35% 25%)' } : {})
                   }}
                 >
                   {msg.content}
@@ -222,7 +212,6 @@ export const SnailChatbot = () => {
               </div>
             ))}
             
-            {/* Quick Replies */}
             {showQuickReplies && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {QUICK_REPLIES.map((qr, i) => (
@@ -242,16 +231,15 @@ export const SnailChatbot = () => {
               <div className="flex justify-start">
                 <div 
                   className="px-3 py-2 rounded-2xl rounded-bl-sm text-white" 
-                  style={{ backgroundColor: 'hsl(140 35% 40%)', fontSize: `${fontSize}px` }}
+                  style={{ backgroundColor: 'hsl(220 35% 25%)', fontSize: `${fontSize}px` }}
                 >
-                  <span className="animate-pulse">🐌 slooowly thinking...</span>
+                  <span className="animate-pulse">🌿 growing a response...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-3 border-t border-border bg-card">
             <div className="flex gap-2">
               <input
@@ -260,7 +248,7 @@ export const SnailChatbot = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Snagent anything..."
+                placeholder="Ask Bulba anything..."
                 className="flex-1 px-3 py-2 rounded-full bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />

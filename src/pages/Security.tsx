@@ -79,7 +79,6 @@ const Security = () => {
             ))}
           </div>
 
-          {/* Known Limitations */}
           <div className="bg-card/50 border border-border rounded-xl p-6 mb-8">
             <h2 className="font-display text-2xl text-foreground mb-4 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-yellow-500" />
@@ -93,7 +92,6 @@ const Security = () => {
             </ul>
           </div>
 
-          {/* Disclaimer */}
           <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6">
             <h2 className="font-display text-2xl text-destructive mb-4 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6" />
@@ -104,7 +102,7 @@ const Security = () => {
                 <strong className="text-foreground">NO WARRANTY:</strong> The security measures described on this page are provided on an "as-is" basis without warranties of any kind, either express or implied.
               </p>
               <p>
-                <strong className="text-foreground">LIMITATION OF LIABILITY:</strong> $SNAIL and its developers, operators, and affiliates shall not be held liable for any direct, indirect, incidental, special, consequential, or exemplary damages resulting from:
+                <strong className="text-foreground">LIMITATION OF LIABILITY:</strong> BulbaSol and its developers, operators, and affiliates shall not be held liable for any direct, indirect, incidental, special, consequential, or exemplary damages resulting from:
               </p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>Security breaches or exploits of the reward system</li>
@@ -118,7 +116,7 @@ const Security = () => {
                 <strong className="text-foreground">USE AT YOUR OWN RISK:</strong> By using this platform and its reward system, you acknowledge that you understand and accept these risks. Cryptocurrency and token transactions are irreversible.
               </p>
               <p>
-                <strong className="text-foreground">NOT FINANCIAL ADVICE:</strong> $SNAIL is a meme token for entertainment purposes only. Do not invest more than you can afford to lose.
+                <strong className="text-foreground">NOT FINANCIAL ADVICE:</strong> BulbaSol is a meme token for entertainment purposes only. Do not invest more than you can afford to lose.
               </p>
               <p className="text-sm italic pt-4 border-t border-border/50">
                 This disclaimer was last updated on {new Date().toLocaleDateString()}. We reserve the right to modify our security measures and this disclaimer at any time without prior notice.

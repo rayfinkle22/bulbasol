@@ -11,10 +11,9 @@ export const DexChart = () => {
           Live Chart 📈
         </h2>
         <p className="font-body text-center text-muted-foreground mb-6">
-          Track $SNAIL in real-time on Dexscreener
+          Track BulbaSol in real-time on Dexscreener
         </p>
 
-        {/* Market Cap Display */}
         <div className="mb-6 p-4 rounded-2xl retro-border bg-card">
           <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
             <div className="text-center">
@@ -54,8 +53,8 @@ export const DexChart = () => {
         
         <div className="rounded-2xl retro-border overflow-hidden bg-card">
           <iframe
-            src="https://dexscreener.com/solana/5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump?embed=1&theme=dark&trades=0&info=0"
-            title="$SNAIL Dexscreener Chart"
+            src="https://dexscreener.com/solana/61z3QXMxs41E2dniUxZYf4PFXk6fFw4Wai9NNuZtqPE9?embed=1&theme=dark&trades=0&info=0"
+            title="BulbaSol Dexscreener Chart"
             className="w-full border-0"
             style={{ height: 400 }}
           />
@@ -63,7 +62,7 @@ export const DexChart = () => {
         
         <p className="text-center mt-4">
           <a 
-            href="https://dexscreener.com/solana/5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump" 
+            href="https://dexscreener.com/solana/61z3QXMxs41E2dniUxZYf4PFXk6fFw4Wai9NNuZtqPE9" 
             target="_blank" 
             rel="noopener noreferrer"
             className="font-body text-accent hover:text-primary transition-colors inline-flex items-center gap-2"
@@ -72,7 +71,6 @@ export const DexChart = () => {
           </a>
         </p>
         
-        {/* Animation Video */}
         <div className="mt-8 rounded-2xl retro-border overflow-hidden">
           <video 
             src="/videos/snail-animation.mp4"
