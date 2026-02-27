@@ -10,12 +10,8 @@ import { toast } from "sonner";
 import { ProceduralTerrain } from "./game/ProceduralTerrain";
 import { RealisticLighting, ForestSkybox } from "./game/RealisticLighting";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Volume2, VolumeX, Wallet, X, Gift } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useGameSounds } from "@/hooks/useGameSounds";
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useTokenRewards } from "@/hooks/useTokenRewards";
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 interface Bug {
   id: number;
@@ -2087,7 +2083,6 @@ export const SnailGame3rdPerson = () => {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [gamesPlayed, setGamesPlayed] = useState(0);
-  const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const gameStartTime = useRef<number>(0);
   
   const touchMove = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
@@ -2098,16 +2093,7 @@ export const SnailGame3rdPerson = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const sounds = useGameSounds();
-  
-  // Wallet connection
-  const { connected, publicKey, disconnect } = useWallet();
-  const walletAddress = publicKey?.toBase58() || null;
-  const { rewardsEnabled, rewardWalletStatus, isCheckingWallet, claimReward, isClaiming, calculateEstimatedReward, canClaim } = useTokenRewards(walletAddress);
-  const [lastGameSessionId, setLastGameSessionId] = useState<string | null>(null);
-  const [showClaimUI, setShowClaimUI] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaRef = useRef<HCaptcha>(null);
-  
+
   const [gameState, setGameState] = useState<GameState>({
     status: 'idle',
     score: 0,
@@ -2141,20 +2127,11 @@ export const SnailGame3rdPerson = () => {
         
         if (leaderboardError) throw leaderboardError;
         
-        // Fetch token rewards to match with leaderboard entries
-        const { data: rewardsData } = await supabase
-          .from('token_rewards')
-          .select('game_session_id, tokens_earned')
-          .eq('status', 'completed');
-        
-        // Map rewards to leaderboard entries
-        const leaderboardWithTokens = (leaderboardData || []).map(entry => {
-          const reward = rewardsData?.find(r => r.game_session_id === entry.id);
-          return {
+        // Simple leaderboard without token rewards
+        const leaderboardWithTokens = (leaderboardData || []).map(entry => ({
             ...entry,
-            tokens_earned: reward?.tokens_earned || null
-          };
-        });
+            tokens_earned: null
+        }));
         
         setLeaderboard(leaderboardWithTokens);
         if (leaderboardData && leaderboardData.length > 0) {
@@ -2213,40 +2190,18 @@ export const SnailGame3rdPerson = () => {
         return;
       }
       
-      // Fetch the newly created leaderboard entry to get its ID for token claim linking
-      const { data: newEntry } = await supabase
-        .from('leaderboard_3d')
-        .select('id')
-        .eq('name', name)
-        .eq('score', score)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (newEntry?.id) {
-        setLastGameSessionId(newEntry.id);
-      }
-      
-      // Fetch updated leaderboard with token data
+      // Fetch updated leaderboard
       const { data: leaderboardData } = await supabase
         .from('leaderboard_3d')
         .select('*')
         .order('score', { ascending: false })
         .limit(10);
       
-      const { data: rewardsData } = await supabase
-        .from('token_rewards')
-        .select('game_session_id, tokens_earned')
-        .eq('status', 'completed');
-      
       if (leaderboardData) {
-        const leaderboardWithTokens = leaderboardData.map(entry => {
-          const reward = rewardsData?.find(r => r.game_session_id === entry.id);
-          return {
+        const leaderboardWithTokens = leaderboardData.map(entry => ({
             ...entry,
-            tokens_earned: reward?.tokens_earned || null
-          };
-        });
+            tokens_earned: null
+        }));
         setLeaderboard(leaderboardWithTokens);
         if (leaderboardData.length > 0) {
           setHighScore(leaderboardData[0].score);
@@ -2275,11 +2230,9 @@ export const SnailGame3rdPerson = () => {
   }, []);
 
   const startGame = useCallback(async () => {
-    setShowWalletPrompt(false);
     setScoreSubmitted(false);
     gameStartTime.current = Date.now();
     
-    // Increment games played counter with session-based rate limiting
     try {
       const sessionHash = getSessionHash();
       const { data: newCount } = await supabase.rpc('increment_games_played', { 
@@ -2291,11 +2244,6 @@ export const SnailGame3rdPerson = () => {
     } catch (error) {
       console.error('Error incrementing games counter:', error);
     }
-    
-    // Reset claim UI state
-    setShowClaimUI(false);
-    setCaptchaToken(null);
-    captchaRef.current?.resetCaptcha();
     
     setGameState({
       status: 'playing',
@@ -2319,63 +2267,14 @@ export const SnailGame3rdPerson = () => {
     });
   }, [getSessionHash]);
 
-  // Handle start button click - show wallet prompt first
-  const handleStartClick = useCallback(() => {
-    if (!connected) {
-      setShowWalletPrompt(true);
-    } else {
-      startGame();
-    }
-  }, [connected, startGame]);
-
   useEffect(() => {
     if (gameState.status === 'gameover' && gameState.health === 0 && !scoreSubmitted) {
       const finalScore = Math.floor(gameState.score);
       if (finalScore > 0 && isHighScore(finalScore)) {
         setGameState(prev => ({ ...prev, status: 'entering_name' }));
       }
-      // Show claim UI if connected and has score
-      if (connected && finalScore > 0) {
-        setShowClaimUI(true);
-      }
     }
-  }, [gameState.status, gameState.health, gameState.score, scoreSubmitted, connected]);
-
-  // Handle reward claim
-  const handleClaimReward = async () => {
-    if (!captchaToken) {
-      toast.error('Please complete the captcha first');
-      return;
-    }
-    
-    const result = await claimReward(Math.floor(gameState.score), lastGameSessionId || undefined, captchaToken);
-    
-    if (result.success) {
-      toast.success(`Claimed ${result.tokens_earned} $SNAIL tokens!`);
-      setShowClaimUI(false);
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
-    } else if (result.reason === 'wallet_cooldown') {
-      const hoursRemaining = (result as any).hours_remaining;
-      if (hoursRemaining) {
-        toast.error(`Wallet cooldown active. Try again in ${hoursRemaining.toFixed(1)} hours.`);
-      } else {
-        toast.error('You can claim once every 24 hours. Please try again later.');
-      }
-      setShowClaimUI(false);
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
-    } else if (result.reason === 'ip_limit') {
-      toast.error('Daily limit reached (5 claims per day). Try again tomorrow.');
-      setShowClaimUI(false);
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
-    } else {
-      toast.error(result.error || 'Failed to claim reward');
-      setCaptchaToken(null);
-      captchaRef.current?.resetCaptcha();
-    }
-  };
+  }, [gameState.status, gameState.health, gameState.score, scoreSubmitted]);
 
 
   return (
@@ -2689,37 +2588,10 @@ export const SnailGame3rdPerson = () => {
           )}
           
           {/* Overlays */}
-          {gameState.status === 'idle' && !showWalletPrompt && (
+          {gameState.status === 'idle' && (
             <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center p-1 sm:p-4 overflow-y-auto">
               <img src={snailTexture} alt="Snail" className="w-8 h-8 sm:w-20 sm:h-20 object-contain mb-0.5 sm:mb-2" />
               <h3 className="font-display text-base sm:text-2xl text-primary mb-1 sm:mb-4">3rd Person Mode</h3>
-              
-              {/* Wallet status indicator */}
-              {connected ? (
-                <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-1 sm:mb-3">
-                  <div className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
-                    <Wallet className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-green-400" />
-                    <span className="text-green-400 text-[10px] sm:text-sm font-display">
-                      {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
-                    </span>
-                    {rewardsEnabled ? (
-                      <span className="text-[8px] sm:text-xs text-green-300">✓</span>
-                    ) : (
-                      <span className="text-[8px] sm:text-xs text-yellow-400">⚠</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => disconnect()}
-                    className="text-[8px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              ) : (
-                <div className="mb-1 sm:mb-3 wallet-start-screen">
-                  <WalletMultiButton />
-                </div>
-              )}
               
               <p className="font-body text-[10px] sm:text-sm text-muted-foreground mb-0.5 sm:mb-2">Difficulty:</p>
               <div className="flex gap-1 sm:gap-2 mb-1 sm:mb-4">
@@ -2742,81 +2614,9 @@ export const SnailGame3rdPerson = () => {
                 ))}
               </div>
               
-              <Button onClick={handleStartClick} size="sm" className="font-display text-xs sm:text-lg px-3 sm:px-8 h-8 sm:h-11">
+              <Button onClick={startGame} size="sm" className="font-display text-xs sm:text-lg px-3 sm:px-8 h-8 sm:h-11">
                 🎮 START GAME
               </Button>
-            </div>
-          )}
-
-          {/* Wallet connection prompt */}
-          {showWalletPrompt && (
-            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-1 sm:p-4 z-50 overflow-y-auto">
-              <div className="relative flex flex-col items-center text-center max-w-[95%] sm:max-w-md py-2">
-                <button 
-                  onClick={() => setShowWalletPrompt(false)}
-                  className="absolute -top-0 -right-0 sm:top-2 sm:right-2 p-1 sm:p-2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                
-                <Wallet className="w-6 h-6 sm:w-10 sm:h-10 text-primary mb-0.5 sm:mb-2" />
-                <h3 className="font-display text-sm sm:text-xl text-green-400 mb-0.5 drop-shadow-[0_0_12px_rgba(74,222,128,0.8)]">Earn $SNAIL Tokens!</h3>
-                <p className="font-display text-xs sm:text-lg text-white mb-1 sm:mb-3 max-w-xs drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
-                  Connect wallet to earn rewards. Optional!
-                </p>
-                
-                {rewardsEnabled ? (
-                  <p className="text-[10px] sm:text-xs text-green-400 mb-1 sm:mb-4">✓ Rewards active</p>
-                ) : (
-                  <p className="text-[10px] sm:text-xs text-yellow-400 mb-1 sm:mb-4">⚠ Rewards paused</p>
-                )}
-                
-                <div className="flex flex-col items-center gap-1.5 sm:gap-3">
-                  {connected ? (
-                    <>
-                      <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-blue-600 rounded-lg">
-                        <Wallet className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
-                        <span className="text-white font-display text-[10px] sm:text-sm">
-                          {publicKey?.toBase58().slice(0, 4)}..{publicKey?.toBase58().slice(-4)}
-                        </span>
-                      </div>
-                      <Button 
-                        type="button"
-                        onClick={() => {
-                          setShowWalletPrompt(false);
-                          startGame();
-                        }}
-                        size="sm"
-                        className="font-display bg-green-600 hover:bg-green-500 text-white px-3 sm:px-8 text-[10px] sm:text-base h-8 sm:h-10"
-                      >
-                        🎮 Play & Earn!
-                      </Button>
-                      <button
-                        onClick={() => disconnect()}
-                        className="text-[9px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        Disconnect
-                      </button>
-                    </>
-                  ) : (
-                    <div className="wallet-prompt-red">
-                      <WalletMultiButton />
-                    </div>
-                  )}
-                  <Button 
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      console.log('Skip button clicked');
-                      startGame();
-                    }}
-                    className="font-display bg-yellow-500 hover:bg-yellow-400 text-black px-2 sm:px-6 text-[10px] sm:text-sm h-7 sm:h-9"
-                  >
-                    Skip & Play Without Rewards
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -2858,77 +2658,6 @@ export const SnailGame3rdPerson = () => {
               <h3 className="font-display text-xl sm:text-3xl text-destructive mb-1 sm:mb-2">GAME OVER</h3>
               <p className="font-display text-base sm:text-xl text-primary mb-0.5 sm:mb-1">Score: {Math.floor(gameState.score)}</p>
               <p className="font-body text-xs sm:text-base text-muted-foreground mb-2 sm:mb-4">Bugs Killed: {gameState.bugsKilled}</p>
-              
-              {!connected && (
-                <div className="mb-2 sm:mb-4 p-2 sm:p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-                  <p className="text-green-400 font-display text-xs sm:text-sm mb-1 sm:mb-2">
-                    🎁 Connect wallet to earn $SNAIL rewards!
-                  </p>
-                  <div className="wallet-prompt-red">
-                    <WalletMultiButton />
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-white/70 mt-1 sm:mt-2">(playing without rewards)</p>
-                </div>
-              )}
-              
-              {connected && showClaimUI && rewardsEnabled && gameState.score > 0 && (
-                <div className="mb-2 sm:mb-4 p-2 sm:p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-center max-w-[95%] sm:max-w-sm">
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
-                    <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                    <span className="text-green-400 font-display text-sm sm:text-lg">Claim Rewards!</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
-                    Estimated: ~{calculateEstimatedReward(Math.floor(gameState.score)).tokens.toFixed(0)} $SNAIL
-                  </p>
-                  
-                  <div className="flex justify-center mb-2 sm:mb-3 transform scale-75 sm:scale-100 origin-center">
-                    <HCaptcha
-                      ref={captchaRef}
-                      sitekey="7b46fff6-d220-4782-b472-ed7ccfc0d8e4"
-                      onVerify={(token) => setCaptchaToken(token)}
-                      onExpire={() => setCaptchaToken(null)}
-                      theme="dark"
-                      size="compact"
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={handleClaimReward}
-                    disabled={isClaiming || !captchaToken}
-                    className="w-full font-display bg-green-600 hover:bg-green-500 disabled:opacity-50 text-xs sm:text-sm"
-                  >
-                    {isClaiming ? 'Claiming...' : '🎁 Claim $SNAIL'}
-                  </Button>
-                  
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
-                    ⏱️ Limit: 5 claims per 24 hours
-                  </p>
-                  <button
-                    onClick={() => { disconnect(); setShowClaimUI(false); }}
-                    className="text-[10px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors mt-0.5 sm:mt-1"
-                  >
-                    Skip rewards & disconnect
-                  </button>
-                </div>
-              )}
-              
-              {connected && !showClaimUI && (
-                <div className="mb-2 sm:mb-4 flex flex-col items-center gap-1 sm:gap-2">
-                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg">
-                    <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                    <span className="text-green-400 text-xs sm:text-sm font-display">
-                      {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
-                    </span>
-                    <span className="text-[10px] sm:text-xs text-green-300">✓ Connected</span>
-                  </div>
-                  <button
-                    onClick={() => disconnect()}
-                    className="text-[10px] sm:text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    Disconnect wallet
-                  </button>
-                </div>
-              )}
               
               <Button onClick={startGame} size="default" className="font-display text-xs sm:text-base">
                 🔄 Play Again

@@ -1,57 +1,57 @@
 import { useEffect, useState } from "react";
 
-interface Leaf {
+interface Star {
   id: number;
   x: number;
-  delay: number;
-  duration: number;
+  y: number;
   size: number;
-  emoji: string;
+  duration: number;
+  delay: number;
   opacity: number;
 }
 
-const LEAF_EMOJIS = ['🍂', '🍃', '🌿', '🍁', '🍂', '🍃', '🍁'];
-
 export const FloatingLeaves = () => {
-  const [leaves, setLeaves] = useState<Leaf[]>([]);
+  const [stars, setStars] = useState<Star[]>([]);
 
   useEffect(() => {
-    const generateLeaves = () => {
-      const newLeaves: Leaf[] = [];
-      for (let i = 0; i < 80; i++) {
-        newLeaves.push({
+    const generateStars = () => {
+      const newStars: Star[] = [];
+      for (let i = 0; i < 120; i++) {
+        newStars.push({
           id: i,
           x: Math.random() * 100,
-          delay: Math.random() * 12,
-          duration: 5 + Math.random() * 10,
-          size: 24 + Math.random() * 32,
-          emoji: LEAF_EMOJIS[Math.floor(Math.random() * LEAF_EMOJIS.length)],
-          opacity: 1,
+          y: Math.random() * 100,
+          size: 1 + Math.random() * 3,
+          duration: 2 + Math.random() * 5,
+          delay: Math.random() * 5,
+          opacity: 0.3 + Math.random() * 0.7,
         });
       }
-      setLeaves(newLeaves);
+      setStars(newStars);
     };
 
-    generateLeaves();
+    generateStars();
   }, []);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {leaves.map((leaf) => (
+      {stars.map((star) => (
         <div
-          key={leaf.id}
-          className="absolute animate-leaf-fall"
+          key={star.id}
+          className="absolute rounded-full animate-twinkle"
           style={{
-            left: `${leaf.x}%`,
-            top: '-5%',
-            fontSize: `${leaf.size}px`,
-            animationDelay: `${leaf.delay}s`,
-            animationDuration: `${leaf.duration}s`,
-            opacity: leaf.opacity,
-          }}
-        >
-          {leaf.emoji}
-        </div>
+            left: `${star.x}%`,
+            top: `${star.y}%`,
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            backgroundColor: star.size > 2 ? 'hsl(210 50% 90%)' : 'hsl(0 0% 100%)',
+            boxShadow: star.size > 2 
+              ? `0 0 ${star.size * 2}px hsl(210 60% 80% / 0.6)` 
+              : `0 0 ${star.size}px hsl(0 0% 100% / 0.4)`,
+            '--twinkle-duration': `${star.duration}s`,
+            '--twinkle-delay': `${star.delay}s`,
+          } as React.CSSProperties}
+        />
       ))}
     </div>
   );

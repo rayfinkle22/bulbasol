@@ -20,34 +20,21 @@ interface VolumeData {
 }
 
 interface MarketData {
-  // Core pricing
   marketCap: number | null;
   priceUsd: string | null;
   priceNative: string | null;
-  
-  // Price changes across timeframes
   priceChange: PriceChangeData;
-  
-  // Volume data
   volume: VolumeData;
-  
-  // Liquidity
   liquidityUsd: number | null;
-  
-  // Transaction activity
   txns24h: TransactionData | null;
   txns1h: TransactionData | null;
-  
-  // Metadata
   pairCreatedAt: number | null;
   dexId: string | null;
-  
   isLoading: boolean;
 }
 
-const TOKEN_ADDRESS = "5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump";
+const TOKEN_ADDRESS = "61z3QXMxs41E2dniUxZYf4PFXk6fFw4Wai9NNuZtqPE9";
 
-// Shared state across components
 let cachedData: MarketData = {
   marketCap: null,
   priceUsd: null,
@@ -72,7 +59,6 @@ const fetchMarketData = async () => {
     );
     const data = await response.json();
     if (data.pairs && data.pairs.length > 0) {
-      // Use pumpswap pair (main trading pair) if available
       const pair = data.pairs.find((p: any) => p.dexId === "pumpswap") || data.pairs[0];
       
       cachedData = {
@@ -115,7 +101,6 @@ export const useMarketData = (): MarketData => {
     const listener = () => forceUpdate({});
     listeners.add(listener);
 
-    // Start fetching if this is the first subscriber
     if (listeners.size === 1) {
       fetchMarketData();
       fetchInterval = setInterval(fetchMarketData, 30000);
@@ -123,7 +108,6 @@ export const useMarketData = (): MarketData => {
 
     return () => {
       listeners.delete(listener);
-      // Stop fetching if no more subscribers
       if (listeners.size === 0 && fetchInterval) {
         clearInterval(fetchInterval);
         fetchInterval = null;

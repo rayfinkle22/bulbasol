@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router-dom";
-import snailImage from "@/assets/snail.png";
 import { useMarketData, formatMarketCap } from "@/hooks/useMarketData";
 
 export const Header = () => {
@@ -12,8 +11,8 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src={snailImage} alt="Snail" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
-              <span className="font-display text-xl sm:text-2xl font-bold text-primary">$SNAIL</span>
+              <span className="text-xl sm:text-2xl">🌿</span>
+              <span className="font-display text-xl sm:text-2xl font-bold text-primary">BulbaSol</span>
             </Link>
             <nav className="hidden sm:flex items-center gap-2">
               <Link 
@@ -49,7 +48,6 @@ export const Header = () => {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            {/* Mobile nav */}
             <Link 
               to="/legacy" 
               className={`sm:hidden font-display text-xs px-2 py-1 rounded-lg ${

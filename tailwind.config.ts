@@ -109,24 +109,9 @@ export default {
           "0%, 100%": { transform: "translate(-50%, -50%) scale(1)", opacity: "1" },
           "50%": { transform: "translate(-50%, -50%) scale(1.1)", opacity: "0.8" },
         },
-        "leaf-fall": {
-          "0%": { 
-            transform: "translateY(-10vh) rotate(0deg) translateX(0)",
-            opacity: "0.7"
-          },
-          "25%": {
-            transform: "translateY(25vh) rotate(90deg) translateX(30px)"
-          },
-          "50%": {
-            transform: "translateY(50vh) rotate(180deg) translateX(-30px)"
-          },
-          "75%": {
-            transform: "translateY(75vh) rotate(270deg) translateX(20px)"
-          },
-          "100%": { 
-            transform: "translateY(110vh) rotate(360deg) translateX(0)",
-            opacity: "0"
-          },
+        "twinkle": {
+          "0%, 100%": { opacity: "0.3", transform: "scale(0.8)" },
+          "50%": { opacity: "1", transform: "scale(1.2)" },
         },
       },
       animation: {
@@ -137,9 +122,7 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "wiggle": "wiggle 1s ease-in-out infinite",
         "bounce-snail": "bounce-snail 0.3s ease-in-out infinite",
-        "tumble": "tumble 1s linear infinite",
-        "pulse-glow": "pulse-glow 0.8s ease-in-out infinite",
-        "leaf-fall": "leaf-fall 10s linear infinite",
+        "twinkle": "twinkle 3s ease-in-out infinite",
       },
     },
   },

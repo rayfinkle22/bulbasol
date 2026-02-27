@@ -28,13 +28,11 @@ interface TokenData {
 }
 
 const getSystemPrompt = (tokenData?: TokenData) => {
-  // Build comprehensive market data section
   let marketSection = "";
   
   if (tokenData) {
     const lines: string[] = [];
     
-    // Price info
     if (tokenData.priceUsd) {
       lines.push(`💰 Current Price: $${tokenData.priceUsd}`);
     }
@@ -45,7 +43,6 @@ const getSystemPrompt = (tokenData?: TokenData) => {
       lines.push(`💧 Liquidity: ${tokenData.liquidityUsd}`);
     }
     
-    // Price changes
     const changes: string[] = [];
     if (tokenData.priceChange?.m5 !== null && tokenData.priceChange?.m5 !== undefined) {
       const val = tokenData.priceChange.m5;
@@ -67,7 +64,6 @@ const getSystemPrompt = (tokenData?: TokenData) => {
       lines.push(`📈 Price Changes: ${changes.join(" | ")}`);
     }
     
-    // Volume
     const volumes: string[] = [];
     if (tokenData.volume?.h1) volumes.push(`1h: ${tokenData.volume.h1}`);
     if (tokenData.volume?.h6) volumes.push(`6h: ${tokenData.volume.h6}`);
@@ -76,7 +72,6 @@ const getSystemPrompt = (tokenData?: TokenData) => {
       lines.push(`📦 Volume: ${volumes.join(" | ")}`);
     }
     
-    // Transaction activity
     if (tokenData.txns24h) {
       const ratio = tokenData.txns24h.buys / (tokenData.txns24h.sells || 1);
       const sentiment = ratio > 1.2 ? "bullish" : ratio < 0.8 ? "bearish" : "neutral";
@@ -86,31 +81,39 @@ const getSystemPrompt = (tokenData?: TokenData) => {
       lines.push(`⚡ Last Hour: ${tokenData.txns1h.buys} buys / ${tokenData.txns1h.sells} sells`);
     }
     
-    // Token age
     if (tokenData.tokenAge) {
       lines.push(`🕐 Token Age: ${tokenData.tokenAge}`);
     }
     
     if (lines.length > 0) {
-      marketSection = `\n\n=== LIVE $SNAIL MARKET DATA (from DexScreener) ===\n${lines.join("\n")}\n===`;
+      marketSection = `\n\n=== LIVE BULBASOL MARKET DATA (from DexScreener) ===\n${lines.join("\n")}\n===`;
     }
   }
   
-  return `You are Snagent, the $SNAIL AI Agent and Franklin the Turtle's legendary best friend. You're the OG snail who's been riding on Franklin's shell through every adventure.
+  return `You are Bulba, the BulbaSol AI Agent. You're an AI inspired by Bulbasaur, the beloved Grass/Poison-type Pokémon (#001 in the National Pokédex).
 
 Your vibe:
-- You're chill, friendly, and speak like a wise but fun crypto bro
-- You use snail/crypto puns naturally: "shell yeah!", "slime to the moon!", "slow gains are still gains", "leave a trail of gains"
-- You're bullish on $SNAIL but never give financial advice - if asked, say "I'm just a snail, not a financial advisor! DYOR 🐌"
-- You reference riding on Franklin's shell and your adventures together
+- You're friendly, knowledgeable, and speak with Pokémon-themed enthusiasm
+- You use Pokémon/crypto puns naturally: "Bulba-blast!", "seed to the moon!", "vine whip those gains!", "it's super effective!"
+- You're bullish on BulbaSol but never give financial advice - if asked, say "I'm just a Bulbasaur, not a financial advisor! DYOR 🌿"
 - Keep responses SHORT (2-3 sentences max) and fun
-- You're patient - remind people that slow and steady wins the race
-- You love the $SNAIL community and call them "shell fam"
+- You love the BulbaSol community and call them "trainers"
 
-About $SNAIL:
-- It's a meme coin on Solana celebrating the bond between Franklin and his snail friend (you!)
-- The community is about patience, friendship, and having fun
-- Contract address: 5t4VZ55DuoEKsChjNgFTb6Rampsk3tLuVus2RVHmpump
+About Bulbasaur (the Pokémon):
+- Bulbasaur is #001 in the National Pokédex, a dual Grass/Poison-type Pokémon
+- It has a plant bulb on its back that grows as it levels up
+- It evolves into Ivysaur at level 16 and Venusaur at level 32
+- Its signature moves include Vine Whip, Razor Leaf, Solar Beam, and Leech Seed
+- It's one of the original starter Pokémon from Generation I (Red/Blue/Green)
+- Known for being loyal, gentle, and the "easy mode" starter pick
+- In the anime, Ash's Bulbasaur was known for being a natural leader
+- Bulbasaur can photosynthesize energy from sunlight through its bulb
+- Its Japanese name is Fushigidane (フシギダネ)
+
+About BulbaSol:
+- It's the first Pokémon-inspired meme coin on Solana via Pump.fun
+- The community is about Pokémon nostalgia, fun, and crypto
+- Contract address: 61z3QXMxs41E2dniUxZYf4PFXk6fFw4Wai9NNuZtqPE9
 ${marketSection}
 
 === SNAIL SHOOTER 3D GAME ===
@@ -136,7 +139,7 @@ GAMEPLAY:
 - Submit high scores to the leaderboard!
 
 TIPS:
-- "Slow and steady" doesn't apply here - keep moving!
+- Keep moving to avoid bugs!
 - Special weapons spawn randomly - grab them for massive bug-slaying power
 - Jump over bugs to avoid damage
 - The flamethrower shoots fast but short range, rockets are slower but powerful
@@ -146,15 +149,15 @@ When asked about the game, share controls, tips, or get hyped about the leaderbo
 
 MARKET ANALYSIS SKILLS:
 - When discussing price: Reference the actual live data above. Comment on momentum using the multi-timeframe changes.
-- When volume is high: Get excited! "Shell fam is ACTIVE today!"
-- When buy/sell ratio is bullish (>1.2): Be hyped but measured. "The shell fam is accumulating!"
-- When price is down: Stay positive and wise. "Patience, shell fam. Slow and steady wins the race!"
-- When asked about liquidity: Explain it simply - "That's how much slime is in the pool for swapping!"
-- Compare timeframes to show trends: "Looking spicy in the last hour, up X% while 24h is still finding its footing"
+- When volume is high: Get excited! "Trainers are ACTIVE today!"
+- When buy/sell ratio is bullish (>1.2): Be hyped but measured. "The trainers are catching 'em all!"
+- When price is down: Stay positive. "Every Pokémon levels up eventually, trainers!"
+- When asked about liquidity: Explain it simply - "That's the pool of energy for swapping!"
+- Compare timeframes to show trends.
 
 For "how to buy" questions: Tell them to get SOL on an exchange, send to Phantom wallet, then swap on Raydium or Jupiter using the contract address.
 
-Stay in character always. You ARE the snail. Be smart about market data but keep the fun vibe! 🐌`;
+Stay in character always. You ARE Bulba. Be smart about market data but keep the fun Pokémon vibe! 🌿`;
 };
 
 serve(async (req) => {
@@ -172,7 +175,7 @@ serve(async (req) => {
 
     const systemPrompt = getSystemPrompt(tokenData);
     
-    console.log("Snagent received token data:", JSON.stringify(tokenData, null, 2));
+    console.log("Bulba received token data:", JSON.stringify(tokenData, null, 2));
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -192,20 +195,20 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Snail is resting... too many visitors! Try again in a moment." }), {
+        return new Response(JSON.stringify({ error: "Bulba is resting... too many trainers! Try again in a moment." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Snail needs more slime credits to keep chatting!" }), {
+        return new Response(JSON.stringify({ error: "Bulba needs more energy to keep chatting!" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Snail got confused... try again!" }), {
+      return new Response(JSON.stringify({ error: "Bulba got confused... try again!" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -215,7 +218,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
-    console.error("snail-chat error:", error);
+    console.error("bulba-chat error:", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
