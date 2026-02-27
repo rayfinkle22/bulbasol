@@ -71,16 +71,6 @@ export const DexChart = () => {
           </a>
         </p>
         
-        <div className="mt-8 rounded-2xl retro-border overflow-hidden">
-          <video 
-            src="/videos/snail-animation.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-auto"
-          />
-        </div>
       </div>
     </section>
   );

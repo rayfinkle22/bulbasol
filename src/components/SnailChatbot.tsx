@@ -148,7 +148,8 @@ export const SnailChatbot = () => {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center transition-transform hover:scale-110 retro-border"
+        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 retro-border"
+        style={{ backgroundColor: 'hsl(200 70% 50%)' }}
       >
         {isOpen ? (
           <X className="w-6 h-6 text-primary-foreground" />
@@ -158,8 +159,8 @@ export const SnailChatbot = () => {
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[32rem] bg-card rounded-2xl retro-border shadow-2xl flex flex-col overflow-hidden animate-scale-in">
-          <div className="bg-primary p-3 flex items-center gap-2">
+        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[32rem] rounded-2xl retro-border shadow-2xl flex flex-col overflow-hidden animate-scale-in" style={{ backgroundColor: 'hsl(200 60% 92%)' }}>
+          <div className="p-3 flex items-center gap-2" style={{ backgroundColor: 'hsl(200 70% 50%)' }}>
             <span className="text-2xl">🌿</span>
             <div className="flex-1">
               <h3 className="font-display text-primary-foreground font-bold">Bulba the AI Agent</h3>
@@ -190,7 +191,7 @@ export const SnailChatbot = () => {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ backgroundColor: 'hsl(220 30% 15%)' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ backgroundColor: 'hsl(200 50% 85%)' }}>
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -199,12 +200,13 @@ export const SnailChatbot = () => {
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-white ${
                     msg.role === "user"
-                      ? "bg-primary rounded-br-sm"
+                      ? "rounded-br-sm"
                       : "rounded-bl-sm"
                   }`}
                   style={{ 
                     fontSize: `${fontSize}px`,
-                    ...(msg.role === "assistant" ? { backgroundColor: 'hsl(220 35% 25%)' } : {})
+                    color: 'hsl(210 30% 15%)',
+                    backgroundColor: msg.role === "user" ? 'hsl(200 70% 50%)' : 'hsl(200 40% 75%)',
                   }}
                 >
                   {msg.content}
@@ -230,8 +232,8 @@ export const SnailChatbot = () => {
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
                 <div 
-                  className="px-3 py-2 rounded-2xl rounded-bl-sm text-white" 
-                  style={{ backgroundColor: 'hsl(220 35% 25%)', fontSize: `${fontSize}px` }}
+                  className="px-3 py-2 rounded-2xl rounded-bl-sm" 
+                  style={{ backgroundColor: 'hsl(200 40% 75%)', color: 'hsl(210 30% 15%)', fontSize: `${fontSize}px` }}
                 >
                   <span className="animate-pulse">🌿 growing a response...</span>
                 </div>
@@ -240,7 +242,7 @@ export const SnailChatbot = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-3 border-t border-border bg-card">
+          <div className="p-3 border-t" style={{ borderColor: 'hsl(200 40% 70%)', backgroundColor: 'hsl(200 60% 92%)' }}>
             <div className="flex gap-2">
               <input
                 ref={inputRef}
