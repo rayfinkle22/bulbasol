@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { PerspectiveCamera, Environment, Billboard, useGLTF, Clone } from "@react-three/drei";
+import { PerspectiveCamera, Environment, Billboard, useGLTF } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
 import snailTexture from "@/assets/snail-game.png";
@@ -250,13 +250,29 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   const vineExtend = useRef(0);
   const isFiring = useRef(false);
   
+  // Clone the scene once so we have our own instance
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        // Clone materials so they're not shared
+        if (child.material) {
+          child.material = child.material.clone();
+        }
+      }
+    });
+    return clone;
+  }, [scene]);
+  
   // Compute scale to normalize model size
   const modelScale = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 2.0;
+    const targetSize = 3.5;
     if (maxDim > 0 && maxDim < 10000) {
       return targetSize / maxDim;
     }
@@ -265,10 +281,10 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
 
   // Compute Y offset to place model on ground
   const modelYOffset = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.scale.set(modelScale, modelScale, modelScale);
-    cloned.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(cloned);
+    const testClone = scene.clone();
+    testClone.scale.set(modelScale, modelScale, modelScale);
+    testClone.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(testClone);
     return -box.min.y;
   }, [scene, modelScale]);
   
@@ -314,9 +330,9 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Bulbasaur 3D model - using Clone for proper rendering */}
+      {/* Bulbasaur 3D model */}
       <group scale={[modelScale, modelScale, modelScale]} position={[0, modelYOffset, 0]} rotation={[0, Math.PI, 0]}>
-        <Clone object={scene} castShadow receiveShadow />
+        <primitive object={clonedScene} />
       </group>
       
       {/* Vine whip - extends forward from front of body */}
