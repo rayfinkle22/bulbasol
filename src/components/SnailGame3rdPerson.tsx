@@ -250,7 +250,6 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   
   const model = useMemo(() => {
     const cloned = collada.scene.clone();
-    // Flip textures for correct UV mapping
     [bodyTexture, bodyBTexture, eyeTexture].forEach(tex => {
       tex.flipY = false;
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -295,7 +294,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
-      <primitive object={model} scale={[0.005, 0.005, 0.005]} position={[0, 0.1, 0]} rotation={[0, Math.PI, 0]} />
+      <primitive object={model} scale={[0.00000008, 0.00000008, 0.00000008]} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
       
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
