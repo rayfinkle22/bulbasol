@@ -42,12 +42,12 @@ interface PowerUp {
   type: 'health' | 'doubleDamage' | 'turboSpeed';
 }
 
-type SpecialWeapon = 'flamethrower' | 'rocketLauncher' | 'shotgun' | 'laserBeam' | null;
+type SpecialWeapon = 'waterJet' | 'rocketLauncher' | 'shotgun' | 'laserBeam' | null;
 
 interface WeaponPickup {
   id: number;
   position: [number, number, number];
-  type: 'flamethrower' | 'rocketLauncher' | 'shotgun' | 'laserBeam';
+  type: 'waterJet' | 'rocketLauncher' | 'shotgun' | 'laserBeam';
 }
 
 interface GameState {
@@ -339,14 +339,9 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   
   // Vine whip extension amount
   const ext = vineExtend.current;
-  const vineLength = 0.3 + ext * 0.8; // short when retracted, long when firing
-  const vineColor = specialWeapon === 'flamethrower' ? '#aa4400' : 
-                    specialWeapon === 'laserBeam' ? '#00aaff' :
-                    '#3a7a2a'; // default green vine
-  const vineTipColor = specialWeapon === 'flamethrower' ? '#ff4400' :
-                       specialWeapon === 'rocketLauncher' ? '#aa2200' :
-                       specialWeapon === 'laserBeam' ? '#00ffff' :
-                       '#5aaa3a';
+  const vineLength = 0.15 + ext * 1.2; // short when retracted, long when firing
+  const vineColor = '#3a7a2a'; // always green vine
+  const vineTipColor = '#5aaa3a';
   
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
@@ -384,35 +379,54 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
         </group>
       )}
       
-      {/* Vine whip tentacles - two vines extending forward from the bulb */}
+      {/* Vine whip tentacles - forward-facing from sides of body, low */}
       {/* Left vine */}
-      <group position={[-0.15, 0.45, 0.2]}>
-        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.3, 0, -0.15]}>
-          <capsuleGeometry args={[0.035, vineLength, 6, 8]} />
+      <group position={[-0.18, 0.2, 0.3]}>
+        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.2, 0, -0.1]}>
+          <capsuleGeometry args={[0.03, vineLength, 6, 8]} />
           <meshStandardMaterial color={vineColor} roughness={0.7} />
         </mesh>
         {/* Vine tip */}
-        <mesh position={[0, ext * 0.1, vineLength + 0.05]} rotation={[0.2, 0, 0]}>
-          <sphereGeometry args={[0.05 + ext * 0.02, 6, 6]} />
-          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.5} />
+        <mesh position={[0, 0, vineLength + 0.05]}>
+          <sphereGeometry args={[0.04 + ext * 0.02, 6, 6]} />
+          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
         </mesh>
       </group>
       {/* Right vine */}
-      <group position={[0.15, 0.45, 0.2]}>
-        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.3, 0, 0.15]}>
-          <capsuleGeometry args={[0.035, vineLength, 6, 8]} />
+      <group position={[0.18, 0.2, 0.3]}>
+        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.2, 0, 0.1]}>
+          <capsuleGeometry args={[0.03, vineLength, 6, 8]} />
           <meshStandardMaterial color={vineColor} roughness={0.7} />
         </mesh>
         {/* Vine tip */}
-        <mesh position={[0, ext * 0.1, vineLength + 0.05]} rotation={[0.2, 0, 0]}>
-          <sphereGeometry args={[0.05 + ext * 0.02, 6, 6]} />
-          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.5} />
+        <mesh position={[0, 0, vineLength + 0.05]}>
+          <sphereGeometry args={[0.04 + ext * 0.02, 6, 6]} />
+          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
         </mesh>
       </group>
       
-      {/* Firing glow when vines extended */}
-      {ext > 0.3 && (
-        <pointLight position={[0, 0.5, vineLength + 0.3]} color={vineTipColor} intensity={ext * 1.5} distance={3} />
+      {/* Vine whip hit glow when extended */}
+      {ext > 0.5 && (
+        <pointLight position={[0, 0.2, vineLength + 0.5]} color={vineTipColor} intensity={ext * 2} distance={2.5} />
+      )}
+      
+      {/* Water jet from mouth when water weapon active */}
+      {specialWeapon === 'waterJet' && ext > 0.3 && (
+        <group position={[0, 0.35, 0.45]}>
+          {/* Water stream */}
+          <mesh position={[0, 0, ext * 0.8]} rotation={[Math.PI / 2, 0, 0]}>
+            <capsuleGeometry args={[0.06 * ext, ext * 1.5, 6, 8]} />
+            <meshStandardMaterial color="#3399ff" transparent opacity={0.6} />
+          </mesh>
+          {/* Water droplets */}
+          {[...Array(3)].map((_, i) => (
+            <mesh key={i} position={[(Math.random() - 0.5) * 0.2, (Math.random() - 0.5) * 0.1, 0.3 + i * ext * 0.5]}>
+              <sphereGeometry args={[0.03, 4, 4]} />
+              <meshBasicMaterial color="#66bbff" transparent opacity={0.7} />
+            </mesh>
+          ))}
+          <pointLight color="#3399ff" intensity={ext * 1.5} distance={3} />
+        </group>
       )}
       
       {/* Turbo lightning trail - simplified on mobile */}
@@ -732,18 +746,18 @@ function Bug({ bug }: { bug: Bug }) {
   );
 }
 
-// Bullet component - with weapon type variations (optimized - no point lights on bullets)
+// Bullet component - only for special weapons (waterJet, rockets, shotgun, laser)
 function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } }) {
-  if (bullet.weaponType === 'flamethrower') {
+  if (bullet.weaponType === 'waterJet') {
     return (
       <group position={bullet.position}>
         <mesh>
-          <sphereGeometry args={[0.35, 6, 6]} />
-          <meshBasicMaterial color="#ff4400" transparent opacity={0.7} />
+          <sphereGeometry args={[0.2, 6, 6]} />
+          <meshBasicMaterial color="#3399ff" transparent opacity={0.7} />
         </mesh>
         <mesh>
-          <sphereGeometry args={[0.2, 6, 6]} />
-          <meshBasicMaterial color="#ffaa00" />
+          <sphereGeometry args={[0.12, 6, 6]} />
+          <meshBasicMaterial color="#66ccff" />
         </mesh>
       </group>
     );
@@ -752,24 +766,17 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
   if (bullet.weaponType === 'rocketLauncher') {
     return (
       <group position={bullet.position}>
-        {/* Rocket body */}
         <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
           <capsuleGeometry args={[0.15, 0.6, 4, 8]} />
           <meshStandardMaterial color="#3a3a3a" metalness={0.8} />
         </mesh>
-        {/* Rocket nose cone */}
         <mesh position={[bullet.velocity[0] * 0.5, 0, bullet.velocity[1] * 0.5]} rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
           <coneGeometry args={[0.15, 0.3, 8]} />
           <meshStandardMaterial color="#aa2200" metalness={0.6} />
         </mesh>
-        {/* Rocket trail/flame */}
         <mesh position={[-bullet.velocity[0] * 0.4, 0, -bullet.velocity[1] * 0.4]}>
           <sphereGeometry args={[0.2, 8, 8]} />
           <meshBasicMaterial color="#ff4400" transparent opacity={0.8} />
-        </mesh>
-        <mesh position={[-bullet.velocity[0] * 0.6, 0, -bullet.velocity[1] * 0.6]}>
-          <sphereGeometry args={[0.15, 8, 8]} />
-          <meshBasicMaterial color="#ffaa00" transparent opacity={0.6} />
         </mesh>
       </group>
     );
@@ -778,7 +785,7 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
   if (bullet.weaponType === 'shotgun') {
     return (
       <group position={bullet.position}>
-        <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
+        <mesh>
           <sphereGeometry args={[0.08, 6, 6]} />
           <meshBasicMaterial color="#888888" />
         </mesh>
@@ -789,12 +796,10 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
   if (bullet.weaponType === 'laserBeam') {
     return (
       <group position={bullet.position}>
-        {/* Laser core */}
         <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
           <capsuleGeometry args={[0.05, 0.8, 4, 8]} />
           <meshBasicMaterial color="#00ffff" />
         </mesh>
-        {/* Laser glow */}
         <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
           <capsuleGeometry args={[0.12, 0.6, 4, 8]} />
           <meshBasicMaterial color="#00aaff" transparent opacity={0.4} />
@@ -803,18 +808,8 @@ function Bullet({ bullet }: { bullet: Bullet & { weaponType?: SpecialWeapon } })
     );
   }
   
-  return (
-    <group position={bullet.position}>
-      <mesh rotation={[Math.PI / 2, 0, Math.atan2(bullet.velocity[1], bullet.velocity[0])]}>
-        <capsuleGeometry args={[0.15, 0.4, 4, 8]} />
-        <meshBasicMaterial color="#ff0000" />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[0.2, 6, 6]} />
-        <meshBasicMaterial color="#ff3300" />
-      </mesh>
-    </group>
-  );
+  // Default - should not appear since default attack is vine whip (no bullets)
+  return null;
 }
 
 // Explosion effect component - optimized for mobile
@@ -943,20 +938,21 @@ function WeaponPickupMesh({ pickup }: { pickup: WeaponPickup }) {
   
   return (
     <group ref={meshRef} position={[pickup.position[0], pickup.position[1], pickup.position[2]]}>
-      {pickup.type === 'flamethrower' && (
+      {pickup.type === 'waterJet' && (
         <>
-          <mesh rotation={[0, 0, Math.PI / 4]}>
-            <cylinderGeometry args={[0.15, 0.2, 0.8, 8]} />
-            <meshStandardMaterial color="#8a4a2a" metalness={0.6} />
+          {/* Water droplet shape */}
+          <mesh rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.25, 0.5, 8]} />
+            <meshStandardMaterial color="#3399ff" metalness={0.3} transparent opacity={0.8} />
           </mesh>
-          <mesh position={[0.2, 0.2, 0]}>
-            <sphereGeometry args={[0.15, 8, 8]} />
-            <meshStandardMaterial color="#aa4400" metalness={0.5} />
+          <mesh position={[0, -0.15, 0]}>
+            <sphereGeometry args={[0.25, 8, 8]} />
+            <meshStandardMaterial color="#66bbff" metalness={0.3} transparent opacity={0.8} />
           </mesh>
-          <pointLight color="#ff4400" intensity={1} distance={4} />
+          <pointLight color="#3399ff" intensity={1} distance={4} />
           <mesh position={[0, 0, 0.5]}>
             <sphereGeometry args={[0.4, 16, 16]} />
-            <meshBasicMaterial color="#ff4400" transparent opacity={0.2} />
+            <meshBasicMaterial color="#3399ff" transparent opacity={0.2} />
           </mesh>
         </>
       )}
@@ -1542,9 +1538,9 @@ function GameScene({
     const currentWeapon = prev => prev.specialWeaponUntil > now ? prev.specialWeapon : null;
     
     // Determine fire rate based on weapon
-    let fireRate = 80; // default machine gun
-    if (gameState.specialWeapon === 'flamethrower' && gameState.specialWeaponUntil > now) {
-      fireRate = 50; // faster for flamethrower
+    let fireRate = 300; // default vine whip attack speed
+    if (gameState.specialWeapon === 'waterJet' && gameState.specialWeaponUntil > now) {
+      fireRate = 50; // fast water jet
     } else if (gameState.specialWeapon === 'rocketLauncher' && gameState.specialWeaponUntil > now) {
       fireRate = 500; // slower for rockets
     } else if (gameState.specialWeapon === 'shotgun' && gameState.specialWeaponUntil > now) {
@@ -1559,24 +1555,27 @@ function GameScene({
       const activeWeapon = gameState.specialWeaponUntil > now ? gameState.specialWeapon : null;
       
       // Calculate vine tip position in world space (forward from bulbasaur)
-      const vineForwardOffset = 1.2; // vine extends forward
+      const vineForwardOffset = 1.5; // vine reach
       const gunTipX = gameState.snailPosition[0] + vineForwardOffset * Math.sin(angle);
       const gunTipZ = gameState.snailPosition[1] + vineForwardOffset * Math.cos(angle);
-      const gunTipY = 0.45 + gameState.snailHeight;
+      const gunTipY = 0.2 + gameState.snailHeight;
       
-      if (activeWeapon === 'flamethrower') {
-        sounds.playFlamethrower();
-        // Flamethrower shoots multiple short-range flames
-        const spread = (Math.random() - 0.5) * 0.4;
+      if (activeWeapon === 'waterJet') {
+        sounds.playShoot();
+        // Water jet from mouth - shoots water projectiles
+        const mouthX = gameState.snailPosition[0] + 0.5 * Math.sin(angle);
+        const mouthZ = gameState.snailPosition[1] + 0.5 * Math.cos(angle);
+        const mouthY = 0.35 + gameState.snailHeight;
+        const spread = (Math.random() - 0.5) * 0.3;
         const velocity: [number, number] = [
-          Math.sin(angle + spread) * 0.4,
-          Math.cos(angle + spread) * 0.4
+          Math.sin(angle + spread) * 0.5,
+          Math.cos(angle + spread) * 0.5
         ];
         const newBullet = {
           id: Date.now() + Math.random(),
-          position: [gunTipX, gunTipY, gunTipZ] as [number, number, number],
+          position: [mouthX, mouthY, mouthZ] as [number, number, number],
           velocity,
-          weaponType: 'flamethrower' as SpecialWeapon
+          weaponType: 'waterJet' as SpecialWeapon
         };
         setGameState(prev => ({
           ...prev,
@@ -1584,7 +1583,6 @@ function GameScene({
         }));
       } else if (activeWeapon === 'rocketLauncher') {
         sounds.playRocket();
-        // Rocket launcher shoots a single powerful rocket
         const velocity: [number, number] = [
           Math.sin(angle) * 0.5,
           Math.cos(angle) * 0.5
@@ -1601,7 +1599,6 @@ function GameScene({
         }));
       } else if (activeWeapon === 'shotgun') {
         sounds.playShoot();
-        // Shotgun shoots multiple pellets in a spread
         const newBullets: Bullet[] = [];
         for (let i = 0; i < 8; i++) {
           const spread = (i - 3.5) * 0.12;
@@ -1622,7 +1619,6 @@ function GameScene({
         }));
       } else if (activeWeapon === 'laserBeam') {
         sounds.playShoot();
-        // Laser beam - fast, accurate, long range
         const velocity: [number, number] = [
           Math.sin(angle) * 1.5,
           Math.cos(angle) * 1.5
@@ -1639,21 +1635,44 @@ function GameScene({
         }));
       } else {
         sounds.playShoot();
-        // Default machine gun
-        const spread = (Math.random() - 0.5) * 0.15;
-        const velocity: [number, number] = [
-          Math.sin(angle + spread) * 0.8,
-          Math.cos(angle + spread) * 0.8
-        ];
-        const newBullet: Bullet = {
-          id: Date.now() + Math.random(),
-          position: [gunTipX, gunTipY, gunTipZ],
-          velocity
-        };
-        setGameState(prev => ({
-          ...prev,
-          bullets: [...prev.bullets, newBullet]
-        }));
+        // Default: VINE WHIP melee attack - no bullets, damage bugs in front arc
+        const vineReach = 2.0;
+        const vineArc = Math.PI / 3; // 60 degree arc
+        const isDoubleDamage = performance.now() < gameState.doubleDamageUntil;
+        const dmgMult = isDoubleDamage ? 2 : 1;
+        
+        setGameState(prev => {
+          let newScore = prev.score;
+          let newBugsKilled = prev.bugsKilled;
+          const updatedBugs = prev.bugs.filter(bug => {
+            const dx = bug.position[0] - prev.snailPosition[0];
+            const dz = bug.position[2] - prev.snailPosition[1];
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            
+            if (dist > vineReach) return true;
+            
+            // Check if bug is within vine arc (in front of character)
+            const angleToBug = Math.atan2(dx, dz);
+            let angleDiff = angleToBug - prev.snailRotation;
+            // Normalize angle diff
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            
+            if (Math.abs(angleDiff) < vineArc) {
+              newScore += 10 * dmgMult;
+              newBugsKilled += 1;
+              return false; // bug killed
+            }
+            return true;
+          });
+          
+          return {
+            ...prev,
+            bugs: updatedBugs,
+            score: newScore,
+            bugsKilled: newBugsKilled
+          };
+        });
       }
     }
 
@@ -1710,7 +1729,7 @@ function GameScene({
     if (now - lastWeaponSpawn.current > 15000 + Math.random() * 10000) {
       lastWeaponSpawn.current = now;
       const rand = Math.random();
-      const weaponType: WeaponPickup['type'] = rand < 0.25 ? 'flamethrower' : rand < 0.5 ? 'rocketLauncher' : rand < 0.75 ? 'shotgun' : 'laserBeam';
+      const weaponType: WeaponPickup['type'] = rand < 0.25 ? 'waterJet' : rand < 0.5 ? 'rocketLauncher' : rand < 0.75 ? 'shotgun' : 'laserBeam';
       const newWeapon: WeaponPickup = {
         id: Date.now() + Math.random(),
         position: [
@@ -1956,7 +1975,7 @@ function GameScene({
                 }
               }
             } else {
-              // Normal bullet or flamethrower - single target
+              // Normal bullet (waterJet, shotgun, laser) - single target
               bugsToRemove.add(bug.id);
               newScore += 10 * damageMultiplier;
               newBugsKilled += 1;
@@ -2325,7 +2344,7 @@ export const SnailGame3rdPerson = () => {
             <span className="font-semibold text-primary">SHIFT</span> to jump
           </p>
           <p className="font-body text-sm text-muted-foreground/80">
-            Pick up 🔥 Flamethrower or 🚀 Rocket Launcher for special weapons (30 sec)!
+            Pick up 💧 Water Jet or 🚀 Rocket Launcher for special weapons (30 sec)!
           </p>
         </div>
         <p className="sm:hidden font-body text-[10px] text-center text-muted-foreground mb-1">
@@ -2427,10 +2446,15 @@ export const SnailGame3rdPerson = () => {
                 {/* Weapon indicator on mobile */}
                 {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
                   <div className={`mt-1 px-2 py-0.5 rounded text-center text-xs ${
-                    gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
+                    gameState.specialWeapon === 'waterJet' ? 'bg-blue-600/80' : 
+                    gameState.specialWeapon === 'rocketLauncher' ? 'bg-green-600/80' :
+                    gameState.specialWeapon === 'shotgun' ? 'bg-yellow-600/80' :
+                    'bg-cyan-600/80'
                   }`}>
                     <span className="text-white font-display">
-                      {gameState.specialWeapon === 'flamethrower' ? '🔥' : '🚀'}
+                      {gameState.specialWeapon === 'waterJet' ? '💧' : 
+                       gameState.specialWeapon === 'rocketLauncher' ? '🚀' :
+                       gameState.specialWeapon === 'shotgun' ? '🔫' : '⚡'}
                       {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
                     </span>
                   </div>
@@ -2487,10 +2511,15 @@ export const SnailGame3rdPerson = () => {
                     )}
                     {gameState.specialWeaponUntil > performance.now() && gameState.specialWeapon && (
                       <div className={`px-2 py-1 rounded-lg pointer-events-none ${
-                        gameState.specialWeapon === 'flamethrower' ? 'bg-orange-600/80' : 'bg-green-600/80'
+                        gameState.specialWeapon === 'waterJet' ? 'bg-blue-600/80' : 
+                        gameState.specialWeapon === 'rocketLauncher' ? 'bg-green-600/80' :
+                        gameState.specialWeapon === 'shotgun' ? 'bg-yellow-600/80' :
+                        'bg-cyan-600/80'
                       }`}>
                         <span className="text-white font-display text-xs">
-                          {gameState.specialWeapon === 'flamethrower' ? '🔥 FLAMETHROWER' : '🚀 ROCKET'}
+                          {gameState.specialWeapon === 'waterJet' ? '💧 WATER JET' : 
+                           gameState.specialWeapon === 'rocketLauncher' ? '🚀 ROCKET' :
+                           gameState.specialWeapon === 'shotgun' ? '🔫 SHOTGUN' : '⚡ LASER'}
                           {' '}({Math.ceil((gameState.specialWeaponUntil - performance.now()) / 1000)}s)
                         </span>
                       </div>
