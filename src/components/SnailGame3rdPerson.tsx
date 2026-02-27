@@ -295,7 +295,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
-      <primitive object={model} scale={[0.02, 0.02, 0.02]} position={[0, 0.1, 0]} rotation={[0, Math.PI, 0]} />
+      <primitive object={model} scale={[0.005, 0.005, 0.005]} position={[0, 0.1, 0]} rotation={[0, Math.PI, 0]} />
       
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
