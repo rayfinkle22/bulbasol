@@ -256,7 +256,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 1.0;
+    const targetSize = 2.0;
     if (maxDim > 0 && maxDim < 10000) {
       return targetSize / maxDim;
     }
@@ -308,7 +308,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   }, []);
   
   const ext = vineExtend.current;
-  const vineLength = 0.15 + ext * 1.2;
+  const vineLength = 0.3 + ext * 2.0;
   const vineColor = '#3a7a2a';
   const vineTipColor = '#5aaa3a';
   
@@ -319,28 +319,26 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
         <Clone object={scene} castShadow receiveShadow />
       </group>
       
-      {/* Vine whip tentacles - forward-facing from sides of body, low */}
+      {/* Vine whip - extends forward from front of body */}
       {/* Left vine */}
-      <group position={[-0.18, 0.2, 0.3]}>
-        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.2, 0, -0.1]}>
-          <capsuleGeometry args={[0.03, vineLength, 6, 8]} />
+      <group position={[-0.25, 0.4, 0.6]}>
+        <mesh rotation={[Math.PI / 2, 0, -0.15]} position={[0, vineLength * 0.5, 0]}>
+          <capsuleGeometry args={[0.05, vineLength, 6, 8]} />
           <meshStandardMaterial color={vineColor} roughness={0.7} />
         </mesh>
-        {/* Vine tip */}
-        <mesh position={[0, 0, vineLength + 0.05]}>
-          <sphereGeometry args={[0.04 + ext * 0.02, 6, 6]} />
+        <mesh position={[0, vineLength + 0.1, 0]}>
+          <sphereGeometry args={[0.06 + ext * 0.03, 6, 6]} />
           <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
         </mesh>
       </group>
       {/* Right vine */}
-      <group position={[0.18, 0.2, 0.3]}>
-        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.2, 0, 0.1]}>
-          <capsuleGeometry args={[0.03, vineLength, 6, 8]} />
+      <group position={[0.25, 0.4, 0.6]}>
+        <mesh rotation={[Math.PI / 2, 0, 0.15]} position={[0, vineLength * 0.5, 0]}>
+          <capsuleGeometry args={[0.05, vineLength, 6, 8]} />
           <meshStandardMaterial color={vineColor} roughness={0.7} />
         </mesh>
-        {/* Vine tip */}
-        <mesh position={[0, 0, vineLength + 0.05]}>
-          <sphereGeometry args={[0.04 + ext * 0.02, 6, 6]} />
+        <mesh position={[0, vineLength + 0.1, 0]}>
+          <sphereGeometry args={[0.06 + ext * 0.03, 6, 6]} />
           <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
         </mesh>
       </group>
