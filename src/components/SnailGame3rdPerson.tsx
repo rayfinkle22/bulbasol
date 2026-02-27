@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { PerspectiveCamera, Environment, Billboard } from "@react-three/drei";
+import { PerspectiveCamera, Environment, Billboard, useGLTF } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
-import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import snailTexture from "@/assets/snail-game.png";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -243,32 +242,12 @@ const BUG_CONFIGS = {
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const collada = useLoader(ColladaLoader, '/models/Bulbasaur.DAE');
-  const bodyTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_BodyA1.png');
-  const bodyBTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_BodyB1.png');
-  const eyeTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_Eye1.png');
+  const { scene } = useGLTF('/models/bulbasaur.glb');
   
   const model = useMemo(() => {
-    const cloned = collada.scene.clone();
-    [bodyTexture, bodyBTexture, eyeTexture].forEach(tex => {
-      tex.flipY = false;
-      tex.colorSpace = THREE.SRGBColorSpace;
-    });
-    
-    cloned.traverse((child: any) => {
-      if (child.isMesh) {
-        const name = (child.name || '').toLowerCase();
-        if (name.includes('bodyb') || name.includes('bulb') || name.includes('vine')) {
-          child.material = new THREE.MeshStandardMaterial({ map: bodyBTexture });
-        } else if (name.includes('eye') || name.includes('iris')) {
-          child.material = new THREE.MeshStandardMaterial({ map: eyeTexture });
-        } else {
-          child.material = new THREE.MeshStandardMaterial({ map: bodyTexture });
-        }
-      }
-    });
+    const cloned = scene.clone();
     return cloned;
-  }, [collada, bodyTexture, bodyBTexture, eyeTexture]);
+  }, [scene]);
 
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
@@ -294,7 +273,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
-      <primitive object={model} scale={[0.00000008, 0.00000008, 0.00000008]} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
+      <primitive object={model} scale={[0.5, 0.5, 0.5]} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
       
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
