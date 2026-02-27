@@ -25,48 +25,49 @@ export function RealisticLighting() {
 
   return (
     <>
-      {/* Main sun - warm afternoon light */}
+      {/* Main sun — bright Pokemon-style noon light */}
       <directionalLight
         ref={sunRef}
         position={[20, 40, 15]}
-        intensity={2.2}
-        color="#fff5e0"
+        intensity={2.8}
+        color="#ffffff"
         castShadow={!isMobile}
       />
-      
-      {/* Ambient fill */}
-      <ambientLight intensity={0.5} color="#8ab4d8" />
-      
-      {/* Hemisphere light */}
+
+      {/* Ambient fill — bright so terrain colors pop like Pokemon games */}
+      <ambientLight intensity={0.75} color="#d4eeff" />
+
+      {/* Hemisphere — bright blue sky / bright green ground bounce */}
       <hemisphereLight
-        args={['#87ceeb', '#4a6a3a', 0.7]}
+        args={['#87d4ff', '#72c84a', 0.9]}
         position={[0, 50, 0]}
       />
-      
-      {/* Secondary lights - skip on mobile */}
+
+      {/* Secondary fill lights - skip on mobile */}
       {!isMobile && (
         <>
           <directionalLight
             position={[-25, 30, -20]}
-            intensity={0.4}
-            color="#ffd8a0"
+            intensity={0.5}
+            color="#ffe8a0"
           />
           <directionalLight
             position={[-10, 25, 20]}
-            intensity={0.35}
-            color="#c0d8ff"
+            intensity={0.4}
+            color="#c8e8ff"
           />
+          {/* Ground-level light to brighten grass */}
           <pointLight
-            position={[0, 0.5, 0]}
-            intensity={0.25}
-            color="#6a9a4a"
-            distance={25}
+            position={[0, 1.0, 0]}
+            intensity={0.5}
+            color="#88dd55"
+            distance={30}
           />
         </>
       )}
-      
-      {/* Fog - less dense on mobile */}
-      <fog attach="fog" args={['#9ab8a0', isMobile ? 35 : 25, isMobile ? 80 : 70]} />
+
+      {/* Fog — lighter, more cheerful Pokemon-route color */}
+      <fog attach="fog" args={['#b8e8c0', isMobile ? 40 : 30, isMobile ? 90 : 80]} />
     </>
   );
 }
@@ -84,8 +85,8 @@ export function ForestSkybox() {
       {/* Sky dome */}
       <mesh position={[0, 0, 0]} scale={[-1, 1, 1]}>
         <sphereGeometry args={[90, isMobile ? 16 : 64, isMobile ? 16 : 64]} />
-        <meshBasicMaterial 
-          color="#4a90d9" 
+        <meshBasicMaterial
+          color="#5ab8ff"
           side={THREE.BackSide}
         />
       </mesh>

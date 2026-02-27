@@ -327,35 +327,46 @@ export function ProceduralTerrain({ isMobile = false }: { isMobile?: boolean }) 
 
   return (
     <>
-      {/* Base terrain - rich earth tones */}
+      {/* Base terrain — deep forest border, Pokemon style */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#3a4a2a" />
+        <meshStandardMaterial color="#3d6e2a" />
       </mesh>
-      
-      {/* Outer forest floor - darker */}
+
+      {/* Outer grass ring — medium bright green */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-        <ringGeometry args={[15, 40, 24]} />
-        <meshStandardMaterial color="#2a3a1a" />
+        <ringGeometry args={[15, 40, 28]} />
+        <meshStandardMaterial color="#52913a" />
       </mesh>
-      
-      {/* Main play area - lush grass */}
+
+      {/* Main battle arena — vibrant Pokemon-style bright grass */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.0, 0]} receiveShadow>
+        <circleGeometry args={[16, 28]} />
+        <meshStandardMaterial color="#72c84a" />
+      </mesh>
+
+      {/* Center clearing — lighter lime green, clearly lit */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+        <circleGeometry args={[8, 24]} />
+        <meshStandardMaterial color="#88d458" />
+      </mesh>
+
+      {/* Spawn point — soft sandy earth, classic Pokemon route feel */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-        <circleGeometry args={[16, 24]} />
-        <meshStandardMaterial color="#4a7a3a" />
+        <circleGeometry args={[3, 14]} />
+        <meshStandardMaterial color="#c8a87a" />
       </mesh>
-      
-      {/* Center clearing - lighter grass with gradient */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow>
-        <circleGeometry args={[8, 20]} />
-        <meshStandardMaterial color="#5a8a4a" />
-      </mesh>
-      
-      {/* Spawn point - soft earth */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]} receiveShadow>
-        <circleGeometry args={[3, 12]} />
-        <meshStandardMaterial color="#7a6a55" />
-      </mesh>
+
+      {/* Tall grass patches — iconic Pokemon dark green spots around arena */}
+      {[
+        [7, 0, 9], [-8, 0, 7], [10, 0, -5], [-6, 0, -10], [4, 0, -8],
+        [-11, 0, 2], [12, 0, 4], [-4, 0, 12], [9, 0, -11], [-13, 0, -6]
+      ].map(([x, y, z], i) => (
+        <mesh key={`tg-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[x, y + 0.01, z]}>
+          <circleGeometry args={[1.2 + (i % 3) * 0.3, 8]} />
+          <meshStandardMaterial color="#4a9c38" />
+        </mesh>
+      ))}
       
       {/* Dirt path */}
       <DirtPath points={elements.pathPoints} />

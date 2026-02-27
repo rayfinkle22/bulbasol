@@ -243,89 +243,92 @@ const BUG_CONFIGS = {
 // 3D Bulbasaur with vine whip weapon
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
   const { scene } = useGLTF('/models/bulbasaur-web.glb');
-  
+
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
   const lightningPhase = useRef(0);
   const vineExtend = useRef(0);
   const isFiring = useRef(false);
-  
-  // Clone the scene once so we have our own instance
+
+  // Vine animation refs — all controlled imperatively in useFrame for silky animation
+  const leftVineArmRef = useRef<THREE.Group>(null);
+  const rightVineArmRef = useRef<THREE.Group>(null);
+  const leftVineRodRef = useRef<THREE.Mesh>(null);
+  const rightVineRodRef = useRef<THREE.Mesh>(null);
+  const leftVineTipRef = useRef<THREE.Mesh>(null);
+  const rightVineTipRef = useRef<THREE.Mesh>(null);
+  const leftTipLightRef = useRef<THREE.PointLight>(null);
+  const rightTipLightRef = useRef<THREE.PointLight>(null);
+
+  // Clone scene once for our own instance
   const clonedScene = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((child: any) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        // Don't clone materials - cloning strips texture references
       }
     });
     return clone;
   }, [scene]);
-  
-  // Compute scale to normalize model size
-  const modelScale = useMemo(() => {
+
+  // Scale + Y-offset computed in one pass
+  const { modelScale, modelYOffset } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
     const targetSize = 2.0;
-    if (maxDim > 0 && maxDim < 10000) {
-      return targetSize / maxDim;
-    }
-    return 1;
+    const scale = (maxDim > 0 && maxDim < 10000) ? targetSize / maxDim : 1;
+    const testClone = scene.clone();
+    testClone.scale.set(scale, scale, scale);
+    testClone.updateMatrixWorld(true);
+    const scaledBox = new THREE.Box3().setFromObject(testClone);
+    return { modelScale: scale, modelYOffset: -scaledBox.min.y };
   }, [scene]);
 
-  // Compute Y offset to place model on ground
-  const modelYOffset = useMemo(() => {
-    const testClone = scene.clone();
-    testClone.scale.set(modelScale, modelScale, modelScale);
-    testClone.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(testClone);
-    return -box.min.y;
-  }, [scene, modelScale]);
-
-  // Imperatively add model to group so it always follows movement
-  const modelWrapperRef = useRef<THREE.Group | null>(null);
-  useEffect(() => {
-    if (groupRef.current && clonedScene) {
-      // Remove old wrapper if exists
-      if (modelWrapperRef.current && groupRef.current.children.includes(modelWrapperRef.current)) {
-        groupRef.current.remove(modelWrapperRef.current);
-      }
-      const wrapper = new THREE.Group();
-      wrapper.scale.set(modelScale, modelScale, modelScale);
-      wrapper.position.set(0, modelYOffset, 0);
-      wrapper.rotation.set(0, Math.PI, 0);
-      wrapper.add(clonedScene);
-      groupRef.current.add(wrapper);
-      modelWrapperRef.current = wrapper;
-      return () => {
-        if (groupRef.current) {
-          groupRef.current.remove(wrapper);
-        }
-      };
-    }
-  }, [clonedScene, modelScale, modelYOffset]);
-  
   useFrame((_, delta) => {
-    if (groupRef.current) {
-      const lerpSpeed = 12;
-      currentPos.current.x = THREE.MathUtils.lerp(currentPos.current.x, position[0], delta * lerpSpeed);
-      currentPos.current.y = THREE.MathUtils.lerp(currentPos.current.y, height, delta * lerpSpeed);
-      currentPos.current.z = THREE.MathUtils.lerp(currentPos.current.z, position[1], delta * lerpSpeed);
-      currentPos.current.rot = THREE.MathUtils.lerp(currentPos.current.rot, rotation, delta * lerpSpeed);
-      
-      groupRef.current.position.x = currentPos.current.x;
-      groupRef.current.position.y = currentPos.current.y;
-      groupRef.current.position.z = currentPos.current.z;
-      groupRef.current.rotation.y = currentPos.current.rot;
-      
-      lightningPhase.current += delta * 20;
-      
-      const targetExtend = isFiring.current ? 1 : 0;
-      vineExtend.current = THREE.MathUtils.lerp(vineExtend.current, targetExtend, delta * 15);
+    if (!groupRef.current) return;
+    const lerpSpeed = 12;
+    currentPos.current.x = THREE.MathUtils.lerp(currentPos.current.x, position[0], delta * lerpSpeed);
+    currentPos.current.y = THREE.MathUtils.lerp(currentPos.current.y, height, delta * lerpSpeed);
+    currentPos.current.z = THREE.MathUtils.lerp(currentPos.current.z, position[1], delta * lerpSpeed);
+    currentPos.current.rot = THREE.MathUtils.lerp(currentPos.current.rot, rotation, delta * lerpSpeed);
+
+    groupRef.current.position.x = currentPos.current.x;
+    groupRef.current.position.y = currentPos.current.y;
+    groupRef.current.position.z = currentPos.current.z;
+    groupRef.current.rotation.y = currentPos.current.rot;
+
+    lightningPhase.current += delta * 20;
+
+    // Smooth vine extend/retract
+    const targetExtend = isFiring.current ? 1 : 0;
+    vineExtend.current = THREE.MathUtils.lerp(vineExtend.current, targetExtend, delta * 15);
+    const ext = vineExtend.current;
+
+    // Vine arm rotation around local X axis:
+    //   ext=0 → rot.x ≈ 0.1 (vines retracted, pointing mostly up from bulb)
+    //   ext=1 → rot.x ≈ -1.4 (vines shoot forward-downward like Bulbasaur vine whip)
+    const vineArmXRot = THREE.MathUtils.lerp(0.1, -1.4, ext);
+    // Vine rod extends from 0.4 (stub) to 2.6 units (full whip)
+    const vineRodScaleY = 0.4 + ext * 2.2;
+
+    if (leftVineArmRef.current) leftVineArmRef.current.rotation.x = vineArmXRot;
+    if (rightVineArmRef.current) rightVineArmRef.current.rotation.x = vineArmXRot;
+
+    if (leftVineRodRef.current) {
+      leftVineRodRef.current.scale.y = vineRodScaleY;
+      leftVineRodRef.current.position.y = vineRodScaleY * 0.5;
     }
+    if (rightVineRodRef.current) {
+      rightVineRodRef.current.scale.y = vineRodScaleY;
+      rightVineRodRef.current.position.y = vineRodScaleY * 0.5;
+    }
+    if (leftVineTipRef.current) leftVineTipRef.current.position.y = vineRodScaleY;
+    if (rightVineTipRef.current) rightVineTipRef.current.position.y = vineRodScaleY;
+    if (leftTipLightRef.current) leftTipLightRef.current.intensity = ext > 0.5 ? ext * 2.5 : 0;
+    if (rightTipLightRef.current) rightTipLightRef.current.intensity = ext > 0.5 ? ext * 2.5 : 0;
   });
 
   useEffect(() => {
@@ -342,65 +345,75 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
-  
-  const ext = vineExtend.current;
-  const vineLength = 0.3 + ext * 2.0;
+
   const vineColor = '#3a7a2a';
-  const vineTipColor = '#5aaa3a';
-  
+  const vineTipColor = '#5aff3a';
+
   return (
-    <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Bulbasaur 3D model is added imperatively via useEffect to ensure it follows movement */}
-      
-      {/* Vine whip - extends forward from front of body */}
-      {/* Left vine */}
-      <group position={[-0.25, 0.4, 0.6]}>
-        <mesh rotation={[Math.PI / 2, 0, -0.15]} position={[0, vineLength * 0.5, 0]}>
-          <capsuleGeometry args={[0.05, vineLength, 6, 8]} />
-          <meshStandardMaterial color={vineColor} roughness={0.7} />
-        </mesh>
-        <mesh position={[0, vineLength + 0.1, 0]}>
-          <sphereGeometry args={[0.06 + ext * 0.03, 6, 6]} />
-          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
-        </mesh>
-      </group>
-      {/* Right vine */}
-      <group position={[0.25, 0.4, 0.6]}>
-        <mesh rotation={[Math.PI / 2, 0, 0.15]} position={[0, vineLength * 0.5, 0]}>
-          <capsuleGeometry args={[0.05, vineLength, 6, 8]} />
-          <meshStandardMaterial color={vineColor} roughness={0.7} />
-        </mesh>
-        <mesh position={[0, vineLength + 0.1, 0]}>
-          <sphereGeometry args={[0.06 + ext * 0.03, 6, 6]} />
-          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.8} />
-        </mesh>
-      </group>
-      
-      {/* Vine whip hit glow when extended */}
-      {ext > 0.5 && (
-        <pointLight position={[0, 0.2, vineLength + 0.5]} color={vineTipColor} intensity={ext * 2} distance={2.5} />
-      )}
-      
-      {/* Water jet from mouth when water weapon active */}
-      {specialWeapon === 'waterJet' && ext > 0.3 && (
-        <group position={[0, 0.35, 0.45]}>
-          {/* Water stream */}
-          <mesh position={[0, 0, ext * 0.8]} rotation={[Math.PI / 2, 0, 0]}>
-            <capsuleGeometry args={[0.06 * ext, ext * 1.5, 6, 8]} />
-            <meshStandardMaterial color="#3399ff" transparent opacity={0.6} />
+    // No position/rotation props here — useFrame owns them completely to avoid R3F overwriting lerped values
+    <group ref={groupRef}>
+      {/* ✅ FIX: Use <primitive> so R3F tracks the model as a proper child.
+          The old imperative useEffect approach caused R3F reconciliation to
+          silently remove the model, leaving only the invisible collision group. */}
+      <primitive
+        object={clonedScene}
+        scale={[modelScale, modelScale, modelScale]}
+        position={[0, modelYOffset, 0]}
+        rotation={[0, Math.PI, 0]}
+      />
+
+      {/* LEFT VINE — pivot at bulb position on back, shoots forward on attack */}
+      <group position={[-0.22, 1.0, -0.15]}>
+        {/* rotation.x is driven imperatively by useFrame — do NOT set it in JSX */}
+        <group ref={leftVineArmRef}>
+          {/* Rod: scale.y and position.y updated in useFrame */}
+          <mesh ref={leftVineRodRef}>
+            <cylinderGeometry args={[0.045, 0.025, 1, 6]} />
+            <meshStandardMaterial color={vineColor} roughness={0.6} />
           </mesh>
-          {/* Water droplets */}
-          {[...Array(3)].map((_, i) => (
-            <mesh key={i} position={[(Math.random() - 0.5) * 0.2, (Math.random() - 0.5) * 0.1, 0.3 + i * ext * 0.5]}>
-              <sphereGeometry args={[0.03, 4, 4]} />
-              <meshBasicMaterial color="#66bbff" transparent opacity={0.7} />
+          {/* Glowing tip — position.y updated in useFrame */}
+          <mesh ref={leftVineTipRef}>
+            <sphereGeometry args={[0.08, 7, 7]} />
+            <meshStandardMaterial color={vineTipColor} emissive={vineTipColor} emissiveIntensity={0.5} />
+          </mesh>
+          <pointLight ref={leftTipLightRef} color={vineTipColor} intensity={0} distance={3} />
+        </group>
+      </group>
+
+      {/* RIGHT VINE — mirror */}
+      <group position={[0.22, 1.0, -0.15]}>
+        <group ref={rightVineArmRef}>
+          <mesh ref={rightVineRodRef}>
+            <cylinderGeometry args={[0.045, 0.025, 1, 6]} />
+            <meshStandardMaterial color={vineColor} roughness={0.6} />
+          </mesh>
+          <mesh ref={rightVineTipRef}>
+            <sphereGeometry args={[0.08, 7, 7]} />
+            <meshStandardMaterial color={vineTipColor} emissive={vineTipColor} emissiveIntensity={0.5} />
+          </mesh>
+          <pointLight ref={rightTipLightRef} color={vineTipColor} intensity={0} distance={3} />
+        </group>
+      </group>
+
+      {/* Water jet from mouth when water weapon active */}
+      {specialWeapon === 'waterJet' && (
+        <group position={[0, 0.4, 0.5]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <capsuleGeometry args={[0.06, 0.9, 6, 8]} />
+            <meshStandardMaterial color="#3399ff" transparent opacity={0.65} />
+          </mesh>
+          {/* Fixed-offset droplets — no Math.random() = no GC churn */}
+          {([[-0.07, 0.05, 0.15], [0.07, -0.04, 0.30], [-0.04, 0.06, 0.45], [0.05, -0.05, 0.60]] as [number,number,number][]).map((p, i) => (
+            <mesh key={i} position={p}>
+              <sphereGeometry args={[0.04, 4, 4]} />
+              <meshBasicMaterial color="#66ccff" transparent opacity={0.8} />
             </mesh>
           ))}
-          <pointLight color="#3399ff" intensity={ext * 1.5} distance={3} />
+          <pointLight color="#3399ff" intensity={1.8} distance={3} />
         </group>
       )}
-      
-      {/* Turbo lightning trail - simplified on mobile */}
+
+      {/* Turbo lightning trail — deterministic geometry, no Math.random() per frame */}
       {isTurbo && !isMobile && (
         <>
           {[...Array(6)].map((_, i) => {
@@ -409,20 +422,21 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
             const zOffset = -0.8 - i * 0.3 - Math.abs(Math.sin(phase * 2)) * 0.2;
             return (
               <group key={i} position={[xOffset, 0.4 + Math.sin(phase * 4 + i * 2) * 0.2, zOffset]}>
-                <mesh rotation={[Math.random() * 0.5, 0, Math.sin(phase + i) * 0.5]}>
-                  <boxGeometry args={[0.08, 0.5 + Math.random() * 0.3, 0.02]} />
+                {/* Fixed box sizes per index — R3F reuses geometry instead of recreating each frame */}
+                <mesh rotation={[i * 0.15, 0, Math.sin(phase + i) * 0.5]}>
+                  <boxGeometry args={[0.08, 0.5 + i * 0.04, 0.02]} />
                   <meshBasicMaterial color="#ffff00" transparent opacity={0.9 - i * 0.1} />
                 </mesh>
-                <mesh rotation={[Math.random() * 0.5, 0, Math.cos(phase + i) * 0.5]}>
-                  <boxGeometry args={[0.06, 0.3 + Math.random() * 0.2, 0.02]} />
+                <mesh rotation={[i * 0.12, 0, Math.cos(phase + i) * 0.5]}>
+                  <boxGeometry args={[0.06, 0.3 + i * 0.03, 0.02]} />
                   <meshBasicMaterial color="#00ffff" transparent opacity={0.8 - i * 0.1} />
                 </mesh>
               </group>
             );
           })}
           <mesh position={[0, 0.5, 0]}>
-            <sphereGeometry args={[1.0, 16, 16]} />
-            <meshBasicMaterial color="#ffff00" transparent opacity={0.15 + Math.sin(lightningPhase.current * 5) * 0.05} />
+            <sphereGeometry args={[1.0, 8, 8]} />
+            <meshBasicMaterial color="#ffff00" transparent opacity={0.15} />
           </mesh>
           <pointLight position={[0, 0.5, -0.5]} color="#ffff00" intensity={2} distance={4} />
         </>
@@ -433,7 +447,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
           <meshBasicMaterial color="#ffff00" transparent opacity={0.2} />
         </mesh>
       )}
-      
+
       {/* Shadow on ground */}
       <mesh position={[0, -height + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
         <circleGeometry args={[0.5, 16]} />
@@ -474,8 +488,9 @@ function Bug({ bug }: { bug: Bug }) {
       legPhaseRef.current += delta * (8 + speed * 15);
       
       // Body bobbing - subtle up/down motion while moving
-      bodyBobRef.current = Math.sin(legPhaseRef.current * 2) * 0.015 * speed;
-      meshRef.current.position.y = 0.35 + bodyBobRef.current;
+      bodyBobRef.current = Math.sin(legPhaseRef.current * 2) * 0.010 * speed;
+      // Lowered from 0.35 to 0.15 so bugs stand ON the terrain instead of floating above it
+      meshRef.current.position.y = 0.15 + bodyBobRef.current;
       
       // Smooth position interpolation
       meshRef.current.position.x = THREE.MathUtils.lerp(
@@ -497,7 +512,7 @@ function Bug({ bug }: { bug: Bug }) {
   const legWiggle = Math.sin(legPhaseRef.current) * 0.4;
   
   return (
-    <group ref={meshRef} position={[bug.position[0], 0.35, bug.position[2]]} scale={[s * 1.5, s * 1.5, s * 1.5]}>
+    <group ref={meshRef} position={[bug.position[0], 0.15, bug.position[2]]} scale={[s * 1.5, s * 1.5, s * 1.5]}>
       {bug.type === 'beetle' && (
         <>
           {/* Body - oval shaped */}
@@ -911,19 +926,35 @@ function WeaponPickupMesh({ pickup }: { pickup: WeaponPickup }) {
     <group ref={meshRef} position={[pickup.position[0], pickup.position[1], pickup.position[2]]}>
       {pickup.type === 'waterJet' && (
         <>
-          {/* Water droplet shape */}
-          <mesh rotation={[0, 0, Math.PI]}>
-            <coneGeometry args={[0.25, 0.5, 8]} />
-            <meshStandardMaterial color="#3399ff" metalness={0.3} transparent opacity={0.8} />
+          {/* Pokemon Water-type symbol: large glowing teardrop */}
+          {/* Main teardrop body */}
+          <mesh position={[0, -0.1, 0]}>
+            <sphereGeometry args={[0.28, 12, 12]} />
+            <meshStandardMaterial color="#1a88ff" metalness={0.2} roughness={0.1} transparent opacity={0.9} emissive="#0044cc" emissiveIntensity={0.3} />
           </mesh>
-          <mesh position={[0, -0.15, 0]}>
-            <sphereGeometry args={[0.25, 8, 8]} />
-            <meshStandardMaterial color="#66bbff" metalness={0.3} transparent opacity={0.8} />
+          {/* Pointed top of teardrop */}
+          <mesh position={[0, 0.22, 0]} rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.18, 0.38, 10]} />
+            <meshStandardMaterial color="#1a88ff" metalness={0.2} roughness={0.1} transparent opacity={0.9} emissive="#0044cc" emissiveIntensity={0.3} />
           </mesh>
-          <pointLight color="#3399ff" intensity={1} distance={4} />
-          <mesh position={[0, 0, 0.5]}>
-            <sphereGeometry args={[0.4, 16, 16]} />
-            <meshBasicMaterial color="#3399ff" transparent opacity={0.2} />
+          {/* Inner highlight — makes it look like a Pokemon water crystal */}
+          <mesh position={[0, -0.05, 0]}>
+            <sphereGeometry args={[0.16, 8, 8]} />
+            <meshBasicMaterial color="#88ccff" transparent opacity={0.6} />
+          </mesh>
+          {/* Orbiting water ripple rings */}
+          {[0, 1, 2].map(i => (
+            <mesh key={i} position={[0, -0.1, 0]} rotation={[Math.PI / 2 + i * (Math.PI / 3), 0, 0]}>
+              <torusGeometry args={[0.45, 0.03, 6, 20]} />
+              <meshBasicMaterial color="#66bbff" transparent opacity={0.55 - i * 0.1} />
+            </mesh>
+          ))}
+          {/* Strong blue glow light */}
+          <pointLight color="#3399ff" intensity={1.8} distance={5} />
+          {/* Outer aura */}
+          <mesh>
+            <sphereGeometry args={[0.52, 12, 12]} />
+            <meshBasicMaterial color="#0066ff" transparent opacity={0.12} />
           </mesh>
         </>
       )}
@@ -1661,7 +1692,7 @@ function GameScene({
           id: Date.now() + Math.random() + i,
           position: [
             gameState.snailPosition[0] + Math.sin(angle) * distance,
-            0.35,
+            0.15,
             gameState.snailPosition[1] + Math.cos(angle) * distance
           ],
           velocity: [0, 0],
