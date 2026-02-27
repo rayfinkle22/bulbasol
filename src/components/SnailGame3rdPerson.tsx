@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { PerspectiveCamera, Environment, Billboard } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import snailTexture from "@/assets/snail-game.png";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -243,13 +243,13 @@ const BUG_CONFIGS = {
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const fbx = useLoader(FBXLoader, '/models/Bulbasaur.FBX');
+  const collada = useLoader(ColladaLoader, '/models/Bulbasaur.DAE');
   const bodyTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_BodyA1.png');
   const bodyBTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_BodyB1.png');
   const eyeTexture = useLoader(THREE.TextureLoader, '/models/pm0001_00_Eye1.png');
   
   const model = useMemo(() => {
-    const cloned = fbx.clone();
+    const cloned = collada.scene.clone();
     // Flip textures for correct UV mapping
     [bodyTexture, bodyBTexture, eyeTexture].forEach(tex => {
       tex.flipY = false;
@@ -269,7 +269,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
       }
     });
     return cloned;
-  }, [fbx, bodyTexture, bodyBTexture, eyeTexture]);
+  }, [collada, bodyTexture, bodyBTexture, eyeTexture]);
 
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
