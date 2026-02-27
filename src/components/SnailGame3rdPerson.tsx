@@ -242,10 +242,29 @@ const BUG_CONFIGS = {
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const { scene } = useGLTF('/models/bulbasaur.glb');
+  const { scene } = useGLTF('/models/bulbasaur-web.glb');
   
   const model = useMemo(() => {
     const cloned = scene.clone();
+    
+    // Auto-normalize scale based on bounding box
+    const box = new THREE.Box3().setFromObject(cloned);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetSize = 1.2;
+    if (maxDim > 0) {
+      const scale = targetSize / maxDim;
+      cloned.scale.multiplyScalar(scale);
+    }
+    
+    // Center the model
+    const centeredBox = new THREE.Box3().setFromObject(cloned);
+    const center = new THREE.Vector3();
+    centeredBox.getCenter(center);
+    cloned.position.sub(center);
+    cloned.position.y += (centeredBox.max.y - centeredBox.min.y) / 2;
+    
     return cloned;
   }, [scene]);
 
@@ -273,7 +292,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
-      <primitive object={model} scale={[0.5, 0.5, 0.5]} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
+      <primitive object={model} scale={1} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
       
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
