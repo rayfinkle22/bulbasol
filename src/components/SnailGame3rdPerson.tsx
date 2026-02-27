@@ -247,18 +247,6 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
   const lightningPhase = useRef(0);
-  const vineExtend = useRef(0);
-  const isFiring = useRef(false);
-
-  // Vine animation refs — all controlled imperatively in useFrame for silky animation
-  const leftVineArmRef = useRef<THREE.Group>(null);
-  const rightVineArmRef = useRef<THREE.Group>(null);
-  const leftVineRodRef = useRef<THREE.Mesh>(null);
-  const rightVineRodRef = useRef<THREE.Mesh>(null);
-  const leftVineTipRef = useRef<THREE.Mesh>(null);
-  const rightVineTipRef = useRef<THREE.Mesh>(null);
-  const leftTipLightRef = useRef<THREE.PointLight>(null);
-  const rightTipLightRef = useRef<THREE.PointLight>(null);
 
   // Clone scene once for our own instance
   const clonedScene = useMemo(() => {
@@ -301,57 +289,10 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     groupRef.current.rotation.y = currentPos.current.rot;
 
     lightningPhase.current += delta * 20;
-
-    // Smooth vine extend/retract
-    const targetExtend = isFiring.current ? 1 : 0;
-    vineExtend.current = THREE.MathUtils.lerp(vineExtend.current, targetExtend, delta * 15);
-    const ext = vineExtend.current;
-
-    // Vine arm rotation around local X axis:
-    //   ext=0 → rot.x ≈ 0.1 (vines retracted, pointing mostly up from bulb)
-    //   ext=1 → rot.x ≈ -1.4 (vines shoot forward-downward like Bulbasaur vine whip)
-    const vineArmXRot = THREE.MathUtils.lerp(0.1, -1.4, ext);
-    // Vine rod extends from 0.4 (stub) to 2.6 units (full whip)
-    const vineRodScaleY = 0.4 + ext * 2.2;
-
-    if (leftVineArmRef.current) leftVineArmRef.current.rotation.x = vineArmXRot;
-    if (rightVineArmRef.current) rightVineArmRef.current.rotation.x = vineArmXRot;
-
-    if (leftVineRodRef.current) {
-      leftVineRodRef.current.scale.y = vineRodScaleY;
-      leftVineRodRef.current.position.y = vineRodScaleY * 0.5;
-    }
-    if (rightVineRodRef.current) {
-      rightVineRodRef.current.scale.y = vineRodScaleY;
-      rightVineRodRef.current.position.y = vineRodScaleY * 0.5;
-    }
-    if (leftVineTipRef.current) leftVineTipRef.current.position.y = vineRodScaleY;
-    if (rightVineTipRef.current) rightVineTipRef.current.position.y = vineRodScaleY;
-    if (leftTipLightRef.current) leftTipLightRef.current.intensity = ext > 0.5 ? ext * 2.5 : 0;
-    if (rightTipLightRef.current) rightTipLightRef.current.intensity = ext > 0.5 ? ext * 2.5 : 0;
   });
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ') isFiring.current = true;
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === ' ') isFiring.current = false;
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
-  const vineColor = '#3a7a2a';
-  const vineTipColor = '#5aff3a';
-
   return (
-    // No position/rotation props here — useFrame owns them completely to avoid R3F overwriting lerped values
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* ✅ FIX: Use <primitive> so R3F tracks the model as a proper child.
           The old imperative useEffect approach caused R3F reconciliation to
           silently remove the model, leaving only the invisible collision group. */}
@@ -361,39 +302,6 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
         position={[0, modelYOffset, 0]}
         rotation={[0, Math.PI, 0]}
       />
-
-      {/* LEFT VINE — pivot at bulb position on back, shoots forward on attack */}
-      <group position={[-0.22, 1.0, -0.15]}>
-        {/* rotation.x is driven imperatively by useFrame — do NOT set it in JSX */}
-        <group ref={leftVineArmRef}>
-          {/* Rod: scale.y and position.y updated in useFrame */}
-          <mesh ref={leftVineRodRef}>
-            <cylinderGeometry args={[0.045, 0.025, 1, 6]} />
-            <meshStandardMaterial color={vineColor} roughness={0.6} />
-          </mesh>
-          {/* Glowing tip — position.y updated in useFrame */}
-          <mesh ref={leftVineTipRef}>
-            <sphereGeometry args={[0.08, 7, 7]} />
-            <meshStandardMaterial color={vineTipColor} emissive={vineTipColor} emissiveIntensity={0.5} />
-          </mesh>
-          <pointLight ref={leftTipLightRef} color={vineTipColor} intensity={0} distance={3} />
-        </group>
-      </group>
-
-      {/* RIGHT VINE — mirror */}
-      <group position={[0.22, 1.0, -0.15]}>
-        <group ref={rightVineArmRef}>
-          <mesh ref={rightVineRodRef}>
-            <cylinderGeometry args={[0.045, 0.025, 1, 6]} />
-            <meshStandardMaterial color={vineColor} roughness={0.6} />
-          </mesh>
-          <mesh ref={rightVineTipRef}>
-            <sphereGeometry args={[0.08, 7, 7]} />
-            <meshStandardMaterial color={vineTipColor} emissive={vineTipColor} emissiveIntensity={0.5} />
-          </mesh>
-          <pointLight ref={rightTipLightRef} color={vineTipColor} intensity={0} distance={3} />
-        </group>
-      </group>
 
       {/* Water jet from mouth when water weapon active */}
       {specialWeapon === 'waterJet' && (
