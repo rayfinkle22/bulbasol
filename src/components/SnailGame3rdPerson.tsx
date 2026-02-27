@@ -257,10 +257,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        // Clone materials so they're not shared
-        if (child.material) {
-          child.material = child.material.clone();
-        }
+        // Don't clone materials - cloning strips texture references
       }
     });
     return clone;
@@ -272,7 +269,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 3.5;
+    const targetSize = 2.0;
     if (maxDim > 0 && maxDim < 10000) {
       return targetSize / maxDim;
     }
@@ -287,6 +284,29 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     const box = new THREE.Box3().setFromObject(testClone);
     return -box.min.y;
   }, [scene, modelScale]);
+
+  // Imperatively add model to group so it always follows movement
+  const modelWrapperRef = useRef<THREE.Group | null>(null);
+  useEffect(() => {
+    if (groupRef.current && clonedScene) {
+      // Remove old wrapper if exists
+      if (modelWrapperRef.current && groupRef.current.children.includes(modelWrapperRef.current)) {
+        groupRef.current.remove(modelWrapperRef.current);
+      }
+      const wrapper = new THREE.Group();
+      wrapper.scale.set(modelScale, modelScale, modelScale);
+      wrapper.position.set(0, modelYOffset, 0);
+      wrapper.rotation.set(0, Math.PI, 0);
+      wrapper.add(clonedScene);
+      groupRef.current.add(wrapper);
+      modelWrapperRef.current = wrapper;
+      return () => {
+        if (groupRef.current) {
+          groupRef.current.remove(wrapper);
+        }
+      };
+    }
+  }, [clonedScene, modelScale, modelYOffset]);
   
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -330,10 +350,7 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Bulbasaur 3D model */}
-      <group scale={[modelScale, modelScale, modelScale]} position={[0, modelYOffset, 0]} rotation={[0, Math.PI, 0]}>
-        <primitive object={clonedScene} />
-      </group>
+      {/* Bulbasaur 3D model is added imperatively via useEffect to ensure it follows movement */}
       
       {/* Vine whip - extends forward from front of body */}
       {/* Left vine */}
@@ -1309,8 +1326,8 @@ function ThirdPersonCamera({ targetPosition, targetRotation }: { targetPosition:
   
   useFrame((_, delta) => {
     // Camera position: directly behind the snail based on its rotation
-    const distance = 4; // Distance behind snail
-    const height = 2.5; // Height above ground
+    const distance = 6; // Distance behind snail
+    const height = 3.5; // Height above ground
     const lookAheadDistance = 3; // How far ahead to look
     
     // Calculate position behind the snail
