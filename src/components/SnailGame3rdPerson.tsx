@@ -240,9 +240,9 @@ const BUG_CONFIGS = {
   wasp: { color: '#1a1a00', glowColor: '#ffff00', bodyScale: 0.6 },
 };
 
-// 3D Snail using sprite with gun on the side - with smooth interpolation
+// 3D Bulbasaur with vine whip weapon
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const { scene } = useGLTF('/models/bulbasaur-web.glb');
+  const { scene } = useGLTF('/models/bulbasaur.glb');
   
   const model = useMemo(() => {
     const cloned = scene.clone();
@@ -252,18 +252,20 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 1.2;
+    const targetSize = 1.0; // Slightly smaller
     if (maxDim > 0) {
-      const scale = targetSize / maxDim;
-      cloned.scale.multiplyScalar(scale);
+      const s = targetSize / maxDim;
+      cloned.scale.multiplyScalar(s);
     }
     
-    // Center the model
+    // Center horizontally, sit on ground
     const centeredBox = new THREE.Box3().setFromObject(cloned);
     const center = new THREE.Vector3();
     centeredBox.getCenter(center);
-    cloned.position.sub(center);
-    cloned.position.y += (centeredBox.max.y - centeredBox.min.y) / 2;
+    cloned.position.x -= center.x;
+    cloned.position.z -= center.z;
+    // Place bottom of model at y=0
+    cloned.position.y -= centeredBox.min.y;
     
     return cloned;
   }, [scene]);
@@ -271,7 +273,10 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
   const lightningPhase = useRef(0);
+  const vineExtend = useRef(0); // 0 = retracted, 1 = fully extended
+  const isFiring = useRef(false);
   
+  // Track if shooting based on bullets being created (vine extends when firing)
   useFrame((_, delta) => {
     if (groupRef.current) {
       const lerpSpeed = 12;
@@ -286,18 +291,80 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
       groupRef.current.rotation.y = currentPos.current.rot;
       
       lightningPhase.current += delta * 20;
+      
+      // Animate vine extend/retract
+      // Check if space or touch fire is active via a global-ish approach
+      const targetExtend = isFiring.current ? 1 : 0;
+      vineExtend.current = THREE.MathUtils.lerp(vineExtend.current, targetExtend, delta * 15);
     }
   });
+
+  // Listen for shooting state
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ') isFiring.current = true;
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ') isFiring.current = false;
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+  
+  // Vine whip extension amount
+  const ext = vineExtend.current;
+  const vineLength = 0.3 + ext * 0.8; // short when retracted, long when firing
+  const vineColor = specialWeapon === 'flamethrower' ? '#aa4400' : 
+                    specialWeapon === 'laserBeam' ? '#00aaff' :
+                    '#3a7a2a'; // default green vine
+  const vineTipColor = specialWeapon === 'flamethrower' ? '#ff4400' :
+                       specialWeapon === 'rocketLauncher' ? '#aa2200' :
+                       specialWeapon === 'laserBeam' ? '#00ffff' :
+                       '#5aaa3a';
   
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
       <primitive object={model} scale={1} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
       
+      {/* Vine whip tentacles - two vines extending forward from the bulb */}
+      {/* Left vine */}
+      <group position={[-0.15, 0.45, 0.2]}>
+        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.3, 0, -0.15]}>
+          <capsuleGeometry args={[0.035, vineLength, 6, 8]} />
+          <meshStandardMaterial color={vineColor} roughness={0.7} />
+        </mesh>
+        {/* Vine tip */}
+        <mesh position={[0, ext * 0.1, vineLength + 0.05]} rotation={[0.2, 0, 0]}>
+          <sphereGeometry args={[0.05 + ext * 0.02, 6, 6]} />
+          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.5} />
+        </mesh>
+      </group>
+      {/* Right vine */}
+      <group position={[0.15, 0.45, 0.2]}>
+        <mesh position={[0, 0, vineLength * 0.5]} rotation={[Math.PI / 2 - ext * 0.3, 0, 0.15]}>
+          <capsuleGeometry args={[0.035, vineLength, 6, 8]} />
+          <meshStandardMaterial color={vineColor} roughness={0.7} />
+        </mesh>
+        {/* Vine tip */}
+        <mesh position={[0, ext * 0.1, vineLength + 0.05]} rotation={[0.2, 0, 0]}>
+          <sphereGeometry args={[0.05 + ext * 0.02, 6, 6]} />
+          <meshStandardMaterial color={vineTipColor} emissive={ext > 0.5 ? vineTipColor : '#000000'} emissiveIntensity={ext * 0.5} />
+        </mesh>
+      </group>
+      
+      {/* Firing glow when vines extended */}
+      {ext > 0.3 && (
+        <pointLight position={[0, 0.5, vineLength + 0.3]} color={vineTipColor} intensity={ext * 1.5} distance={3} />
+      )}
+      
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
         <>
-          {/* Lightning bolts shooting out behind */}
           {[...Array(6)].map((_, i) => {
             const phase = lightningPhase.current + i * 0.5;
             const xOffset = Math.sin(phase * 3 + i) * 0.3;
@@ -315,132 +382,25 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
               </group>
             );
           })}
-          {/* Electric glow around snail */}
-          <mesh position={[0, 0.9, 0]}>
-            <sphereGeometry args={[1.2, 16, 16]} />
+          <mesh position={[0, 0.5, 0]}>
+            <sphereGeometry args={[1.0, 16, 16]} />
             <meshBasicMaterial color="#ffff00" transparent opacity={0.15 + Math.sin(lightningPhase.current * 5) * 0.05} />
           </mesh>
-          <pointLight position={[0, 0.9, -0.5]} color="#ffff00" intensity={2} distance={4} />
+          <pointLight position={[0, 0.5, -0.5]} color="#ffff00" intensity={2} distance={4} />
         </>
       )}
-      {/* Simple turbo indicator on mobile */}
       {isTurbo && isMobile && (
-        <mesh position={[0, 0.9, 0]}>
-          <sphereGeometry args={[1.0, 8, 8]} />
+        <mesh position={[0, 0.5, 0]}>
+          <sphereGeometry args={[0.8, 8, 8]} />
           <meshBasicMaterial color="#ffff00" transparent opacity={0.2} />
         </mesh>
       )}
       
-      {/* Shadow on ground - scales with height, raised to prevent z-fighting */}
-      <mesh position={[0, -height + 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
-        <circleGeometry args={[0.6, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.1, 0.25 - height * 0.05)} depthWrite={false} />
+      {/* Shadow on ground */}
+      <mesh position={[0, -height + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1 - height * 0.1, 0.7 - height * 0.07, 1]}>
+        <circleGeometry args={[0.5, 16]} />
+        <meshBasicMaterial color="#000000" transparent opacity={Math.max(0.1, 0.3 - height * 0.05)} depthWrite={false} />
       </mesh>
-      
-      {/* Gun mounted on right side of snail body - changes based on weapon */}
-      <group position={[0.7, 0.5, 0.4]} rotation={[0, 0, 0]}>
-        {/* Mount arm connecting to body */}
-        <mesh position={[-0.2, 0, -0.1]} rotation={[0, 0.2, 0.1]}>
-          <boxGeometry args={[0.3, 0.06, 0.06]} />
-          <meshStandardMaterial color="#5a4a3a" roughness={0.85} />
-        </mesh>
-        
-        {specialWeapon === 'flamethrower' ? (
-          <>
-            {/* Flamethrower barrel */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.08, 0.1, 0.6, 8]} />
-              <meshStandardMaterial color="#4a3a2a" metalness={0.7} roughness={0.3} />
-            </mesh>
-            {/* Fuel tank */}
-            <mesh position={[-0.15, 0, -0.2]}>
-              <capsuleGeometry args={[0.08, 0.2, 8, 12]} />
-              <meshStandardMaterial color="#aa4400" metalness={0.6} roughness={0.4} />
-            </mesh>
-            {/* Flame tip glow */}
-            <pointLight position={[0, 0, 0.4]} color="#ff4400" intensity={1} distance={2} />
-          </>
-        ) : specialWeapon === 'rocketLauncher' ? (
-          <>
-            {/* Rocket launcher tube */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.1, 0.1, 0.8, 12]} />
-              <meshStandardMaterial color="#3a4a3a" metalness={0.8} roughness={0.2} />
-            </mesh>
-            {/* Scope */}
-            <mesh position={[0, 0.12, 0]}>
-              <boxGeometry args={[0.04, 0.06, 0.15]} />
-              <meshStandardMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Back exhaust */}
-            <mesh position={[0, 0, -0.45]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.12, 0.08, 0.1, 12]} />
-              <meshStandardMaterial color="#2a2a2a" />
-            </mesh>
-          </>
-        ) : specialWeapon === 'shotgun' ? (
-          <>
-            {/* Shotgun barrels (double barrel) */}
-            <mesh position={[0.03, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.7, 8]} />
-              <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
-            </mesh>
-            <mesh position={[-0.03, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.7, 8]} />
-              <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
-            </mesh>
-            {/* Stock */}
-            <mesh position={[0, -0.05, -0.35]}>
-              <boxGeometry args={[0.08, 0.12, 0.25]} />
-              <meshStandardMaterial color="#5a4a3a" roughness={0.8} />
-            </mesh>
-          </>
-        ) : specialWeapon === 'laserBeam' ? (
-          <>
-            {/* Laser rifle body */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <boxGeometry args={[0.1, 0.6, 0.08]} />
-              <meshStandardMaterial color="#2a4a6a" metalness={0.9} roughness={0.1} />
-            </mesh>
-            {/* Power cell */}
-            <mesh position={[0, -0.08, -0.1]}>
-              <boxGeometry args={[0.12, 0.06, 0.15]} />
-              <meshBasicMaterial color="#00ffff" />
-            </mesh>
-            {/* Emitter */}
-            <mesh position={[0, 0, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.03, 0.05, 0.1, 8]} />
-              <meshBasicMaterial color="#00aaff" />
-            </mesh>
-            <pointLight position={[0, 0, 0.4]} color="#00ffff" intensity={0.8} distance={2} />
-          </>
-        ) : (
-          <>
-            {/* Default gun barrel */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.04, 0.06, 0.5, 8]} />
-              <meshStandardMaterial color="#2a2a2a" metalness={0.9} roughness={0.15} />
-            </mesh>
-            {/* Barrel rings */}
-            {[0.08, 0.18, 0.28].map((z, i) => (
-              <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.05, 0.008, 6, 12]} />
-                <meshStandardMaterial color="#1a1a1a" metalness={0.95} roughness={0.05} />
-              </mesh>
-            ))}
-            {/* Muzzle */}
-            <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.055, 0.04, 0.06, 8]} />
-              <meshStandardMaterial color="#0a0a0a" metalness={0.95} roughness={0.05} />
-            </mesh>
-            {/* Receiver/body */}
-            <mesh position={[0, 0.03, -0.1]}>
-              <boxGeometry args={[0.08, 0.1, 0.15]} />
-              <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.25} />
-            </mesh>
-          </>
-        )}
-      </group>
     </group>
   );
 }
@@ -1545,13 +1505,11 @@ function GameScene({
       const angle = gameState.snailRotation;
       const activeWeapon = gameState.specialWeaponUntil > now ? gameState.specialWeapon : null;
       
-      // Calculate gun tip position in world space
-      // Gun is at local [0.7, 0.5, 0.8] - 0.7 right, 0.5 up, 0.8 forward (including barrel)
-      const gunRightOffset = 0.7;
-      const gunForwardOffset = 0.8;
-      const gunTipX = gameState.snailPosition[0] + gunRightOffset * Math.cos(angle) + gunForwardOffset * Math.sin(angle);
-      const gunTipZ = gameState.snailPosition[1] - gunRightOffset * Math.sin(angle) + gunForwardOffset * Math.cos(angle);
-      const gunTipY = 0.5 + gameState.snailHeight;
+      // Calculate vine tip position in world space (forward from bulbasaur)
+      const vineForwardOffset = 1.2; // vine extends forward
+      const gunTipX = gameState.snailPosition[0] + vineForwardOffset * Math.sin(angle);
+      const gunTipZ = gameState.snailPosition[1] + vineForwardOffset * Math.cos(angle);
+      const gunTipY = 0.45 + gameState.snailHeight;
       
       if (activeWeapon === 'flamethrower') {
         sounds.playFlamethrower();
