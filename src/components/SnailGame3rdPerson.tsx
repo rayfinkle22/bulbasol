@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { PerspectiveCamera, Environment, Billboard } from "@react-three/drei";
+import { PerspectiveCamera, Environment, Billboard, useGLTF } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import * as THREE from "three";
 import snailTexture from "@/assets/snail-game.png";
-import snail3DImage from "@/assets/snail-3d.png";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProceduralTerrain } from "./game/ProceduralTerrain";
@@ -242,14 +242,13 @@ const BUG_CONFIGS = {
 
 // 3D Snail using sprite with gun on the side - with smooth interpolation
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const texture = useLoader(THREE.TextureLoader, snail3DImage);
+  const { scene } = useGLTF('/models/bulbasaur.glb');
   const groupRef = useRef<THREE.Group>(null);
   const currentPos = useRef({ x: position[0], y: height, z: position[1], rot: rotation });
   const lightningPhase = useRef(0);
   
   useFrame((_, delta) => {
     if (groupRef.current) {
-      // Smooth interpolation for position and rotation
       const lerpSpeed = 12;
       currentPos.current.x = THREE.MathUtils.lerp(currentPos.current.x, position[0], delta * lerpSpeed);
       currentPos.current.y = THREE.MathUtils.lerp(currentPos.current.y, height, delta * lerpSpeed);
@@ -267,14 +266,8 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
   
   return (
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
-      {/* Snail sprite - positioned on ground, facing forward */}
-      <sprite position={[0, 0.9, 0]} scale={[1.8, 1.8, 1]}>
-        <spriteMaterial 
-          map={texture} 
-          transparent={true} 
-          alphaTest={0.1}
-        />
-      </sprite>
+      {/* Bulbasaur 3D model */}
+      <primitive object={scene.clone()} scale={[0.8, 0.8, 0.8]} position={[0, 0.1, 0]} />
       
       {/* Turbo lightning trail - simplified on mobile */}
       {isTurbo && !isMobile && (
