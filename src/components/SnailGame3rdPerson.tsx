@@ -242,18 +242,40 @@ const BUG_CONFIGS = {
 
 // 3D Bulbasaur with vine whip weapon
 function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }: { position: [number, number]; rotation: number; height: number; specialWeapon: SpecialWeapon; isTurbo?: boolean; isMobile?: boolean }) {
-  const { scene } = useGLTF('/models/bulbasaur.glb');
+  const { scene } = useGLTF('/models/bulbasaur-web.glb');
+  
+  const [modelReady, setModelReady] = useState(false);
   
   const model = useMemo(() => {
-    const cloned = scene.clone();
+    const cloned = scene.clone(true);
+    
+    let hasMeshes = false;
+    // Ensure all materials are visible and properly configured
+    cloned.traverse((child: any) => {
+      if (child.isMesh) {
+        hasMeshes = true;
+        child.castShadow = true;
+        child.receiveShadow = true;
+        child.visible = true;
+        if (child.material) {
+          const mat = child.material.clone();
+          mat.transparent = false;
+          mat.opacity = 1;
+          mat.visible = true;
+          mat.side = THREE.DoubleSide;
+          mat.needsUpdate = true;
+          child.material = mat;
+        }
+      }
+    });
     
     // Auto-normalize scale based on bounding box
     const box = new THREE.Box3().setFromObject(cloned);
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 1.0; // Slightly smaller
-    if (maxDim > 0) {
+    const targetSize = 1.0;
+    if (maxDim > 0 && maxDim < 10000) {
       const s = targetSize / maxDim;
       cloned.scale.multiplyScalar(s);
     }
@@ -264,9 +286,9 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     centeredBox.getCenter(center);
     cloned.position.x -= center.x;
     cloned.position.z -= center.z;
-    // Place bottom of model at y=0
     cloned.position.y -= centeredBox.min.y;
     
+    setModelReady(hasMeshes);
     return cloned;
   }, [scene]);
 
@@ -330,6 +352,37 @@ function Snail({ position, rotation, height, specialWeapon, isTurbo, isMobile }:
     <group ref={groupRef} position={[position[0], height, position[1]]} rotation={[0, rotation, 0]}>
       {/* Bulbasaur 3D model */}
       <primitive object={model} scale={1} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
+      {/* Fallback body if GLB has no visible meshes */}
+      {!modelReady && (
+        <group>
+          {/* Body */}
+          <mesh position={[0, 0.3, 0]}>
+            <sphereGeometry args={[0.35, 16, 16]} />
+            <meshStandardMaterial color="#5aaa5a" roughness={0.6} />
+          </mesh>
+          {/* Bulb on back */}
+          <mesh position={[0, 0.55, -0.1]}>
+            <sphereGeometry args={[0.22, 12, 12]} />
+            <meshStandardMaterial color="#2d7a2d" roughness={0.5} />
+          </mesh>
+          {/* Eyes */}
+          <mesh position={[-0.12, 0.4, 0.28]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color="#ff3333" />
+          </mesh>
+          <mesh position={[0.12, 0.4, 0.28]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color="#ff3333" />
+          </mesh>
+          {/* Legs */}
+          {[[-0.2, 0.08, 0.15], [0.2, 0.08, 0.15], [-0.2, 0.08, -0.15], [0.2, 0.08, -0.15]].map((pos, i) => (
+            <mesh key={i} position={pos as [number, number, number]}>
+              <cylinderGeometry args={[0.06, 0.08, 0.16, 8]} />
+              <meshStandardMaterial color="#4a9a4a" roughness={0.7} />
+            </mesh>
+          ))}
+        </group>
+      )}
       
       {/* Vine whip tentacles - two vines extending forward from the bulb */}
       {/* Left vine */}
